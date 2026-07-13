@@ -1,6 +1,7 @@
 import { supabasePublic } from "../lib/server";
 import { STAGES, stageForDate } from "../lib/stages";
 import TripMap from "./TripMap";
+import PushButton from "./PushButton";
 
 export const revalidate = 300;
 
@@ -167,6 +168,13 @@ export default async function Home() {
         )}
         {posts.map((e) => <PostCard key={e.date} e={e} />)}
       </div>
+
+      <footer style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid var(--line)", textAlign: "center" }}>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
+          Être prévenu à chaque nouvelle étape du voyage
+        </p>
+        <PushButton role="reader" label="M'avertir des grandes étapes" labelDone="Tu seras prévenu ✓" />
+      </footer>
     </main>
   );
 }

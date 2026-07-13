@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import PushButton from "../PushButton";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
@@ -302,6 +303,12 @@ export default function Journal() {
           <p style={{ fontSize: 13, color: "var(--muted)" }}>Un point doré = une note existe déjà (tape pour la modifier).</p>
           <MiniCalendar date={date} onSelect={openDate} entryDates={entries.map((e) => e.date)} entries={entries} />
           {error && <p className="error">{error}</p>}
+          <div style={{ marginTop: 8, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
+              Rappel chaque soir à 20h, et le lendemain matin si la journée est encore vide.
+            </p>
+            <PushButton role="admin" adminKey={adminKey} label="Activer mes rappels" labelDone="Rappels activés ✓" />
+          </div>
         </div>
       )}
 
