@@ -1,22 +1,30 @@
 import "./globals.css";
+import Nav from "./Nav";
 
 export const metadata = {
   title: "Carnet de voyage — Mexique & Amérique centrale",
-  description: "100 jours de voyage, un jour à la fois.",
+  description: "Un voyage en solo, raconté un jour à la fois.",
   manifest: "/manifest.json",
 };
 
-export const viewport = {
-  themeColor: "#1E2340",
-};
+export const viewport = { themeColor: "#16111C" };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Karla:wght@400;700&family=Space+Mono:wght@400;700&display=swap"
+          rel="stylesheet"
+        />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body>{children}</body>
+      <body>
+        <Nav />
+        {children}
+      </body>
     </html>
   );
 }

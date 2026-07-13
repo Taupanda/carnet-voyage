@@ -67,8 +67,8 @@ export default function TripMap({ points }) {
         type: "line",
         source: "trail",
         paint: {
-          "line-color": "#F2A93B",
-          "line-width": 2,
+          "line-color": "#F7F1E8",
+          "line-width": 2.5,
           "line-opacity": 0.75,
           "line-dasharray": [2, 1.5],
         },
@@ -96,10 +96,10 @@ export default function TripMap({ points }) {
         type: "circle",
         source: "days",
         paint: {
-          "circle-radius": ["case", ["==", ["get", "jour"], points[points.length - 1].day_number], 8, 5],
+          "circle-radius": ["case", ["==", ["get", "jour"], points[points.length - 1].day_number], 9, 5.5],
           "circle-color": ["get", "couleur"],
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#1E2340",
+          "circle-stroke-color": "#16111C",
         },
       });
 
@@ -130,7 +130,7 @@ export default function TripMap({ points }) {
 
   if (failed) {
     return (
-      <div style={{ height: 260, borderRadius: 14, background: "var(--bg3)", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>
+      <div style={{ height: 340, borderRadius: 14, background: "var(--bg3)", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>
         Carte indisponible
       </div>
     );
@@ -138,7 +138,7 @@ export default function TripMap({ points }) {
 
   return (
     <div style={{ position: "relative" }}>
-      <div ref={containerRef} style={{ height: 280, borderRadius: 14, overflow: "hidden", border: "1px solid var(--line)" }} />
+      <div ref={containerRef} style={{ height: 340, borderRadius: 14, overflow: "hidden", border: "1px solid var(--line)" }} />
       {points.length === 0 && (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13, pointerEvents: "none" }}>
           Le tracé apparaîtra avec le premier jour publié
