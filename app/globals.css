@@ -291,3 +291,67 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; display: inline-block; }
+
+/* ============ SOCIAL ============ */
+.avatar {
+  width: 30px; height: 30px; border-radius: 50%; object-fit: cover;
+  border: 1px solid var(--line2); flex-shrink: 0; display: block;
+}
+.avatar-fallback {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--stage); color: var(--ink);
+  font-weight: 700; font-size: 13px; border: none;
+}
+
+.modal {
+  position: relative; background: var(--ink2); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 26px; width: min(400px, 90vw);
+}
+
+.social { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.social-actions { display: flex; gap: 8px; }
+.like-btn, .cmt-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--line2); background: transparent;
+  color: var(--muted); cursor: pointer; font-size: 14px;
+  transition: all .15s;
+}
+.like-btn:hover, .cmt-btn:hover { border-color: var(--stage); color: var(--text); }
+.like-btn.on { border-color: var(--stage); color: var(--stage); }
+.like-heart { font-size: 17px; line-height: 1; }
+.like-btn.on .like-heart { animation: pop .3s ease; }
+@keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.35); } 100% { transform: scale(1); } }
+.cmt-label { font-size: 13px; }
+
+.cmt-zone { margin-top: 14px; display: flex; flex-direction: column; gap: 12px; }
+.cmt { display: flex; gap: 10px; }
+.cmt-body { flex: 1; }
+.cmt-head { display: flex; align-items: center; gap: 8px; }
+.cmt-head b { font-size: 13.5px; }
+.cmt-time { font-size: 10.5px; color: var(--muted); }
+.cmt-del {
+  margin-left: auto; background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 12px; padding: 2px 6px;
+}
+.cmt-del:hover { color: var(--stage-2); }
+.cmt-body p { font-size: 14.5px; color: var(--text2); margin-top: 2px; }
+.cmt-form { display: flex; gap: 8px; align-items: center; }
+
+.pm-box { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; text-align: left; }
+.pm { background: var(--ink2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+.pm-head { display: flex; align-items: center; gap: 9px; }
+.pm-head b { font-size: 13.5px; }
+
+.lbl { display: block; font-family: "Space Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+
+.reco-form { display: flex; flex-direction: column; gap: 10px; background: var(--ink2); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; }
+.reco-form select.input { cursor: pointer; }
+.reco {
+  background: var(--ink2); border: 1px solid var(--line); border-left: 5px solid var(--c);
+  border-radius: 12px; padding: 16px; margin-bottom: 10px;
+}
+.reco-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.reco-by { font-size: 11.5px; color: var(--muted); }
+.reco-titre { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 700; font-size: 17px; }
+.reco-desc { color: var(--text2); font-size: 14.5px; margin-top: 4px; }

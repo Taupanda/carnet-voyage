@@ -1,5 +1,6 @@
 import "./globals.css";
 import Nav from "./Nav";
+import AuthProvider from "./AuthProvider";
 
 export const metadata = {
   title: "Carnet de voyage — Mexique & Amérique centrale",
@@ -22,8 +23,10 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
-        <Nav />
-        {children}
+        <AuthProvider>
+          <Nav />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

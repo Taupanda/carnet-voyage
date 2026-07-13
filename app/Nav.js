@@ -1,12 +1,14 @@
 "use client";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import AuthBar from "./AuthBar";
 
 const LINKS = [
   { href: "/", label: "Journal" },
   { href: "/album", label: "Album" },
   { href: "/etapes", label: "Étapes" },
   { href: "/calendrier", label: "100 jours" },
+  { href: "/recos", label: "Conseils" },
 ];
 
 export default function Nav() {
@@ -28,6 +30,7 @@ export default function Nav() {
             {l.label}
           </Link>
         ))}
+        <AuthBar />
       </div>
     </nav>
   );

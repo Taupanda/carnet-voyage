@@ -1,4 +1,5 @@
 import PhotoGrid from "./PhotoGrid";
+import PostSocial from "./PostSocial";
 import { stageForDate } from "../lib/stages";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
@@ -81,6 +82,8 @@ export default function Post({ e }) {
             <div className="mood"><span className="mood-e">{AVENTURE[e.aventure]}</span><span className="mood-l">aventure</span></div>
           </div>
         </div>
+
+        <PostSocial entryDate={e.date} />
       </div>
     </article>
   );

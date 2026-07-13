@@ -36,6 +36,8 @@ export default function Journal() {
   const [post, setPost] = useState(null);
   const [error, setError] = useState(null);
   const [recording, setRecording] = useState(false);
+  const [inbox, setInbox] = useState([]);
+  const [showInbox, setShowInbox] = useState(false);
   const recognitionRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
@@ -74,6 +76,8 @@ export default function Journal() {
       sessionStorage.setItem("carnet-key", key);
       const listRes = await api("/api/entries", {}, key);
       if (listRes.ok) setEntries(await listRes.json());
+      const inboxRes = await api("/api/inbox", {}, key);
+      if (inboxRes.ok) setInbox(await inboxRes.json());
     } catch (e) {
       setError("Impossible de joindre le serveur : " + e.message);
     }
@@ -297,18 +301,66 @@ export default function Journal() {
         )}
       </header>
 
-      {phase === "date" && (
+      {phase === "date" && !showInbox && (
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
           <h2 className="serif" style={{ fontSize: 19 }}>Quelle journée veux-tu raconter ?</h2>
           <p style={{ fontSize: 13, color: "var(--muted)" }}>Un point doré = une note existe déjà (tape pour la modifier).</p>
           <MiniCalendar date={date} onSelect={openDate} entryDates={entries.map((e) => e.date)} entries={entries} />
           {error && <p className="error">{error}</p>}
+          <button
+            className="btn-secondary"
+            style={{ width: "100%", marginTop: 6 }}
+            onClick={() => setShowInbox(true)}
+          >
+            ✉️ Mots reçus {inbox.filter((m) => !m.lu).length > 0 && `(${inbox.filter((m) => !m.lu).length})`}
+          </button>
+
           <div style={{ marginTop: 8, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
             <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
-              Rappel chaque soir à 20h, et le lendemain matin si la journée est encore vide.
+              Rappel chaque soir à 20h, et le lendemain soir si la journée est encore vide.
             </p>
             <PushButton role="admin" adminKey={adminKey} label="Activer mes rappels" labelDone="Rappels activés ✓" />
           </div>
+        </div>
+      )}
+
+      {showInbox && (
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px" }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 18 }}>
+            <h2 className="serif" style={{ fontSize: 19 }}>Mots reçus</h2>
+            <button className="btn-secondary" style={{ marginLeft: "auto", padding: "8px 14px" }} onClick={() => setShowInbox(false)}>
+              Fermer
+            </button>
+          </div>
+          {inbox.length === 0 && <p className="empty">Aucun mot pour l'instant.</p>}
+          {inbox.map((m) => (
+            <div key={m.id} className="pm" style={{ opacity: m.lu ? 0.6 : 1 }}>
+              <div className="pm-head">
+                {m.profiles?.avatar_url ? (
+                  <img src={m.profiles.avatar_url} alt="" className="avatar" />
+                ) : (
+                  <span className="avatar avatar-fallback">{(m.profiles?.prenom || "?")[0]?.toUpperCase()}</span>
+                )}
+                <b>{m.profiles?.prenom} {m.profiles?.nom}</b>
+                <span className="mono" style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>
+                  {new Date(m.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                </span>
+              </div>
+              <p style={{ color: "var(--text2)", fontSize: 14.5, marginTop: 6 }}>{m.contenu}</p>
+              {!m.lu && (
+                <button
+                  className="btn-secondary"
+                  style={{ marginTop: 8, padding: "6px 12px", fontSize: 12 }}
+                  onClick={async () => {
+                    await api("/api/inbox", { method: "POST", body: JSON.stringify({ id: m.id }) }, adminKey);
+                    setInbox((ms) => ms.map((x) => (x.id === m.id ? { ...x, lu: true } : x)));
+                  }}
+                >
+                  Marquer comme lu
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

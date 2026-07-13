@@ -3,6 +3,7 @@ import { STAGES, stageForDate, stageDays, TRIP_DAYS, todayLocal, dayNumberOf, fm
 import TripMap from "./TripMap";
 import PushButton from "./PushButton";
 import Post from "./Post";
+import FooterNote from "./FooterNote";
 
 export const revalidate = 120;
 
@@ -110,6 +111,9 @@ export default async function Home() {
           RECEVOIR UN MOT À CHAQUE NOUVELLE ÉTAPE
         </p>
         <PushButton role="reader" label="Me prévenir" labelDone="Tu seras prévenu ✓" />
+        <div style={{ marginTop: 22, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
+          <FooterNote />
+        </div>
       </footer>
     </main>
   );
