@@ -52,14 +52,29 @@ export default function Journal() {
   }, [messages, phase]);
 
   async function tryAuth(key) {
-    const res = await api("/api/entries", {}, key);
-    if (res.ok) {
+    setError(null);
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: key }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setError(data.reason || "Connexion refusée.");
+        sessionStorage.removeItem("carnet-key");
+        return;
+      }
+      if (data.missingVars?.length) {
+        setError("Variables manquantes sur Vercel : " + data.missingVars.join(", "));
+        return;
+      }
       setAuthed(true);
       sessionStorage.setItem("carnet-key", key);
-      setEntries(await res.json());
-    } else {
-      setError("Mot de passe incorrect.");
-      sessionStorage.removeItem("carnet-key");
+      const listRes = await api("/api/entries", {}, key);
+      if (listRes.ok) setEntries(await listRes.json());
+    } catch (e) {
+      setError("Impossible de joindre le serveur : " + e.message);
     }
   }
 
