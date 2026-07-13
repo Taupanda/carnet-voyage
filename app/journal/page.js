@@ -9,7 +9,7 @@ const TRIP_START = new Date("2026-09-08T00:00:00");
 
 const emptyExtracted = () => ({ lieu: null, activites: null, rencontres: null, anecdote: null, adresse: null, reflexion: null, photos: null });
 const todayStr = () => new Date().toISOString().slice(0, 10);
-const dayNumber = (d) => Math.round((new Date(d + "T00:00:00") - TRIP_START) / 86400000) + 1;
+const dayNumber = (d) => Math.round((new Date(d + "T00:00:00") - TRIP_START) / 86400000);
 
 function api(path, opts = {}, key) {
   return fetch(path, {
@@ -281,8 +281,8 @@ export default function Journal() {
     <main style={{ display: "flex", flexDirection: "column", height: "100dvh", maxWidth: 560, margin: "0 auto" }}>
       <header style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid var(--line)", background: "var(--bg2)" }}>
         <div style={{ width: 48, height: 48, borderRadius: "50%", border: "2px dashed var(--gold)", color: "var(--gold)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span className="serif" style={{ fontSize: 16, fontWeight: 700 }}>{dNum > 0 ? dNum : "—"}</span>
-          <span style={{ fontSize: 7, textTransform: "uppercase" }}>{dNum > 0 ? "jour" : "avant"}</span>
+          <span className="serif" style={{ fontSize: 16, fontWeight: 700 }}>{dNum >= 0 ? dNum : "—"}</span>
+          <span style={{ fontSize: 7, textTransform: "uppercase" }}>{dNum >= 0 ? "jour" : "avant"}</span>
         </div>
         <div>
           <div className="serif" style={{ fontSize: 16 }}>Carnet de bord</div>
@@ -451,7 +451,7 @@ function EditablePost({ post, setPost, photos, humeur, kiff, aventure, dayNum })
     <div className="post-card">
       <div className="post-header">
         <div style={{ flex: 1 }}>
-          <div className="post-day">Jour {dayNum > 0 ? dayNum : "—"}</div>
+          <div className="post-day">Jour {dayNum >= 0 ? dayNum : "—"}</div>
           <input className="input serif" style={{ fontSize: 17, marginTop: 4 }} value={post.titre || ""} onChange={(e) => upd("titre", e.target.value)} />
         </div>
         <div className="post-moods">

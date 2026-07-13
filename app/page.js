@@ -21,7 +21,7 @@ export default async function Home() {
 
   const today = todayLocal();
   const started = today >= STAGES[0].debut;
-  const dayNum = started ? Math.min(TRIP_DAYS, dayNumberOf(today)) : 0;
+  const dayNum = started ? Math.min(TRIP_DAYS, dayNumberOf(today)) : null;
   const current = stageForDate(today);
   const active = current || (posts[0] ? stageForDate(posts[0].date) : STAGES[0]);
   const c = active?.couleur || "#F2A93B";

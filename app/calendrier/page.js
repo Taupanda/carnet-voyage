@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { supabasePublic } from "../../lib/server";
-import { STAGES, stageForDate, TRIP_START, TRIP_DAYS, todayLocal } from "../../lib/stages";
+import { STAGES, stageForDate, TRIP_START, TRIP_DAYS, TRIP_DATES, todayLocal } from "../../lib/stages";
 
 export const revalidate = 120;
 
@@ -16,16 +16,16 @@ export default async function Calendrier() {
 
   const today = todayLocal();
   const days = [];
-  for (let i = 0; i < TRIP_DAYS; i++) {
+  for (let i = 0; i < TRIP_DATES; i++) {
     const d = new Date(new Date(TRIP_START).getTime() + i * 86400000).toISOString().slice(0, 10);
-    days.push({ date: d, n: i + 1, entry: byDate[d], stage: stageForDate(d) });
+    days.push({ date: d, n: i, entry: byDate[d], stage: stageForDate(d) });
   }
 
   const written = Object.keys(byDate).length;
 
   return (
     <main className="container-wide" style={{ paddingTop: 30, paddingBottom: 70 }}>
-      <p className="eyebrow">{written} / {TRIP_DAYS} jours racontés</p>
+      <p className="eyebrow">{written} / {TRIP_DATES} jours racontés</p>
       <h1 className="display" style={{ fontSize: "clamp(26px, 5vw, 40px)", margin: "8px 0 22px" }}>
         Cent jours
       </h1>
