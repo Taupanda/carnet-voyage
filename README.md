@@ -36,6 +36,7 @@ Journal de bord conversationnel : une interview guidée par IA chaque soir, un b
 Le script `setup-supabase.sql` doit avoir été exécuté, plus la ligne :
 ```sql
 alter table entries add column if not exists photos jsonb default '[]';
+
 ```
 
 ## Sécurité
