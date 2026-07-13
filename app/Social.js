@@ -29,10 +29,11 @@ export default function Social({ entryDate, onNeedLogin }) {
   const [text, setText] = useState("");
   const [openC, setOpenC] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
 
   const load = useCallback(async () => {
     const sb = supabaseBrowser();
-    const [{ data: l }, { data: c }] = await Promise.all([
+    const [likeRes, cmtRes] = await Promise.all([
       sb.from("likes").select("user_id").eq("entry_date", entryDate),
       sb
         .from("comments")
@@ -40,8 +41,9 @@ export default function Social({ entryDate, onNeedLogin }) {
         .eq("entry_date", entryDate)
         .order("created_at", { ascending: true }),
     ]);
-    setLikes(l || []);
-    setComments(c || []);
+    if (cmtRes.error) setErr("Commentaires indisponibles : " + cmtRes.error.message);
+    setLikes(likeRes.data || []);
+    setComments(cmtRes.data || []);
   }, [entryDate]);
 
   useEffect(() => {
@@ -73,7 +75,9 @@ export default function Social({ entryDate, onNeedLogin }) {
       contenu: text.trim(),
     });
     setBusy(false);
-    if (!error) {
+    if (error) setErr("Échec : " + error.message);
+    else {
+      setErr(null);
       setText("");
       load();
     }
@@ -101,6 +105,7 @@ export default function Social({ entryDate, onNeedLogin }) {
 
       {openC && (
         <div className="cmt-zone">
+          {err && <p className="error">{err}</p>}
           {comments.map((c) => (
             <div key={c.id} className="cmt">
               <Avatar p={c.profiles} />

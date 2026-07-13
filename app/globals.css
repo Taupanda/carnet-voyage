@@ -355,3 +355,17 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .reco-by { font-size: 11.5px; color: var(--muted); }
 .reco-titre { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 700; font-size: 17px; }
 .reco-desc { color: var(--text2); font-size: 14.5px; margin-top: 4px; }
+
+.menu {
+  position: absolute; right: 0; top: 42px; z-index: 51;
+  background: var(--ink2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px; min-width: 190px; box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+}
+.menu-name { font-weight: 700; font-size: 14px; padding: 6px 10px 0; }
+.menu-mail { font-size: 10.5px; color: var(--muted); padding: 0 10px 8px; border-bottom: 1px solid var(--line); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; }
+.menu-item {
+  display: block; width: 100%; text-align: left;
+  padding: 9px 10px; border-radius: 8px; border: none; background: none;
+  color: var(--text); font-size: 14px; cursor: pointer;
+}
+.menu-item:hover { background: var(--ink3); }

@@ -39,17 +39,29 @@ export default function AuthBar() {
   if (user) {
     const nom = profile?.prenom || user.email.split("@")[0];
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <Link href="/profil" style={{ display: "flex", alignItems: "center", gap: 7 }}>
+      <div style={{ position: "relative" }}>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+          aria-label="Mon compte"
+        >
           {profile?.avatar_url ? (
             <img src={profile.avatar_url} alt="" className="avatar" />
           ) : (
             <span className="avatar avatar-fallback">{nom[0]?.toUpperCase()}</span>
           )}
-        </Link>
-        <button className="nav-link" onClick={signOut} style={{ border: "none", background: "none", cursor: "pointer" }}>
-          Sortir
         </button>
+        {open && (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 50 }} onClick={() => setOpen(false)} />
+            <div className="menu">
+              <div className="menu-name">{profile?.prenom} {profile?.nom}</div>
+              <div className="menu-mail mono">{user.email}</div>
+              <Link href="/profil" className="menu-item" onClick={() => setOpen(false)}>Mon profil</Link>
+              <button className="menu-item" onClick={signOut}>Se déconnecter</button>
+            </div>
+          </>
+        )}
       </div>
     );
   }

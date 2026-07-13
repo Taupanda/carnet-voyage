@@ -15,10 +15,11 @@ export default function Recos() {
 
   const load = useCallback(async () => {
     const sb = supabaseBrowser();
-    const { data } = await sb
+    const { data, error } = await sb
       .from("recos")
       .select("*, profiles(prenom, nom, avatar_url)")
       .order("created_at", { ascending: false });
+    if (error) setMsg("Lecture impossible : " + error.message);
     setRecos(data || []);
   }, []);
 

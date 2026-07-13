@@ -1,6 +1,7 @@
 import "./globals.css";
 import Nav from "./Nav";
 import AuthProvider from "./AuthProvider";
+import ProfileGate from "./ProfileGate";
 
 export const metadata = {
   title: "Carnet de voyage — Mexique & Amérique centrale",
@@ -26,6 +27,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <Nav />
           {children}
+          <ProfileGate />
         </AuthProvider>
       </body>
     </html>
