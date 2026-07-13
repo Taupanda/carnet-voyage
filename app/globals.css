@@ -1,7 +1,7 @@
 /* ============================================
    CARNET DE VOYAGE — design system
-   Display: Archivo Black (enseignes peintes)
-   Body: Karla · Data: Space Mono (tampon)
+   Display: Bricolage Grotesque · Body: Figtree
+   Data: Space Mono (tampon de passeport)
    ============================================ */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,16 +40,16 @@ html { scroll-behavior: smooth; }
 body {
   background: var(--ink);
   color: var(--text);
-  font-family: "Karla", system-ui, sans-serif;
+  font-family: "Figtree", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-.display { font-family: "Archivo Black", system-ui, sans-serif; font-weight: 400; letter-spacing: -0.02em; line-height: 1.05; }
+.display { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; }
 .mono { font-family: "Space Mono", ui-monospace, monospace; }
-.serif { font-family: "Archivo Black", system-ui, sans-serif; }
+.serif { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 700; }
 
 a { color: inherit; text-decoration: none; }
 input, textarea, button, select { font-family: inherit; font-size: inherit; }
@@ -67,7 +67,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
   border-bottom: 1px solid var(--line);
 }
 .nav-inner { display: flex; align-items: center; gap: 6px; max-width: 1100px; margin: 0 auto; padding: 12px 18px; }
-.nav-brand { font-family: "Archivo Black", sans-serif; font-size: 15px; letter-spacing: -0.01em; margin-right: auto; }
+.nav-brand { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 15px; letter-spacing: -0.01em; margin-right: auto; }
 .nav-brand span { color: var(--stage); }
 .nav-link {
   font-family: "Space Mono", monospace; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em;
@@ -101,10 +101,10 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
   pointer-events: none;
 }
 .stage-band-n {
-  font-family: "Archivo Black", sans-serif; font-size: 46px; line-height: 0.85;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 48px; line-height: 0.85;
   color: rgba(0,0,0,0.35); flex-shrink: 0;
 }
-.stage-band-name { font-family: "Archivo Black", sans-serif; font-size: 20px; color: #16111C; line-height: 1.1; }
+.stage-band-name { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 20px; color: #16111C; line-height: 1.1; }
 .stage-band-dates { font-family: "Space Mono", monospace; font-size: 11.5px; color: rgba(0,0,0,0.6); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* ---------- post ---------- */
@@ -134,12 +134,12 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .photo-more {
   position: absolute; inset: 0; background: rgba(22,17,28,0.72);
   display: flex; align-items: center; justify-content: center;
-  font-family: "Archivo Black", sans-serif; font-size: 22px; cursor: zoom-in;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 22px; cursor: zoom-in;
 }
 
 .post-body { padding: 20px; }
 .post-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 12px; }
-.post-title { font-family: "Archivo Black", sans-serif; font-size: 23px; line-height: 1.15; margin-top: 6px; letter-spacing: -0.02em; }
+.post-title { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 700; font-size: 24px; line-height: 1.15; margin-top: 6px; letter-spacing: -0.025em; }
 @media (max-width: 560px) { .post-title { font-size: 19px; } }
 
 .stamp {
@@ -148,7 +148,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
   border: 2px dashed var(--stage); color: var(--stage);
   transform: rotate(-7deg);
 }
-.stamp-n { font-family: "Archivo Black", sans-serif; font-size: 20px; line-height: 1; }
+.stamp-n { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 20px; line-height: 1; }
 .stamp-l { font-family: "Space Mono", monospace; font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 1px; }
 
 .moods { display: flex; gap: 12px; }
@@ -254,8 +254,8 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
   transition: transform .15s, background .15s;
 }
 .stage-card:hover { background: var(--ink3); transform: translateX(3px); }
-.stage-card .n { font-family: "Archivo Black", sans-serif; font-size: 26px; color: var(--c); min-width: 38px; }
-.stage-card .nm { font-family: "Archivo Black", sans-serif; font-size: 16px; }
+.stage-card .n { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 26px; color: var(--c); min-width: 38px; }
+.stage-card .nm { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 700; font-size: 16px; }
 .stage-card .dt { font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
 .stage-card .ct { margin-left: auto; font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); text-align: right; }
 
@@ -277,7 +277,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .post-card { background: var(--ink2); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .post-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .post-day { font-family: "Space Mono", monospace; font-size: 11px; color: var(--stage); text-transform: uppercase; letter-spacing: 0.08em; }
-.post-title { font-family: "Archivo Black", sans-serif; }
+.post-title { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 700; }
 .post-moods { display: flex; gap: 12px; flex-shrink: 0; }
 .mood-item { display: flex; flex-direction: column; align-items: center; }
 .mood-big { font-size: 24px; }
