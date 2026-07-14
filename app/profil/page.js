@@ -22,9 +22,7 @@ export default function Profil() {
     }
   }, [profile]);
 
-  useEffect(() => {
-    if (!loading && !user) router.push("/");
-  }, [loading, user, router]);
+
 
   async function uploadAvatar(e) {
     const file = e.target.files?.[0];
@@ -66,7 +64,22 @@ export default function Profil() {
     }
   }
 
-  if (loading || !user) return <main className="container" style={{ paddingTop: 40 }}><p className="empty">…</p></main>;
+  if (loading) {
+    return (
+      <main className="container" style={{ paddingTop: 40 }}>
+        <p className="empty">Chargement de ton profil…</p>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="container" style={{ paddingTop: 60, maxWidth: 420, textAlign: "center" }}>
+        <p style={{ color: "var(--text2)", marginBottom: 16 }}>Tu n'es pas connecté.</p>
+        <a href="/connexion" className="btn" style={{ display: "inline-block", textDecoration: "none" }}>Se connecter</a>
+      </main>
+    );
+  }
 
   return (
     <main className="container" style={{ paddingTop: 30, paddingBottom: 60, maxWidth: 460 }}>
