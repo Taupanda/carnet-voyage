@@ -2,6 +2,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import AuthBar from "./AuthBar";
+import { useAuth } from "./AuthProvider";
 
 const LINKS = [
   { href: "/", label: "Journal" },
@@ -13,7 +14,9 @@ const LINKS = [
 
 export default function Nav() {
   const path = usePathname();
-  if (path?.startsWith("/journal")) return null; // espace privé : pas de nav publique
+  const { user } = useAuth();
+  const isAdmin = !!user?.email && user.email.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase();
+  if (path?.startsWith("/journal")) return null; // le mode éditeur a sa propre interface
 
   return (
     <nav className="nav">
@@ -30,6 +33,11 @@ export default function Nav() {
             {l.label}
           </Link>
         ))}
+        {isAdmin && (
+          <Link href="/journal" className="nav-link" style={{ color: "var(--stage)", border: "1px solid var(--stage)" }}>
+            ✏️ Éditeur
+          </Link>
+        )}
         <AuthBar />
       </div>
     </nav>

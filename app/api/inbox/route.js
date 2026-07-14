@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, checkAdmin } from "../../../lib/server";
 
 export async function GET(request) {
-  if (!checkAdmin(request)) {
+  if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const db = supabaseAdmin();
@@ -25,7 +25,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  if (!checkAdmin(request)) {
+  if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { id } = await request.json();

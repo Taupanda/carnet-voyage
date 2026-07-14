@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { callClaude, checkAdmin } from "../../../lib/server";
 
 export async function POST(request) {
-  if (!checkAdmin(request)) {
+  if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { history, extracted, photoCount } = await request.json();

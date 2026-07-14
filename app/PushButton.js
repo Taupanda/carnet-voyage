@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { supabaseBrowser } from "../lib/supabaseClient";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -8,7 +9,7 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-export default function PushButton({ role = "reader", adminKey = null, label, labelDone }) {
+export default function PushButton({ role = "reader", label, labelDone }) {
   const [status, setStatus] = useState("idle"); // idle | subscribed | unsupported | working
   const [msg, setMsg] = useState(null);
 
@@ -49,12 +50,15 @@ export default function PushButton({ role = "reader", adminKey = null, label, la
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
+      let authHeaders = {};
+      if (role === "admin") {
+        const { data } = await supabaseBrowser().auth.getSession();
+        const token = data.session?.access_token;
+        if (token) authHeaders = { Authorization: `Bearer ${token}` };
+      }
       const res = await fetch("/api/push", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(adminKey ? { "x-admin-key": adminKey } : {}),
-        },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ subscription: sub.toJSON(), role }),
       });
       if (!res.ok) throw new Error("enregistrement refusé");

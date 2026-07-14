@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabasePublic, checkAdmin } from "../../../lib/server";
 
 export async function GET(request) {
-  const isAdmin = checkAdmin(request);
+  const isAdmin = await checkAdmin(request);
   const db = isAdmin ? supabaseAdmin() : supabasePublic();
   let query = db.from("entries").select("*").order("date", { ascending: false });
   if (!isAdmin) query = query.eq("status", "published");
@@ -16,7 +16,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  if (!checkAdmin(request)) {
+  if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const entry = await request.json();
@@ -31,7 +31,7 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
-  if (!checkAdmin(request)) {
+  if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { date } = await request.json();

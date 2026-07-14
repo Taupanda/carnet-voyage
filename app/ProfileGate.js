@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import { supabaseBrowser } from "../lib/supabaseClient";
 
@@ -22,8 +23,9 @@ export default function ProfileGate() {
     }
   }, [profile]);
 
+  const pathname = usePathname();
   const needsSetup = !loading && user && !profile?.prenom;
-  if (!needsSetup) return null;
+  if (!needsSetup || pathname?.startsWith("/journal")) return null;
 
   async function uploadAvatar(e) {
     const file = e.target.files?.[0];

@@ -1,6 +1,9 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import PushButton from "../PushButton";
+import { useAuth } from "../AuthProvider";
+import { supabaseBrowser } from "../../lib/supabaseClient";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
@@ -11,16 +14,22 @@ const emptyExtracted = () => ({ lieu: null, activites: null, rencontres: null, a
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const dayNumber = (d) => Math.round((new Date(d + "T00:00:00") - TRIP_START) / 86400000);
 
-function api(path, opts = {}, key) {
+async function api(path, opts = {}) {
+  const { data } = await supabaseBrowser().auth.getSession();
+  const token = data.session?.access_token;
   return fetch(path, {
     ...opts,
-    headers: { ...(opts.headers || {}), "x-admin-key": key, ...(opts.body && !(opts.body instanceof FormData) ? { "Content-Type": "application/json" } : {}) },
+    headers: {
+      ...(opts.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(opts.body && !(opts.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+    },
   });
 }
 
 export default function Journal() {
-  const [adminKey, setAdminKey] = useState("");
-  const [authed, setAuthed] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const isAdmin = !!user?.email && user.email.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase();
   const [phase, setPhase] = useState("date");
   const [date, setDate] = useState(todayStr());
   const [entries, setEntries] = useState([]);
@@ -43,45 +52,14 @@ export default function Journal() {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("carnet-key");
-    if (saved) {
-      setAdminKey(saved);
-      tryAuth(saved);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, phase]);
-
-  async function tryAuth(key) {
-    setError(null);
-    try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: key }),
-      });
-      const data = await res.json();
-      if (!data.ok) {
-        setError(data.reason || "Connexion refusée.");
-        sessionStorage.removeItem("carnet-key");
-        return;
-      }
-      if (data.missingVars?.length) {
-        setError("Variables manquantes sur Vercel : " + data.missingVars.join(", "));
-        return;
-      }
-      setAuthed(true);
-      sessionStorage.setItem("carnet-key", key);
-      const listRes = await api("/api/entries", {}, key);
+    if (!isAdmin) return;
+    (async () => {
+      const listRes = await api("/api/entries");
       if (listRes.ok) setEntries(await listRes.json());
-      const inboxRes = await api("/api/inbox", {}, key);
+      const inboxRes = await api("/api/inbox");
       if (inboxRes.ok) setInbox(await inboxRes.json());
-    } catch (e) {
-      setError("Impossible de joindre le serveur : " + e.message);
-    }
-  }
+    })();
+  }, [isAdmin]);
 
   function startInterview() {
     setMessages([{ role: "assistant", content: "Alors, cette journée ? Raconte-moi comme tu veux, dans l'ordre que tu veux — je remets tout en forme après." }]);
@@ -132,7 +110,7 @@ export default function Journal() {
     setMessages(newMessages);
     setLoading(true);
     try {
-      const res = await api("/api/interview", { method: "POST", body: JSON.stringify({ history: newMessages, extracted, photoCount: photos.length }) }, adminKey);
+      const res = await api("/api/interview", { method: "POST", body: JSON.stringify({ history: newMessages, extracted, photoCount: photos.length }) });
       if (!res.ok) throw new Error("api");
       const parsed = await res.json();
       setExtracted((prev) => ({ ...prev, ...parsed.extracted }));
@@ -153,7 +131,7 @@ export default function Journal() {
       fd.append("file", f);
       fd.append("date", date);
       try {
-        const res = await api("/api/upload", { method: "POST", body: fd }, adminKey);
+        const res = await api("/api/upload", { method: "POST", body: fd });
         if (!res.ok) throw new Error("upload");
         const { url } = await res.json();
         setPhotos((p) => [...p, url]);
@@ -203,7 +181,7 @@ export default function Journal() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date }) }, adminKey);
+      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date }) });
       if (!res.ok) throw new Error("api");
       setPost(await res.json());
       setPhase("summary");
@@ -238,7 +216,7 @@ export default function Journal() {
       status,
     };
     try {
-      const res = await api("/api/entries", { method: "POST", body: JSON.stringify(entry) }, adminKey);
+      const res = await api("/api/entries", { method: "POST", body: JSON.stringify(entry) });
       if (!res.ok) throw new Error((await res.json()).error);
       const saved = await res.json();
       setEntries((es) => [saved, ...es.filter((x) => x.date !== date)].sort((a, b) => (a.date < b.date ? 1 : -1)));
@@ -253,7 +231,7 @@ export default function Journal() {
   async function deleteEntry() {
     if (!confirm("Supprimer définitivement cette journée ?")) return;
     try {
-      await api("/api/entries", { method: "DELETE", body: JSON.stringify({ date }) }, adminKey);
+      await api("/api/entries", { method: "DELETE", body: JSON.stringify({ date }) });
       setEntries((es) => es.filter((x) => x.date !== date));
       setPhase("date");
     } catch (e) {
@@ -263,20 +241,32 @@ export default function Journal() {
 
   const dNum = dayNumber(date);
 
-  if (!authed) {
+  if (authLoading) {
     return (
-      <main className="container" style={{ paddingTop: 80, maxWidth: 380 }}>
-        <h1 className="serif" style={{ fontSize: 24, marginBottom: 16 }}>Carnet — accès privé</h1>
-        <input
-          className="input"
-          type="password"
-          placeholder="Mot de passe"
-          value={adminKey}
-          onChange={(e) => setAdminKey(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && tryAuth(adminKey)}
-        />
-        {error && <p className="error" style={{ marginTop: 10 }}>{error}</p>}
-        <button className="btn" style={{ marginTop: 14, width: "100%" }} onClick={() => tryAuth(adminKey)}>Entrer</button>
+      <main className="container" style={{ paddingTop: 60 }}>
+        <p className="empty">Vérification…</p>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="container" style={{ paddingTop: 60, maxWidth: 420, textAlign: "center" }}>
+        <h1 className="serif" style={{ fontSize: 22, marginBottom: 12 }}>Mode éditeur</h1>
+        <p style={{ color: "var(--text2)", marginBottom: 18 }}>Connecte-toi avec ton compte pour continuer.</p>
+        <Link href="/connexion" className="btn" style={{ display: "inline-block", textDecoration: "none" }}>Se connecter</Link>
+      </main>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <main className="container" style={{ paddingTop: 60, maxWidth: 420, textAlign: "center" }}>
+        <h1 className="serif" style={{ fontSize: 22, marginBottom: 12 }}>Mode éditeur</h1>
+        <p style={{ color: "var(--text2)", marginBottom: 18 }}>
+          Cet espace est réservé à l'auteur du carnet.
+        </p>
+        <Link href="/" className="btn-secondary" style={{ display: "inline-block", textDecoration: "none" }}>← Retour au carnet</Link>
       </main>
     );
   }
@@ -294,8 +284,11 @@ export default function Journal() {
             {new Date(date + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
           </div>
         </div>
+        <Link href="/" className="btn-secondary" style={{ marginLeft: "auto", padding: "8px 12px", fontSize: 13, textDecoration: "none" }}>
+          ← Site
+        </Link>
         {phase !== "date" && (
-          <button className="btn-secondary" style={{ marginLeft: "auto", padding: "8px 12px", fontSize: 13 }} onClick={() => setPhase("date")}>
+          <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => setPhase("date")}>
             Calendrier
           </button>
         )}
@@ -319,7 +312,7 @@ export default function Journal() {
             <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
               Rappel chaque soir à 20h, et le lendemain soir si la journée est encore vide.
             </p>
-            <PushButton role="admin" adminKey={adminKey} label="Activer mes rappels" labelDone="Rappels activés ✓" />
+            <PushButton role="admin" label="Activer mes rappels" labelDone="Rappels activés ✓" />
           </div>
         </div>
       )}
@@ -352,7 +345,7 @@ export default function Journal() {
                   className="btn-secondary"
                   style={{ marginTop: 8, padding: "6px 12px", fontSize: 12 }}
                   onClick={async () => {
-                    await api("/api/inbox", { method: "POST", body: JSON.stringify({ id: m.id }) }, adminKey);
+                    await api("/api/inbox", { method: "POST", body: JSON.stringify({ id: m.id }) });
                     setInbox((ms) => ms.map((x) => (x.id === m.id ? { ...x, lu: true } : x)));
                   }}
                 >

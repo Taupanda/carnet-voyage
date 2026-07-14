@@ -12,7 +12,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "subscription invalide" }, { status: 400 });
   }
   // only the admin can register as 'admin'
-  const finalRole = role === "admin" && checkAdmin(request) ? "admin" : "reader";
+  const finalRole = role === "admin" && (await checkAdmin(request)) ? "admin" : "reader";
 
   const db = supabaseAdmin();
   const { error } = await db.from("push_subs").upsert(
