@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { STAGES, todayLocal } from "../../lib/stages";
+import AuthModal from "../AuthModal";
 
 export default function Recos() {
   const { user, profile } = useAuth();
@@ -12,6 +13,7 @@ export default function Recos() {
   const [stage, setStage] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [ask, setAsk] = useState(false);
 
   const load = useCallback(async () => {
     const sb = supabaseBrowser();
@@ -79,8 +81,12 @@ export default function Recos() {
           </button>
         </div>
       ) : (
-        <p className="empty">Connecte-toi pour proposer une adresse.</p>
+        <div style={{ textAlign: "center", padding: "30px 20px", background: "var(--ink2)", border: "1px solid var(--line)", borderRadius: 14 }}>
+          <p style={{ color: "var(--text2)", marginBottom: 14 }}>Connecte-toi pour proposer une adresse.</p>
+          <button className="btn" onClick={() => setAsk(true)}>Se connecter</button>
+        </div>
       )}
+      {ask && <AuthModal onClose={() => setAsk(false)} />}
 
       <div style={{ marginTop: 34 }}>
         {recos.map((r) => {
