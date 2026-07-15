@@ -24,7 +24,9 @@ export default function ProfileGate() {
   }, [profile]);
 
   const pathname = usePathname();
-  const needsSetup = !loading && user && !profile?.prenom;
+  // profile === undefined => encore en cours de chargement ; null => chargé mais vide
+  const profileLoaded = profile !== undefined;
+  const needsSetup = !loading && user && profileLoaded && !profile?.prenom;
   if (!needsSetup || pathname?.startsWith("/journal")) return null;
 
   async function uploadAvatar(e) {

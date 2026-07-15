@@ -7,7 +7,7 @@ export const useAuth = () => useContext(Ctx);
 
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(undefined);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (u) => {
