@@ -49,17 +49,22 @@ export default function Profil() {
     setBusy(true);
     setMsg(null);
     const sb = supabaseBrowser();
-    const { error } = await sb.from("profiles").upsert({
-      id: user.id,
-      prenom: prenom.trim(),
-      nom: nom.trim(),
-      avatar_url: avatar,
-    });
+    const { data, error } = await sb
+      .from("profiles")
+      .upsert(
+        { id: user.id, prenom: prenom.trim(), nom: nom.trim() || null, avatar_url: avatar },
+        { onConflict: "id" }
+      )
+      .select()
+      .maybeSingle();
     setBusy(false);
-    if (error) setMsg("Échec : " + error.message);
-    else {
+    if (error) {
+      setMsg("Échec : " + error.message);
+    } else if (!data?.prenom) {
+      setMsg("Rien n'a été écrit : les règles de sécurité de la table profiles bloquent. Exécute le SQL correctif.");
+    } else {
       setMsg("Profil enregistré.");
-      refresh();
+      await refresh();
       setTimeout(() => router.push("/"), 800);
     }
   }

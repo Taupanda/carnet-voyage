@@ -51,12 +51,35 @@ export default function ProfileGate() {
     }
     setBusy(true);
     setErr(null);
-    const { error } = await supabaseBrowser()
+
+    const sb = supabaseBrowser();
+    const payload = {
+      id: user.id,
+      prenom: prenom.trim(),
+      nom: nom.trim() || null,
+      avatar_url: avatar,
+    };
+
+    // upsert + on redemande la ligne pour confirmer qu'elle est bien écrite
+    const { data, error } = await sb
       .from("profiles")
-      .upsert({ id: user.id, prenom: prenom.trim(), nom: nom.trim() || null, avatar_url: avatar });
+      .upsert(payload, { onConflict: "id" })
+      .select()
+      .maybeSingle();
+
     setBusy(false);
-    if (error) setErr("Échec : " + error.message);
-    else refresh();
+
+    if (error) {
+      setErr("Échec : " + error.message);
+      window.alert("Le profil n'a pas pu être enregistré.\n\n" + error.message);
+      return;
+    }
+    if (!data?.prenom) {
+      setErr("Enregistrement silencieusement refusé (règles de sécurité de la base).");
+      window.alert("Le profil n'a pas été refusé par une erreur, mais rien n'a été écrit : ce sont les règles de sécurité (RLS) de la table profiles. Exécute le SQL correctif.");
+      return;
+    }
+    await refresh();
   }
 
   return (
