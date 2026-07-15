@@ -47,6 +47,9 @@ export default function Journal() {
   const [recording, setRecording] = useState(false);
   const [inbox, setInbox] = useState([]);
   const [showInbox, setShowInbox] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [showComments, setShowComments] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const recognitionRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
@@ -58,6 +61,8 @@ export default function Journal() {
       if (listRes.ok) setEntries(await listRes.json());
       const inboxRes = await api("/api/inbox");
       if (inboxRes.ok) setInbox(await inboxRes.json());
+      const cmtRes = await api("/api/comments");
+      if (cmtRes.ok) setComments(await cmtRes.json());
     })();
   }, [isAdmin]);
 
@@ -241,6 +246,34 @@ export default function Journal() {
 
   const dNum = dayNumber(date);
 
+  async function exportData() {
+    setExporting(true);
+    setError(null);
+    try {
+      const res = await api("/api/export");
+      if (!res.ok) throw new Error("export refusé");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `carnet-export-${todayStr()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError("Export impossible : " + e.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function deleteComment(id) {
+    if (!confirm("Supprimer ce commentaire ?")) return;
+    const res = await api("/api/comments", { method: "DELETE", body: JSON.stringify({ id }) });
+    if (res.ok) setComments((cs) => cs.filter((c) => c.id !== id));
+  }
+
   if (authLoading) {
     return (
       <main className="container" style={{ paddingTop: 60 }}>
@@ -294,19 +327,23 @@ export default function Journal() {
         )}
       </header>
 
-      {phase === "date" && !showInbox && (
+      {phase === "date" && !showInbox && !showComments && (
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
           <h2 className="serif" style={{ fontSize: 19 }}>Quelle journée veux-tu raconter ?</h2>
           <p style={{ fontSize: 13, color: "var(--muted)" }}>Un point doré = une note existe déjà (tape pour la modifier).</p>
           <MiniCalendar date={date} onSelect={openDate} entryDates={entries.map((e) => e.date)} entries={entries} />
           {error && <p className="error">{error}</p>}
-          <button
-            className="btn-secondary"
-            style={{ width: "100%", marginTop: 6 }}
-            onClick={() => setShowInbox(true)}
-          >
-            ✉️ Mots reçus {inbox.filter((m) => !m.lu).length > 0 && `(${inbox.filter((m) => !m.lu).length})`}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+            <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setShowInbox(true)}>
+              ✉️ Mots reçus {inbox.filter((m) => !m.lu).length > 0 && `(${inbox.filter((m) => !m.lu).length} non lus)`}
+            </button>
+            <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setShowComments(true)}>
+              💬 Commentaires ({comments.length})
+            </button>
+            <button className="btn-secondary" style={{ width: "100%" }} onClick={exportData} disabled={exporting}>
+              {exporting ? "Préparation…" : "⬇️ Exporter toutes mes données"}
+            </button>
+          </div>
 
           <div style={{ marginTop: 8, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
             <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
@@ -314,6 +351,41 @@ export default function Journal() {
             </p>
             <PushButton role="admin" label="Activer mes rappels" labelDone="Rappels activés ✓" />
           </div>
+        </div>
+      )}
+
+      {showComments && (
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px" }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 18 }}>
+            <h2 className="serif" style={{ fontSize: 19 }}>Commentaires</h2>
+            <button className="btn-secondary" style={{ marginLeft: "auto", padding: "8px 14px" }} onClick={() => setShowComments(false)}>
+              Fermer
+            </button>
+          </div>
+          {comments.length === 0 && <p className="empty">Aucun commentaire pour l'instant.</p>}
+          {comments.map((c) => (
+            <div key={c.id} className="pm">
+              <div className="pm-head">
+                {c.profiles?.avatar_url ? (
+                  <img src={c.profiles.avatar_url} alt="" className="avatar" />
+                ) : (
+                  <span className="avatar avatar-fallback">{(c.profiles?.prenom || "?")[0]?.toUpperCase()}</span>
+                )}
+                <b>{c.profiles?.prenom || "Quelqu'un"} {c.profiles?.nom || ""}</b>
+                <span className="mono" style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>
+                  jour du {new Date(c.entry_date + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                </span>
+              </div>
+              <p style={{ color: "var(--text2)", fontSize: 14.5, marginTop: 6 }}>{c.contenu}</p>
+              <button
+                className="btn-danger"
+                style={{ marginTop: 8, padding: "6px 12px", fontSize: 12 }}
+                onClick={() => deleteComment(c.id)}
+              >
+                Supprimer
+              </button>
+            </div>
+          ))}
         </div>
       )}
 

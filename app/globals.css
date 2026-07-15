@@ -398,3 +398,28 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
   padding: 10px 14px; font-size: 13.5px; border-radius: 8px;
   background: var(--ink3); color: var(--text2); border-left: 3px solid var(--stage);
 }
+
+/* menu compte : adapté au mobile */
+@media (max-width: 560px) {
+  .menu {
+    position: fixed;
+    left: 12px; right: 12px; top: 62px;
+    min-width: 0;
+  }
+  .menu-item { padding: 14px 12px; font-size: 15px; }
+  .menu-name { font-size: 15px; }
+}
+
+/* choix de catégorie dans le formulaire de conseils */
+.cat-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (min-width: 620px) { .cat-picker { grid-template-columns: repeat(4, 1fr); } }
+.cat-option {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 12px 8px; border-radius: 12px;
+  border: 1px solid var(--line2); background: var(--ink3);
+  color: var(--text2); font-size: 12px; cursor: pointer; text-align: center;
+  transition: all .15s;
+}
+.cat-option .cat-emoji { font-size: 22px; }
+.cat-option.on { border-color: var(--stage); color: var(--text); background: var(--line); }
+.reco-head { flex-wrap: wrap; }
