@@ -5,7 +5,7 @@ import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 
 export default function Profil() {
-  const { user, profile, loading, refresh } = useAuth();
+  const { user, profile, loading, refresh, signOut } = useAuth();
   const router = useRouter();
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
@@ -126,11 +126,7 @@ export default function Profil() {
       <button
         className="btn-secondary"
         style={{ width: "100%", marginTop: 20, color: "var(--stage-2)", borderColor: "var(--stage-2)" }}
-        onClick={async () => {
-          const { supabaseBrowser } = await import("../../lib/supabaseClient");
-          await supabaseBrowser().auth.signOut();
-          window.location.href = "/";
-        }}
+        onClick={signOut}
       >
         Se déconnecter
       </button>

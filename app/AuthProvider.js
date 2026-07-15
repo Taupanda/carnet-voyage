@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabaseBrowser } from "../lib/supabaseClient";
 
-const Ctx = createContext({ user: null, profile: null, loading: true, refresh: () => {} });
+const Ctx = createContext({ user: null, profile: undefined, loading: true, refresh: () => {}, signOut: () => {} });
 export const useAuth = () => useContext(Ctx);
 
 export default function AuthProvider({ children }) {
@@ -23,39 +23,48 @@ export default function AuthProvider({ children }) {
 
   useEffect(() => {
     const sb = supabaseBrowser();
-
-    // garde-fou : quoi qu'il arrive, on ne reste jamais bloqué en chargement
     const failsafe = setTimeout(() => setLoading(false), 3000);
 
-    // lecture locale de la session : immédiate, pas d'appel réseau bloquant
     sb.auth.getSession().then(async ({ data }) => {
       const u = data.session?.user || null;
       setUser(u);
       await loadProfile(u);
       setLoading(false);
       clearTimeout(failsafe);
-    }).catch(() => {
-      setLoading(false);
-      clearTimeout(failsafe);
-    });
+    }).catch(() => { setLoading(false); clearTimeout(failsafe); });
 
-    const { data: sub } = sb.auth.onAuthStateChange(async (_event, session) => {
+    const { data: sub } = sb.auth.onAuthStateChange(async (event, session) => {
       const u = session?.user || null;
       setUser(u);
-      await loadProfile(u);
+      if (event === "SIGNED_OUT") {
+        setProfile(null);
+      } else {
+        await loadProfile(u);
+      }
       setLoading(false);
     });
 
-    return () => {
-      clearTimeout(failsafe);
-      sub.subscription.unsubscribe();
-    };
+    return () => { clearTimeout(failsafe); sub.subscription.unsubscribe(); };
   }, [loadProfile]);
 
   const refresh = useCallback(() => loadProfile(user), [user, loadProfile]);
 
+  // déconnexion robuste : on nettoie, on ignore les erreurs, on repart propre
+  const signOut = useCallback(async () => {
+    try {
+      await supabaseBrowser().auth.signOut();
+    } catch (e) {}
+    try {
+      // purge défensive des jetons persistés
+      Object.keys(window.localStorage)
+        .filter((k) => k.startsWith("sb-"))
+        .forEach((k) => window.localStorage.removeItem(k));
+    } catch (e) {}
+    window.location.replace("/");
+  }, []);
+
   return (
-    <Ctx.Provider value={{ user, profile, loading, refresh }}>
+    <Ctx.Provider value={{ user, profile, loading, refresh, signOut }}>
       {children}
     </Ctx.Provider>
   );
