@@ -15,7 +15,7 @@ export default function Connexion() {
   const [info, setInfo] = useState(null);
 
   useEffect(() => {
-    if (!loading && user) router.push("/profil");
+    if (!loading && user) router.push("/");
   }, [loading, user, router]);
 
   async function google() {
@@ -23,7 +23,7 @@ export default function Connexion() {
     setErr(null);
     const { error } = await supabaseBrowser().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/profil` },
+      options: { redirectTo: `${window.location.origin}/` },
     });
     if (error) {
       setErr(error.message);
@@ -64,16 +64,26 @@ export default function Connexion() {
         options: { emailRedirectTo: `${window.location.origin}/profil` },
       });
       setBusy(false);
-      if (error) setErr(error.message);
-      else if (data.session) router.push("/profil");
+      if (error) {
+        if (error.message.toLowerCase().includes("already registered")) {
+          setErr("Un compte existe déjà avec cet email. Connecte-toi (ou utilise le bouton Google si c'est comme ça que tu t'étais inscrit).");
+        } else {
+          setErr(error.message);
+        }
+      }
+      else if (data.session) router.push("/");
       else setInfo("Compte créé ! Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.");
     } else {
       const { error } = await sb.auth.signInWithPassword({ email, password: pwd });
       setBusy(false);
       if (error) {
-        setErr(error.message.includes("Invalid login") ? "Email ou mot de passe incorrect." : error.message);
+        if (error.message.includes("Invalid login")) {
+          setErr("Email ou mot de passe incorrect. Si tu t'étais inscrit via Google, utilise plutôt le bouton Google ci-dessus.");
+        } else {
+          setErr(error.message);
+        }
       } else {
-        router.push("/profil");
+        router.push("/");
       }
     }
   }
