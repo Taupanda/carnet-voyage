@@ -4,16 +4,37 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import { supabaseBrowser } from "../lib/supabaseClient";
 
-/* Bloque l'interaction tant que le prénom n'est pas renseigné.
-   S'affiche automatiquement à la première connexion. */
+/* Ne s'affiche QUE si on a la certitude que le profil est chargé et sans prénom.
+   Toute incertitude (profil pas encore lu) => on n'affiche rien. */
 export default function ProfileGate() {
   const { user, profile, loading, refresh } = useAuth();
+  const pathname = usePathname();
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  const [checked, setChecked] = useState(false); // a-t-on vérifié la base directement ?
+  const [profileMissing, setProfileMissing] = useState(false);
   const fileRef = useRef(null);
+
+  // Vérification directe en base (source de vérité), plutôt que de se fier au cache du contexte
+  useEffect(() => {
+    let cancel = false;
+    async function verify() {
+      if (loading || !user) { setChecked(false); return; }
+      const { data } = await supabaseBrowser()
+        .from("profiles")
+        .select("prenom")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancel) return;
+      setProfileMissing(!data?.prenom);
+      setChecked(true);
+    }
+    verify();
+    return () => { cancel = true; };
+  }, [user, loading, profile]);
 
   useEffect(() => {
     if (profile) {
@@ -23,11 +44,11 @@ export default function ProfileGate() {
     }
   }, [profile]);
 
-  const pathname = usePathname();
-  // profile === undefined => encore en cours de chargement ; null => chargé mais vide
-  const profileLoaded = profile !== undefined;
-  const needsSetup = !loading && user && profileLoaded && !profile?.prenom;
-  if (!needsSetup || pathname?.startsWith("/journal")) return null;
+  // conditions strictes d'affichage
+  if (loading || !user) return null;
+  if (pathname?.startsWith("/journal")) return null;
+  if (!checked) return null;              // tant qu'on n'a pas lu la base : rien
+  if (!profileMissing) return null;       // profil déjà renseigné : rien
 
   async function uploadAvatar(e) {
     const file = e.target.files?.[0];
@@ -47,41 +68,32 @@ export default function ProfileGate() {
   }
 
   async function save() {
-    if (!prenom.trim()) {
-      setErr("Ton prénom, au minimum.");
-      return;
-    }
+    if (!prenom.trim()) { setErr("Ton prénom, au minimum."); return; }
     setBusy(true);
     setErr(null);
-
     const sb = supabaseBrowser();
-    const payload = {
+    const guard = setTimeout(() => {
+      setBusy(false);
+      setErr("La base ne répond pas. Réessaie.");
+    }, 10000);
+    let { error } = await sb.from("profiles").upsert({
       id: user.id,
       prenom: prenom.trim(),
       nom: nom.trim() || null,
       avatar_url: avatar,
-    };
-
-    // upsert + on redemande la ligne pour confirmer qu'elle est bien écrite
-    const { data, error } = await sb
-      .from("profiles")
-      .upsert(payload, { onConflict: "id" })
-      .select()
-      .maybeSingle();
-
-    setBusy(false);
-
+    });
+    clearTimeout(guard);
     if (error) {
-      setErr("Échec : " + error.message);
-      window.alert("Le profil n'a pas pu être enregistré.\n\n" + error.message);
-      return;
+      const { data: check } = await sb.from("profiles").select("prenom").eq("id", user.id).maybeSingle();
+      if (check?.prenom) error = null;
     }
-    if (!data?.prenom) {
-      setErr("Enregistrement silencieusement refusé (règles de sécurité de la base).");
-      window.alert("Le profil n'a pas été refusé par une erreur, mais rien n'a été écrit : ce sont les règles de sécurité (RLS) de la table profiles. Exécute le SQL correctif.");
-      return;
+    setBusy(false);
+    if (error) {
+      setErr("Échec (" + (error.code || "?") + ") : " + error.message);
+    } else {
+      setProfileMissing(false);  // ferme immédiatement
+      await refresh();
     }
-    await refresh();
   }
 
   return (
