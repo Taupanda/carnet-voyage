@@ -4,6 +4,7 @@ import Link from "next/link";
 import PushButton from "../PushButton";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import { fetchMeteo } from "../../lib/weather";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
@@ -38,9 +39,12 @@ export default function Journal() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState([]); // array of URLs
-  const [humeur, setHumeur] = useState("");
-  const [kiff, setKiff] = useState(2);
-  const [aventure, setAventure] = useState(2);
+  const [noteHumeur, setNoteHumeur] = useState(3);
+  const [noteEnergie, setNoteEnergie] = useState(3);
+  const [noteSociale, setNoteSociale] = useState(3);
+  const [noteAventure, setNoteAventure] = useState(3);
+  const [hebergement, setHebergement] = useState("");
+  const [photoPrincipale, setPhotoPrincipale] = useState(null);
   const [reflexionPrivee, setReflexionPrivee] = useState(false);
   const [post, setPost] = useState(null);
   const [error, setError] = useState(null);
@@ -85,9 +89,12 @@ export default function Journal() {
     const existing = entries.find((e) => e.date === d);
     if (existing) {
       setExtracted(existing.raw_extracted || emptyExtracted());
-      setHumeur(existing.humeur || "");
-      setKiff(existing.kiff ?? 2);
-      setAventure(existing.aventure ?? 2);
+      setNoteHumeur(existing.note_humeur ?? 3);
+      setNoteEnergie(existing.note_energie ?? 3);
+      setNoteSociale(existing.note_sociale ?? 3);
+      setNoteAventure(existing.note_aventure ?? 3);
+      setHebergement(existing.hebergement || "");
+      setPhotoPrincipale(existing.photo_principale || null);
       setReflexionPrivee(!!existing.reflexion_privee);
       setPhotos(existing.photos || []);
       setPost({
@@ -213,13 +220,23 @@ export default function Journal() {
       adresse: post.adresse,
       reflexion: post.reflexion,
       reflexion_privee: reflexionPrivee,
-      humeur,
-      kiff,
-      aventure,
+      note_humeur: noteHumeur,
+      note_energie: noteEnergie,
+      note_sociale: noteSociale,
+      note_aventure: noteAventure,
+      hebergement: hebergement.trim() || null,
+      photo_principale: photoPrincipale || photos[0] || null,
       photos,
       raw_extracted: extracted,
       status,
     };
+    // météo automatique à partir des coordonnées du lieu
+    if (post.coords?.lat) {
+      try {
+        const m = await fetchMeteo(post.coords.lat, post.coords.lng, date);
+        if (m) entry.meteo = m;
+      } catch {}
+    }
     try {
       const res = await api("/api/entries", { method: "POST", body: JSON.stringify(entry) });
       if (!res.ok) throw new Error((await res.json()).error);
@@ -492,21 +509,34 @@ export default function Journal() {
       )}
 
       {phase === "moods" && (
-        <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 22 }}>
-          <h2 className="serif" style={{ fontSize: 19 }}>Dernières petites notes</h2>
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 20 }}>
+          <h2 className="serif" style={{ fontSize: 19 }}>Comment était cette journée ?</h2>
+          <NoteScale label="😊 Humeur" value={noteHumeur} onChange={setNoteHumeur} />
+          <NoteScale label="⚡ Énergie" value={noteEnergie} onChange={setNoteEnergie} />
+          <NoteScale label="🤝 Sociale" value={noteSociale} onChange={setNoteSociale} />
+          <NoteScale label="🌋 Aventure" value={noteAventure} onChange={setNoteAventure} />
+
           <div>
-            <p style={{ fontSize: 13.5, color: "var(--muted)", marginBottom: 10 }}>Ton humeur du jour — choisis ou tape l'emoji qui te ressemble</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6, marginBottom: 8 }}>
-              {EMOJIS.map((em) => (
-                <button key={em} onClick={() => setHumeur(em)} className="btn-secondary" style={{ padding: "8px 0", fontSize: 20, ...(humeur === em ? { borderColor: "var(--gold)", background: "var(--line)" } : {}) }}>
-                  {em}
-                </button>
-              ))}
-            </div>
-            <input className="input" value={humeur} onChange={(e) => setHumeur(e.target.value.slice(-2))} placeholder="…ou n'importe quel emoji du clavier" />
+            <label className="lbl">🛏️ Où as-tu dormi ?</label>
+            <input className="input" value={hebergement} onChange={(e) => setHebergement(e.target.value)} placeholder="Nom de l'hôtel, hostel, Airbnb…" />
           </div>
-          <Scale label="Niveau de kiff" options={KIFF} value={kiff} onChange={setKiff} low="bof" high="journée de folie" />
-          <Scale label="Sortie de zone de confort" options={AVENTURE} value={aventure} onChange={setAventure} low="tranquille" high="grand saut" />
+
+          {photos.length > 0 && (
+            <div>
+              <label className="lbl">Photo principale (en tête du post)</label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(70px, 1fr))", gap: 6 }}>
+                {photos.map((url, i) => (
+                  <button key={i} onClick={() => setPhotoPrincipale(url)} style={{ position: "relative", padding: 0, border: "none", cursor: "pointer", borderRadius: 8, overflow: "hidden", outline: (photoPrincipale || photos[0]) === url ? "3px solid var(--accent)" : "none" }}>
+                    <img src={url} alt="" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", display: "block" }} />
+                    {(photoPrincipale || photos[0]) === url && (
+                      <span style={{ position: "absolute", top: 3, right: 3, background: "var(--accent)", color: "#fff", fontSize: 9, padding: "1px 5px", borderRadius: 4, fontFamily: "Space Mono, monospace" }}>★</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {extracted.reflexion && extracted.reflexion !== "rien" && (
             <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "var(--muted)" }}>
               <input type="checkbox" checked={reflexionPrivee} onChange={(e) => setReflexionPrivee(e.target.checked)} style={{ width: 18, height: 18 }} />
@@ -514,8 +544,8 @@ export default function Journal() {
             </label>
           )}
           {error && <p className="error">{error}</p>}
-          <button className="btn" style={{ marginTop: "auto" }} onClick={generatePost} disabled={loading || !humeur}>
-            {loading ? "Mise en forme…" : humeur ? "Voir mon post" : "Choisis d'abord ton humeur"}
+          <button className="btn" style={{ marginTop: "auto" }} onClick={generatePost} disabled={loading}>
+            {loading ? "Mise en forme…" : "Voir mon post"}
           </button>
         </div>
       )}
@@ -523,7 +553,7 @@ export default function Journal() {
       {phase === "summary" && post && (
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
           <p style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>Aperçu — touche un texte pour le modifier</p>
-          <EditablePost post={post} setPost={setPost} photos={photos} humeur={humeur} kiff={kiff} aventure={aventure} dayNum={dNum} />
+          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} />
           {error && <p className="error">{error}</p>}
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => saveEntry("draft")} disabled={loading}>Brouillon</button>
@@ -549,7 +579,7 @@ export default function Journal() {
   );
 }
 
-function EditablePost({ post, setPost, photos, humeur, kiff, aventure, dayNum }) {
+function EditablePost({ post, setPost, photos, notes, dayNum }) {
   const recit = Array.isArray(post.recit) ? post.recit : [];
   const upd = (field, value) => setPost((p) => ({ ...p, [field]: value }));
   const updRecit = (i, k, v) => upd("recit", recit.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
@@ -572,9 +602,10 @@ function EditablePost({ post, setPost, photos, humeur, kiff, aventure, dayNum })
           <input className="input serif" style={{ fontSize: 17, marginTop: 4 }} value={post.titre || ""} onChange={(e) => upd("titre", e.target.value)} />
         </div>
         <div className="post-moods">
-          <div className="mood-item"><span className="mood-big">{humeur}</span><span className="mood-caption">humeur</span></div>
-          <div className="mood-item"><span className="mood-small">{KIFF[kiff]}</span><span className="mood-caption">kiff</span></div>
-          <div className="mood-item"><span className="mood-small">{AVENTURE[aventure]}</span><span className="mood-caption">aventure</span></div>
+          <div className="mood-item"><span className="mood-small">😊{notes.h}</span><span className="mood-caption">humeur</span></div>
+          <div className="mood-item"><span className="mood-small">⚡{notes.e}</span><span className="mood-caption">énergie</span></div>
+          <div className="mood-item"><span className="mood-small">🤝{notes.s}</span><span className="mood-caption">sociale</span></div>
+          <div className="mood-item"><span className="mood-small">🌋{notes.a}</span><span className="mood-caption">aventure</span></div>
         </div>
       </div>
 
@@ -602,6 +633,34 @@ function EditablePost({ post, setPost, photos, humeur, kiff, aventure, dayNum })
       {post.anecdote && (<div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>)}
       {post.adresse && (<div className="section"><div className="section-head">Bonne adresse</div>{ta("adresse", post.adresse)}</div>)}
       {post.reflexion && (<div className="section box-reflexion"><div className="section-head">Ce que je garde</div>{ta("reflexion", post.reflexion)}</div>)}
+    </div>
+  );
+}
+
+function NoteScale({ label, value, onChange }) {
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
+        <span className="mono" style={{ fontSize: 13, color: "var(--accent)" }}>{value}/5</span>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            onClick={() => onChange(n)}
+            style={{
+              flex: 1, padding: "12px 0", borderRadius: 10, cursor: "pointer",
+              border: "1.5px solid " + (n <= value ? "var(--accent)" : "var(--line2)"),
+              background: n <= value ? "var(--accent)" : "var(--card)",
+              color: n <= value ? "#fff" : "var(--muted)",
+              fontFamily: "Space Mono, monospace", fontSize: 15, fontWeight: 700,
+            }}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

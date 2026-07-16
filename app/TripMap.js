@@ -40,7 +40,7 @@ export default function TripMap({ points }) {
 
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: "mapbox://styles/mapbox/light-v11",
       center: points.length ? [points[points.length - 1].lng, points[points.length - 1].lat] : [-99.13, 19.43],
       zoom: points.length ? 4.2 : 3.6,
       attributionControl: false,

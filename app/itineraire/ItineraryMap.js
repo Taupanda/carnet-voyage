@@ -22,7 +22,7 @@ export default function ItineraryMap({ phases, activeId }) {
       if (!L || !ref.current || mapRef.current) return;
       const map = L.map(ref.current, { scrollWheelZoom: false, attributionControl: false });
       mapRef.current = map;
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         subdomains: "abcd", maxZoom: 19,
       }).addTo(map);
 
@@ -47,5 +47,5 @@ export default function ItineraryMap({ phases, activeId }) {
     };
   }, [phases]);
 
-  return <div ref={ref} style={{ width: "100%", height: 360, borderRadius: 14, overflow: "hidden", border: "1px solid var(--line)", background: "#0D1119" }} />;
+  return <div ref={ref} style={{ width: "100%", height: 360, borderRadius: 14, overflow: "hidden", border: "1px solid var(--line)", background: "#EDE7DB" }} />;
 }

@@ -83,7 +83,22 @@ export default async function Home() {
         </div>
       </div>
 
-      <div className="container" style={{ marginTop: 30 }}>
+      {groups.length > 1 && (
+        <div className="container-wide">
+          <div className="stage-nav">
+            {groups.map((g) =>
+              g.stage ? (
+                <a key={g.key} href={`#etape-${g.stage.n}`} className="stage-chip" style={{ "--c": g.stage.couleur }}>
+                  <span className="dot" />
+                  {String(g.stage.n).padStart(2, "0")} · {g.stage.nom}
+                </a>
+              ) : null
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="container" style={{ marginTop: 20 }}>
         {posts.length === 0 && (
           <p className="empty">Le carnet est encore vierge.<br />Les premières pages arrivent bientôt.</p>
         )}
@@ -91,7 +106,7 @@ export default async function Home() {
         {groups.map((g) => (
           <div key={g.key}>
             {g.stage && (
-              <div className="stage-band" style={{ background: g.stage.couleur }}>
+              <div className="stage-band" id={`etape-${g.stage.n}`} style={{ background: g.stage.couleur, scrollMarginTop: 16 }}>
                 <span className="stage-band-n">{String(g.stage.n).padStart(2, "0")}</span>
                 <div>
                   <div className="stage-band-name">{g.stage.nom}</div>
