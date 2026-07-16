@@ -15,8 +15,8 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   // tri chronologique fiable (par numéro de jour croissant)
   const sortedPosts = [...posts].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
 
-  // étapes qui ont au moins un post publié
-  const stagesWithPosts = STAGES.filter((s) => sortedPosts.some((p) => stageForDate(p.date)?.n === s.n));
+  // toutes les étapes (même sans post) pour le filtre
+  const stagesWithPosts = STAGES;
 
   const shown = filter ? sortedPosts.filter((p) => stageForDate(p.date)?.n === filter) : sortedPosts;
 
@@ -52,7 +52,7 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
           </div>
           <div className="stage-nav">
             <button className={"stage-chip" + (filter === null ? " on" : "")} style={{ "--c": "var(--accent)" }} onClick={() => setFilter(null)}>
-              Tout le voyage
+              <span className="dot" />Tout le voyage
             </button>
             {stagesWithPosts.map((s) => (
               <button key={s.n} className={"stage-chip" + (filter === s.n ? " on" : "")} style={{ "--c": s.couleur }} onClick={() => setFilter(s.n)}>
