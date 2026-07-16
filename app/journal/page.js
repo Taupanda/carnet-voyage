@@ -74,9 +74,12 @@ export default function Journal() {
     setMessages([{ role: "assistant", content: "Alors, cette journée ? Raconte-moi comme tu veux, dans l'ordre que tu veux — je remets tout en forme après." }]);
     setExtracted(emptyExtracted());
     setPhotos([]);
-    setHumeur("");
-    setKiff(2);
-    setAventure(2);
+    setNoteHumeur(3);
+    setNoteEnergie(3);
+    setNoteSociale(3);
+    setNoteAventure(3);
+    setHebergement("");
+    setPhotoPrincipale(null);
     setReflexionPrivee(false);
     setPost(null);
     setError(null);
