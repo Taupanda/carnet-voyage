@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { STAGES, stageForDate } from "../lib/stages";
 
-export default function TripMap({ points }) {
+export default function TripMap({ points, big }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -130,7 +130,7 @@ export default function TripMap({ points }) {
 
   if (failed) {
     return (
-      <div style={{ height: 340, borderRadius: 14, background: "var(--bg3)", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>
+      <div style={{ height: big ? "100%" : 220, borderRadius: 14, background: "var(--bg3)", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13 }}>
         Carte indisponible
       </div>
     );
@@ -138,7 +138,7 @@ export default function TripMap({ points }) {
 
   return (
     <div style={{ position: "relative" }}>
-      <div ref={containerRef} style={{ height: 340, borderRadius: 14, overflow: "hidden", border: "1px solid var(--line)" }} />
+      <div ref={containerRef} style={{ height: big ? "100%" : 220, borderRadius: 14, overflow: "hidden", border: "1px solid var(--line)" }} />
       {points.length === 0 && (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 13, pointerEvents: "none" }}>
           Le tracé apparaîtra avec le premier jour publié

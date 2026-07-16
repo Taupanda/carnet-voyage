@@ -410,3 +410,47 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .pays-flag { font-size: 34px; }
 .pays-nom { font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; margin-top: 6px; }
 .pays-meta { font-family: "Space Mono", monospace; font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+
+/* ============ HOME v3 : fil + colonne droite fixe ============ */
+.home-layout { display: flex; gap: 26px; max-width: 1160px; margin: 0 auto; padding: 26px 22px 70px; align-items: flex-start; }
+.home-feed { flex: 1; min-width: 0; max-width: 720px; }
+.home-top { margin-bottom: 22px; }
+.home-side { display: none; }
+.home-map-mobile { margin-bottom: 24px; }
+
+@media (min-width: 1000px) {
+  .home-side { display: block; width: 300px; flex: 0 0 300px; }
+  .home-side-sticky { position: sticky; top: 22px; }
+  .home-map-mobile { display: none; }
+}
+
+.side-map-wrap { position: relative; }
+.side-map-expand {
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
+  background: rgba(255,253,248,0.92); border: 1px solid var(--line); font-size: 15px;
+}
+.kpi-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; }
+.kpi-n { font-family: "Fraunces", serif; font-weight: 600; font-size: 26px; color: var(--accent); line-height: 1; }
+.kpi-label { font-family: "Space Mono", monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 4px; }
+
+/* tuiles back-office (éditeur) */
+.bo-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.bo-tile {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 8px; border-radius: 14px; border: 1.5px solid var(--line2); background: var(--card);
+  color: var(--ink); cursor: pointer; text-decoration: none; font-size: 12px; text-align: center;
+}
+.bo-tile:hover { border-color: var(--accent); background: var(--accent-soft); }
+.bo-tile-ic { font-size: 24px; }
+.bo-tile-label { font-family: "Space Mono", monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+.bo-tile-badge { position: absolute; top: 6px; right: 6px; background: var(--accent); color: #fff; font-size: 10px; min-width: 18px; height: 18px; border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 0 4px; font-family: "Space Mono", monospace; }
+
+/* rencontres dans l'aside du post */
+.aside-rencs { display: flex; flex-direction: column; gap: 8px; }
+.aside-renc { display: flex; align-items: center; gap: 9px; }
+.aside-renc img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.aside-renc-fallback { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+.aside-renc-name { font-size: 13.5px; font-weight: 600; }

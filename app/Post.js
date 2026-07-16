@@ -44,26 +44,6 @@ export default function Post({ e }) {
 
           <PhotoGridV2 photos={e.photos || []} principale={e.photo_principale} caption={`Jour ${e.day_number}`} />
 
-          {hasNotes ? (
-            <div className="notes">
-              {NOTES.map((n) =>
-                e[n.key] != null ? (
-                  <div key={n.key} className="note-row">
-                    <span className="note-label"><span>{n.ic}</span>{n.label}</span>
-                    <Dots v={e[n.key]} />
-                    <span className="note-val">{e[n.key]}/5</span>
-                  </div>
-                ) : null
-              )}
-            </div>
-          ) : (
-            e.humeur && (
-              <div className="notes">
-                <div className="note-row"><span className="note-label">Humeur</span><span style={{ fontSize: 20 }}>{e.humeur}</span></div>
-              </div>
-            )
-          )}
-
           {e.lieux?.length > 0 && (
             <div className="chips">
               {e.lieux.map((l, i) => <span key={i} className="chip">{l}</span>)}
@@ -82,29 +62,6 @@ export default function Post({ e }) {
             ))}
           </ul>
 
-          {e.rencontres && (
-            <div className="block">
-              <div className="block-head">Rencontres</div>
-              <p>{e.rencontres}</p>
-            </div>
-          )}
-          {e.rencontres_liees?.length > 0 && (
-            <div className="block">
-              <div className="block-head">Croisé·es ce jour-là</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-                {e.rencontres_liees.map((r) => (
-                  <a key={r.id} href="/rencontres" className="renc-mini">
-                    {r.photo_url ? (
-                      <img src={r.photo_url} alt="" />
-                    ) : (
-                      <span className="renc-mini-fallback">{r.prenom?.[0]?.toUpperCase()}</span>
-                    )}
-                    {r.prenom}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
           {e.anecdote && (
             <div className="block framed">
               <div className="block-head">L'anecdote</div>
@@ -128,6 +85,40 @@ export default function Post({ e }) {
         </div>
 
         <aside className="post-aside">
+          {hasNotes && (
+            <div>
+              <div className="aside-head">Le ressenti</div>
+              <div className="notes">
+                {NOTES.map((n) =>
+                  e[n.key] != null ? (
+                    <div key={n.key} className="note-row">
+                      <span className="note-label"><span>{n.ic}</span>{n.label}</span>
+                      <Dots v={e[n.key]} />
+                    </div>
+                  ) : null
+                )}
+              </div>
+            </div>
+          )}
+
+          {e.rencontres_liees?.length > 0 && (
+            <div>
+              <div className="aside-head">Croisé·es ce jour-là</div>
+              <div className="aside-rencs">
+                {e.rencontres_liees.map((r) => (
+                  <a key={r.id} href="/rencontres" className="aside-renc">
+                    {r.photo_url ? (
+                      <img src={r.photo_url} alt="" />
+                    ) : (
+                      <span className="aside-renc-fallback">{r.prenom?.[0]?.toUpperCase()}</span>
+                    )}
+                    <span className="aside-renc-name">{r.prenom}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {mapUrl && (
             <div>
               <div className="aside-head">Lieu</div>

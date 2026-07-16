@@ -34,14 +34,24 @@ export default function RencontresManager({ onClose }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setBusy(true);
-    const sb = supabaseBrowser();
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `rencontres/${Date.now()}.${ext}`;
-    const { error } = await sb.storage.from("photos").upload(path, file, { upsert: true });
-    if (!error) {
-      const { data } = sb.storage.from("photos").getPublicUrl(path);
-      setEditing((ed) => ({ ...ed, photo_url: data.publicUrl }));
-    } else setErr("Photo refusée : " + error.message);
+    setErr(null);
+    try {
+      const { data: sess } = await supabaseBrowser().auth.getSession();
+      const token = sess.session?.access_token;
+      const form = new FormData();
+      form.append("file", file);
+      form.append("date", "rencontres");
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "upload");
+      const { url } = await res.json();
+      setEditing((ed) => ({ ...ed, photo_url: url }));
+    } catch (e2) {
+      setErr("Photo refusée : " + e2.message);
+    }
     setBusy(false);
   }
 

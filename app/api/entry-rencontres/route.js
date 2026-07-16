@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin, supabasePublic, checkAdmin } from "../../../lib/server";
+import { supabaseAdmin, checkAdmin } from "../../../lib/server";
 
 // GET ?date=YYYY-MM-DD : rencontres liées à un post (public, sans réseaux)
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const date = searchParams.get("date");
   const isAdmin = await checkAdmin(request);
-  const db = isAdmin ? supabaseAdmin() : supabasePublic();
+  const db = supabaseAdmin();
 
   let linkQuery = db.from("entry_rencontres").select("entry_date, rencontre_id");
   if (date) linkQuery = linkQuery.eq("entry_date", date);

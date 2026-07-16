@@ -57,6 +57,7 @@ export default function Journal() {
   const [showRencontres, setShowRencontres] = useState(false);
   const [allRencontres, setAllRencontres] = useState([]);
   const [linkedRencontres, setLinkedRencontres] = useState([]);
+  const [quickRenc, setQuickRenc] = useState(null);
   const [exporting, setExporting] = useState(false);
   const recognitionRef = useRef(null);
   const scrollRef = useRef(null);
@@ -111,6 +112,21 @@ export default function Journal() {
         setLinkedRencontres(linked.map((r) => r.id));
       }
     } catch {}
+  }
+
+  async function createQuickRenc() {
+    if (!quickRenc?.prenom.trim()) return;
+    setLoading(true);
+    try {
+      const res = await api("/api/rencontres", { method: "POST", body: JSON.stringify(quickRenc) });
+      if (res.ok) {
+        const saved = await res.json();
+        setAllRencontres((rs) => [saved, ...rs]);
+        setLinkedRencontres((ids) => [...ids, saved.id]);
+        setQuickRenc(null);
+      }
+    } catch {}
+    setLoading(false);
   }
 
   function openDate(d) {
@@ -394,19 +410,33 @@ export default function Journal() {
           <p style={{ fontSize: 13, color: "var(--muted)" }}>Un point doré = une note existe déjà (tape pour la modifier).</p>
           <MiniCalendar date={date} onSelect={openDate} entryDates={entries.map((e) => e.date)} entries={entries} />
           {error && <p className="error">{error}</p>}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
-            <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setShowInbox(true)}>
-              ✉️ Mots reçus {inbox.filter((m) => !m.lu).length > 0 && `(${inbox.filter((m) => !m.lu).length} non lus)`}
-            </button>
-            <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setShowComments(true)}>
-              💬 Commentaires ({comments.length})
-            </button>
-            <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setShowRencontres(true)}>
-              🤝 Gérer les rencontres
-            </button>
-            <button className="btn-secondary" style={{ width: "100%" }} onClick={exportData} disabled={exporting}>
-              {exporting ? "Préparation…" : "⬇️ Exporter toutes mes données"}
-            </button>
+
+          <div style={{ marginTop: 4 }}>
+            <p className="lbl" style={{ marginBottom: 10 }}>Back-office</p>
+            <div className="bo-tiles">
+              <button className="bo-tile" onClick={() => setShowRencontres(true)}>
+                <span className="bo-tile-ic">🤝</span>
+                <span className="bo-tile-label">Rencontres</span>
+              </button>
+              <a className="bo-tile" href="/budget">
+                <span className="bo-tile-ic">💰</span>
+                <span className="bo-tile-label">Budget</span>
+              </a>
+              <button className="bo-tile" onClick={() => setShowComments(true)}>
+                <span className="bo-tile-ic">💬</span>
+                <span className="bo-tile-label">Commentaires</span>
+                {comments.length > 0 && <span className="bo-tile-badge">{comments.length}</span>}
+              </button>
+              <button className="bo-tile" onClick={() => setShowInbox(true)}>
+                <span className="bo-tile-ic">✉️</span>
+                <span className="bo-tile-label">Mots reçus</span>
+                {inbox.filter((m) => !m.lu).length > 0 && <span className="bo-tile-badge">{inbox.filter((m) => !m.lu).length}</span>}
+              </button>
+              <button className="bo-tile" onClick={exportData} disabled={exporting}>
+                <span className="bo-tile-ic">⬇️</span>
+                <span className="bo-tile-label">{exporting ? "..." : "Export"}</span>
+              </button>
+            </div>
           </div>
 
           <div style={{ marginTop: 8, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
@@ -572,35 +602,50 @@ export default function Journal() {
 
           <div>
             <label className="lbl">🤝 Rencontres du jour</label>
-            {allRencontres.length === 0 ? (
-              <p style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                Aucune fiche encore. Crée-les via « Gérer les rencontres » sur l'écran d'accueil, elles apparaîtront ici.
-              </p>
-            ) : (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {allRencontres.map((r) => {
-                  const on = linkedRencontres.includes(r.id);
-                  return (
-                    <button
-                      key={r.id}
-                      onClick={() =>
-                        setLinkedRencontres((ids) =>
-                          on ? ids.filter((x) => x !== r.id) : [...ids, r.id]
-                        )
-                      }
-                      style={{
-                        display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999, cursor: "pointer",
-                        border: "1.5px solid " + (on ? "var(--accent)" : "var(--line2)"),
-                        background: on ? "var(--accent)" : "var(--card)",
-                        color: on ? "#fff" : "var(--ink2)", fontSize: 13,
-                      }}
-                    >
-                      {r.photo_url && <img src={r.photo_url} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />}
-                      {r.prenom} {r.nom || ""}
-                    </button>
-                  );
-                })}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {allRencontres.map((r) => {
+                const on = linkedRencontres.includes(r.id);
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() =>
+                      setLinkedRencontres((ids) =>
+                        on ? ids.filter((x) => x !== r.id) : [...ids, r.id]
+                      )
+                    }
+                    style={{
+                      display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999, cursor: "pointer",
+                      border: "1.5px solid " + (on ? "var(--accent)" : "var(--line2)"),
+                      background: on ? "var(--accent)" : "var(--card)",
+                      color: on ? "#fff" : "var(--ink2)", fontSize: 13,
+                    }}
+                  >
+                    {r.photo_url && <img src={r.photo_url} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />}
+                    {r.prenom} {r.nom || ""}
+                  </button>
+                );
+              })}
+            </div>
+            {quickRenc ? (
+              <div style={{ marginTop: 10, padding: 12, border: "1.5px solid var(--accent)", borderRadius: 12, background: "var(--card)" }}>
+                <input className="input" placeholder="Prénom *" value={quickRenc.prenom} onChange={(e) => setQuickRenc({ ...quickRenc, prenom: e.target.value })} style={{ marginBottom: 8 }} autoFocus />
+                <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                  <input className="input" placeholder="Pays" value={quickRenc.pays} onChange={(e) => setQuickRenc({ ...quickRenc, pays: e.target.value })} />
+                  <input className="input" placeholder="Lieu" value={quickRenc.lieu_rencontre} onChange={(e) => setQuickRenc({ ...quickRenc, lieu_rencontre: e.target.value })} />
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setQuickRenc(null)}>Annuler</button>
+                  <button className="btn" style={{ flex: 1 }} onClick={createQuickRenc} disabled={loading || !quickRenc.prenom.trim()}>Créer & lier</button>
+                </div>
               </div>
+            ) : (
+              <button
+                className="btn-secondary"
+                style={{ marginTop: 8, padding: "8px 14px", fontSize: 13 }}
+                onClick={() => setQuickRenc({ prenom: "", pays: "", lieu_rencontre: "" })}
+              >
+                + Nouvelle personne
+              </button>
             )}
           </div>
 
