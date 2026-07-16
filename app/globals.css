@@ -414,15 +414,32 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 /* ============ HOME v3 : fil + colonne droite fixe ============ */
 .home-layout { display: flex; gap: 26px; max-width: 1160px; margin: 0 auto; padding: 26px 22px 70px; align-items: flex-start; }
 .home-feed { flex: 1; min-width: 0; max-width: 720px; }
-.home-top { margin-bottom: 22px; }
+.home-top { margin-bottom: 22px; position: sticky; top: 62px; z-index: 20; background: var(--paper); padding: 12px 0 10px; }
+.home-top::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
+@media (min-width: 1024px) { .home-top { top: 0; } }
 .home-side { display: none; }
 .home-map-mobile { margin-bottom: 24px; }
 
 @media (min-width: 1000px) {
   .home-side { display: block; width: 300px; flex: 0 0 300px; }
-  .home-side-sticky { position: sticky; top: 22px; }
+  .home-side-sticky { position: sticky; top: 22px; max-height: calc(100vh - 44px); overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+  .home-side-sticky::-webkit-scrollbar { width: 6px; }
+  .home-side-sticky::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 999px; }
   .home-map-mobile { display: none; }
 }
+
+.side-cal { margin-top: 18px; }
+.side-cal-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.side-cal-day {
+  aspect-ratio: 1; border-radius: 5px; border: 1px solid var(--line);
+  background: var(--card); font-family: "Space Mono", monospace; font-size: 8.5px;
+  color: var(--muted); cursor: default; padding: 0; display: flex; align-items: center; justify-content: center;
+}
+.side-cal-day.done { cursor: pointer; border-color: transparent; font-weight: 700; }
+.side-cal-day.done:hover { transform: scale(1.15); z-index: 2; }
+
+/* les posts s'ancrent sous le haut de page au clic calendrier */
+.post { scroll-margin-top: 20px; }
 
 .side-map-wrap { position: relative; }
 .side-map-expand {

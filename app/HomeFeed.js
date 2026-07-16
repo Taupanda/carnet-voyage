@@ -12,10 +12,13 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   const today = todayLocal();
   const current = stageForDate(today);
 
-  // étapes qui ont au moins un post publié
-  const stagesWithPosts = STAGES.filter((s) => posts.some((p) => stageForDate(p.date)?.n === s.n));
+  // tri chronologique fiable (par numéro de jour croissant)
+  const sortedPosts = [...posts].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
 
-  const shown = filter ? posts.filter((p) => stageForDate(p.date)?.n === filter) : posts;
+  // étapes qui ont au moins un post publié
+  const stagesWithPosts = STAGES.filter((s) => sortedPosts.some((p) => stageForDate(p.date)?.n === s.n));
+
+  const shown = filter ? sortedPosts.filter((p) => stageForDate(p.date)?.n === filter) : sortedPosts;
 
   // regrouper par étape pour les bandeaux
   const groups = [];
@@ -101,7 +104,7 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         </footer>
       </div>
 
-      {/* colonne droite fixe : carte + KPI (desktop) */}
+      {/* colonne droite fixe : carte + KPI + calendrier (desktop) */}
       <aside className="home-side">
         <div className="home-side-sticky">
           <div className="side-map-wrap">
@@ -114,6 +117,7 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
             <Kpi n={stats.photos} label="Photos" />
             <Kpi n={stats.rencontres} label="Rencontres" />
           </div>
+          <MiniCalendar posts={sortedPosts} />
         </div>
       </aside>
 
@@ -134,6 +138,41 @@ function Kpi({ n, label }) {
     <div className="kpi">
       <span className="kpi-n">{n}</span>
       <span className="kpi-label">{label}</span>
+    </div>
+  );
+}
+
+function MiniCalendar({ posts }) {
+  // map jour -> post publié
+  const byDay = {};
+  posts.forEach((p) => { byDay[p.day_number] = p; });
+
+  function goTo(n) {
+    const el = document.getElementById(`jour-${n}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  return (
+    <div className="side-cal">
+      <div className="aside-head" style={{ marginBottom: 8 }}>Les 100 jours</div>
+      <div className="side-cal-grid">
+        {Array.from({ length: 101 }, (_, n) => {
+          const post = byDay[n];
+          const stage = post ? stageForDate(post.date) : null;
+          return (
+            <button
+              key={n}
+              className={"side-cal-day" + (post ? " done" : "")}
+              style={post ? { background: stage?.couleur || "var(--accent)", color: "#fff" } : {}}
+              onClick={() => post && goTo(n)}
+              disabled={!post}
+              title={post ? `Jour ${n} — ${post.titre}` : `Jour ${n}`}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
