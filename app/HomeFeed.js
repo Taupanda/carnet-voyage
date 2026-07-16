@@ -11,6 +11,7 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   const [mapOpen, setMapOpen] = useState(false);
   const today = todayLocal();
   const current = stageForDate(today);
+  const joursAvantDepart = Math.max(0, Math.ceil((new Date(STAGES[0].debut) - new Date(today)) / 86400000));
 
   // tri chronologique fiable (par numéro de jour croissant)
   const sortedPosts = [...posts].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
@@ -36,9 +37,12 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         <div className="home-top">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, gap: 12 }}>
             <span className="mono" style={{ fontSize: 12.5, color: "var(--ink2)" }}>
-              {started ? `JOUR ${dayNum} / ${TRIP_DAYS}` : `DÉPART LE ${fmtDate(STAGES[0].debut).toUpperCase()}`}
+              {started ? `JOUR ${dayNum} / ${TRIP_DAYS}` : joursAvantDepart > 0 ? `J − ${joursAvantDepart} AVANT LE DÉPART` : "LE VOYAGE COMMENCE"}
             </span>
-            {current && <span className="mono" style={{ fontSize: 12, color: current.couleur, fontWeight: 700 }}>ÉTAPE {current.n} — {current.nom.toUpperCase()}</span>}
+            {started && current
+              ? <span className="mono" style={{ fontSize: 12, color: current.couleur, fontWeight: 700 }}>ÉTAPE {current.n} — {current.nom.toUpperCase()}</span>
+              : !started && <span className="mono" style={{ fontSize: 12, color: STAGES[0].couleur, fontWeight: 700 }}>1RE ÉTAPE — {STAGES[0].nom.toUpperCase()}</span>
+            }
           </div>
           <div className="prog" style={{ marginBottom: 14 }}>
             {STAGES.map((s) => {
