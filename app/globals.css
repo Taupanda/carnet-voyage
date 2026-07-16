@@ -416,63 +416,68 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .pays-nom { font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; margin-top: 6px; }
 .pays-meta { font-family: "Space Mono", monospace; font-size: 10.5px; color: var(--muted); margin-top: 3px; }
 
-/* ============ HOME v3 : fil + colonne droite fixe ============ */
-.home-layout { display: block; max-width: 1280px; margin: 0 auto; padding: 26px 22px 70px; }
-.home-feed { min-width: 0; }
-.home-top { margin-bottom: 22px; position: sticky; top: 62px; z-index: 20; background: var(--paper); padding: 12px 0 10px; }
-.home-top::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
-.home-side { display: none; }
-.home-map-mobile { margin-bottom: 24px; }
-
-@media (min-width: 1024px) {
-  .home-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 30px; align-items: start; padding: 26px 26px 70px; }
-  .home-feed { max-width: 760px; }
-  .home-top { top: 0; }
-  .home-side { display: block; }
-  .home-side-sticky { position: sticky; top: 22px; }
-  .home-map-mobile { display: none; }
-}
-
-.side-cal { margin-top: 20px; }
-.side-cal-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
-.side-cal-day {
-  aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--line);
-  background: var(--card); font-family: "Space Mono", monospace; font-size: 10px;
-  color: var(--muted); cursor: default; padding: 0; display: flex; align-items: center; justify-content: center;
-}
-.side-cal-day.done { cursor: pointer; border-color: transparent; font-weight: 700; }
-.side-cal-day.done:hover { transform: scale(1.18); z-index: 2; }
-
-/* les posts s'ancrent sous le haut de page au clic calendrier */
-.post { scroll-margin-top: 20px; }
-
-.side-map-wrap { position: relative; }
-.side-map-expand {
-  position: absolute; top: 10px; right: 10px; z-index: 5;
-  width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
-  background: rgba(255,253,248,0.92); border: 1px solid var(--line); font-size: 15px;
-}
-.kpi-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
-.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; }
-.kpi-n { font-family: "Fraunces", serif; font-weight: 600; font-size: 26px; color: var(--accent); line-height: 1; }
-.kpi-label { font-family: "Space Mono", monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 4px; }
-
-/* tuiles back-office (éditeur) */
-.bo-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.bo-tile {
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 16px 8px; border-radius: 14px; border: 1.5px solid var(--line2); background: var(--card);
-  color: var(--ink); cursor: pointer; text-decoration: none; font-size: 12px; text-align: center;
-}
-.bo-tile:hover { border-color: var(--accent); background: var(--accent-soft); }
-.bo-tile-ic { font-size: 24px; }
-.bo-tile-label { font-family: "Space Mono", monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
-.bo-tile-badge { position: absolute; top: 6px; right: 6px; background: var(--accent); color: #fff; font-size: 10px; min-width: 18px; height: 18px; border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 0 4px; font-family: "Space Mono", monospace; }
-
 /* rencontres dans l'aside du post */
 .aside-rencs { display: flex; flex-direction: column; gap: 8px; }
 .aside-renc { display: flex; align-items: center; gap: 9px; }
 .aside-renc img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 .aside-renc-fallback { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
 .aside-renc-name { font-size: 13.5px; font-weight: 600; }
+
+/* ============ HOME v4 : fil central + panneau fixe droite ============ */
+.home3 { max-width: 1180px; margin: 0 auto; padding: 26px 22px 70px; }
+.home3-feed { min-width: 0; }
+.home3-panel { display: none; }
+
+/* mobile : le panneau s'affiche en haut du fil, non fixe */
+.home3-panel-mobile { display: block; background: var(--side-bg); border-radius: 18px; padding: 18px; margin-bottom: 26px; }
+
+@media (min-width: 1024px) {
+  .home3 { padding-right: 400px; }              /* réserve la place du panneau fixe */
+  .home3-panel-mobile { display: none; }
+  .home3-panel {
+    display: block;
+    position: fixed; top: 0; right: 0; bottom: 0; width: 372px;
+    background: var(--side-bg); color: var(--side-ink);
+    padding: 24px 20px; overflow-y: auto; z-index: 25;
+    border-left: 1px solid rgba(255,255,255,0.06);
+  }
+  .home3-panel::-webkit-scrollbar { width: 7px; }
+  .home3-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 999px; }
+}
+
+/* éléments du panneau (fond foncé) */
+.rp-map-wrap { position: relative; margin-bottom: 18px; }
+.rp-map-expand { position: absolute; top: 10px; right: 10px; z-index: 5; width: 32px; height: 32px; border-radius: 9px; cursor: pointer; background: rgba(23,20,15,0.7); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 14px; }
+.rp-block { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.rp-head { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: rgba(239,232,220,0.5); margin-bottom: 10px; }
+.rp-prog-head { font-family: "Space Mono", monospace; font-size: 12px; color: var(--side-ink); font-weight: 700; }
+.home3-panel .prog, .home3-panel-mobile .prog { background: rgba(255,255,255,0.1); }
+.rp-stage-now { font-family: "Fraunces", serif; font-size: 14px; color: rgba(239,232,220,0.85); margin-top: 10px; }
+
+.rp-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.rp-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 11px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04);
+  color: rgba(239,232,220,0.8); font-size: 11.5px; font-weight: 600; white-space: nowrap; transition: all .15s;
+}
+.rp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.rp-chip:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.rp-chip.on { background: var(--c); border-color: var(--c); color: #fff; }
+.rp-chip.on .rp-dot { background: rgba(255,255,255,0.9); }
+
+.rp-cal { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.rp-cal-day {
+  aspect-ratio: 1; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03); font-family: "Space Mono", monospace; font-size: 10px;
+  color: rgba(239,232,220,0.35); cursor: default; padding: 0; display: flex; align-items: center; justify-content: center;
+}
+.rp-cal-day.done { cursor: pointer; border-color: transparent; font-weight: 700; }
+.rp-cal-day.done:hover { transform: scale(1.18); z-index: 2; }
+
+.rp-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rp-kpi { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; }
+.rp-kpi-n { font-family: "Fraunces", serif; font-weight: 600; font-size: 24px; color: #fff; line-height: 1; }
+.rp-kpi-l { font-family: "Space Mono", monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(239,232,220,0.5); margin-top: 4px; }
+
+.post { scroll-margin-top: 20px; }

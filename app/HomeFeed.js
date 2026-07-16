@@ -7,21 +7,15 @@ import PushButton from "./PushButton";
 import { STAGES, stageForDate, stageDays, TRIP_DAYS, todayLocal, fmtDate } from "../lib/stages";
 
 export default function HomeFeed({ posts, points, stats, dayNum, started }) {
-  const [filter, setFilter] = useState(null); // n° d'étape, ou null = tout
+  const [filter, setFilter] = useState(null);
   const [mapOpen, setMapOpen] = useState(false);
   const today = todayLocal();
   const current = stageForDate(today);
   const joursAvantDepart = Math.max(0, Math.ceil((new Date(STAGES[0].debut) - new Date(today)) / 86400000));
 
-  // tri chronologique fiable (par numéro de jour croissant)
   const sortedPosts = [...posts].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
-
-  // toutes les étapes (même sans post) pour le filtre
-  const stagesWithPosts = STAGES;
-
   const shown = filter ? sortedPosts.filter((p) => stageForDate(p.date)?.n === filter) : sortedPosts;
 
-  // regrouper par étape pour les bandeaux
   const groups = [];
   for (const p of shown) {
     const s = stageForDate(p.date);
@@ -30,54 +24,93 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
     else groups[groups.length - 1].posts.push(p);
   }
 
-  return (
-    <main className="home-layout">
-      <div className="home-feed">
-        {/* barre de progression + filtre d'étapes en haut */}
-        <div className="home-top">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, gap: 12 }}>
-            <span className="mono" style={{ fontSize: 12.5, color: "var(--ink2)" }}>
-              {started ? `JOUR ${dayNum} / ${TRIP_DAYS}` : joursAvantDepart > 0 ? `J − ${joursAvantDepart} AVANT LE DÉPART` : "LE VOYAGE COMMENCE"}
-            </span>
-            {started && current
-              ? <span className="mono" style={{ fontSize: 12, color: current.couleur, fontWeight: 700 }}>ÉTAPE {current.n} — {current.nom.toUpperCase()}</span>
-              : !started && <span className="mono" style={{ fontSize: 12, color: STAGES[0].couleur, fontWeight: 700 }}>1RE ÉTAPE — {STAGES[0].nom.toUpperCase()}</span>
-            }
-          </div>
-          <div className="prog" style={{ marginBottom: 14 }}>
-            {STAGES.map((s) => {
-              const past = today > s.fin;
-              const now = current?.n === s.n;
-              return (
-                <i key={s.n} title={`${s.n}. ${s.nom}`}
-                  style={{ flex: stageDays(s), background: past || now ? s.couleur : "var(--line)", opacity: past ? 0.55 : 1 }} />
-              );
-            })}
-          </div>
-          <div className="stage-nav">
-            <button className={"stage-chip" + (filter === null ? " on" : "")} style={{ "--c": "var(--accent)" }} onClick={() => setFilter(null)}>
-              <span className="dot" />Tout le voyage
+  const byDay = {};
+  sortedPosts.forEach((p) => { byDay[p.day_number] = p; });
+
+  function goToDay(n) {
+    if (filter) setFilter(null);
+    setTimeout(() => {
+      const el = document.getElementById(`jour-${n}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  }
+
+  const Panel = (
+    <>
+      {/* carte */}
+      <div className="rp-map-wrap">
+        <TripMap points={points} />
+        <button className="rp-map-expand" onClick={() => setMapOpen(true)} aria-label="Agrandir">⛶</button>
+      </div>
+
+      {/* progression */}
+      <div className="rp-block">
+        <div className="rp-prog-head">
+          <span>{started ? `JOUR ${dayNum} / ${TRIP_DAYS}` : joursAvantDepart > 0 ? `J − ${joursAvantDepart} AVANT LE DÉPART` : "LE VOYAGE COMMENCE"}</span>
+        </div>
+        <div className="prog" style={{ marginTop: 8 }}>
+          {STAGES.map((s) => {
+            const past = today > s.fin;
+            const now = current?.n === s.n;
+            return <i key={s.n} title={`${s.n}. ${s.nom}`} style={{ flex: stageDays(s), background: past || now ? s.couleur : "rgba(255,255,255,0.14)", opacity: past ? 0.6 : 1 }} />;
+          })}
+        </div>
+        <div className="rp-stage-now">
+          {started && current ? `Étape ${current.n} — ${current.nom}` : `1re étape — ${STAGES[0].nom}`}
+        </div>
+      </div>
+
+      {/* filtres */}
+      <div className="rp-block">
+        <div className="rp-head">Filtrer par étape</div>
+        <div className="rp-filters">
+          <button className={"rp-chip" + (filter === null ? " on" : "")} style={{ "--c": "var(--accent)" }} onClick={() => setFilter(null)}>
+            <span className="rp-dot" />Tout
+          </button>
+          {STAGES.map((s) => (
+            <button key={s.n} className={"rp-chip" + (filter === s.n ? " on" : "")} style={{ "--c": s.couleur }} onClick={() => setFilter(s.n)}>
+              <span className="rp-dot" />{String(s.n).padStart(2, "0")} {s.nom}
             </button>
-            {stagesWithPosts.map((s) => (
-              <button key={s.n} className={"stage-chip" + (filter === s.n ? " on" : "")} style={{ "--c": s.couleur }} onClick={() => setFilter(s.n)}>
-                <span className="dot" />{String(s.n).padStart(2, "0")} · {s.nom}
+          ))}
+        </div>
+      </div>
+
+      {/* 100 jours */}
+      <div className="rp-block">
+        <div className="rp-head">Les 100 jours</div>
+        <div className="rp-cal">
+          {Array.from({ length: 101 }, (_, n) => {
+            const post = byDay[n];
+            const stage = post ? stageForDate(post.date) : null;
+            return (
+              <button key={n} className={"rp-cal-day" + (post ? " done" : "")}
+                style={post ? { background: stage?.couleur || "var(--accent)", color: "#fff" } : {}}
+                onClick={() => post && goToDay(n)} disabled={!post}
+                title={post ? `Jour ${n} — ${post.titre}` : `Jour ${n}`}>
+                {n}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* carte + KPI : visibles ici seulement sur mobile (en haut du fil) */}
-        <div className="home-map-mobile">
-          <TripMap points={points} />
-          <div className="kpi-row">
-            <Kpi n={stats.jours} label="Jours" />
-            <Kpi n={stats.villes} label="Lieux" />
-            <Kpi n={stats.photos} label="Photos" />
-            <Kpi n={stats.rencontres} label="Rencontres" />
-          </div>
-        </div>
+      {/* KPI */}
+      <div className="rp-kpis">
+        <div className="rp-kpi"><span className="rp-kpi-n">{stats.jours}</span><span className="rp-kpi-l">Jours</span></div>
+        <div className="rp-kpi"><span className="rp-kpi-n">{stats.villes}</span><span className="rp-kpi-l">Lieux</span></div>
+        <div className="rp-kpi"><span className="rp-kpi-n">{stats.photos}</span><span className="rp-kpi-l">Photos</span></div>
+        <div className="rp-kpi"><span className="rp-kpi-n">{stats.rencontres}</span><span className="rp-kpi-l">Rencontres</span></div>
+      </div>
+    </>
+  );
 
-        {/* fil des posts */}
+  return (
+    <div className="home3">
+      {/* fil central : posts uniquement */}
+      <div className="home3-feed">
+        {/* panneau en haut sur mobile (le fixe est masqué < 1024px) */}
+        <div className="home3-panel-mobile">{Panel}</div>
+
         {shown.length === 0 ? (
           <p className="empty">{posts.length === 0 ? "Le carnet est encore vierge." : "Aucun post pour cette étape."}</p>
         ) : (
@@ -108,22 +141,8 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         </footer>
       </div>
 
-      {/* colonne droite fixe : carte + KPI + calendrier (desktop) */}
-      <aside className="home-side">
-        <div className="home-side-sticky">
-          <div className="side-map-wrap">
-            <TripMap points={points} />
-            <button className="side-map-expand" onClick={() => setMapOpen(true)} aria-label="Agrandir la carte">⛶</button>
-          </div>
-          <div className="kpi-col">
-            <Kpi n={stats.jours} label="Jours racontés" />
-            <Kpi n={stats.villes} label="Lieux visités" />
-            <Kpi n={stats.photos} label="Photos" />
-            <Kpi n={stats.rencontres} label="Rencontres" />
-          </div>
-          <MiniCalendar posts={sortedPosts} />
-        </div>
-      </aside>
+      {/* panneau fixe à droite (desktop) */}
+      <aside className="home3-panel">{Panel}</aside>
 
       {mapOpen && (
         <div className="lb" onClick={() => setMapOpen(false)}>
@@ -133,50 +152,6 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
           </div>
         </div>
       )}
-    </main>
-  );
-}
-
-function Kpi({ n, label }) {
-  return (
-    <div className="kpi">
-      <span className="kpi-n">{n}</span>
-      <span className="kpi-label">{label}</span>
-    </div>
-  );
-}
-
-function MiniCalendar({ posts }) {
-  // map jour -> post publié
-  const byDay = {};
-  posts.forEach((p) => { byDay[p.day_number] = p; });
-
-  function goTo(n) {
-    const el = document.getElementById(`jour-${n}`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  return (
-    <div className="side-cal">
-      <div className="aside-head" style={{ marginBottom: 8 }}>Les 100 jours</div>
-      <div className="side-cal-grid">
-        {Array.from({ length: 101 }, (_, n) => {
-          const post = byDay[n];
-          const stage = post ? stageForDate(post.date) : null;
-          return (
-            <button
-              key={n}
-              className={"side-cal-day" + (post ? " done" : "")}
-              style={post ? { background: stage?.couleur || "var(--accent)", color: "#fff" } : {}}
-              onClick={() => post && goTo(n)}
-              disabled={!post}
-              title={post ? `Jour ${n} — ${post.titre}` : `Jour ${n}`}
-            >
-              {n}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
