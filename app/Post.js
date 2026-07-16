@@ -88,6 +88,23 @@ export default function Post({ e }) {
               <p>{e.rencontres}</p>
             </div>
           )}
+          {e.rencontres_liees?.length > 0 && (
+            <div className="block">
+              <div className="block-head">Croisé·es ce jour-là</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                {e.rencontres_liees.map((r) => (
+                  <a key={r.id} href="/rencontres" className="renc-mini">
+                    {r.photo_url ? (
+                      <img src={r.photo_url} alt="" />
+                    ) : (
+                      <span className="renc-mini-fallback">{r.prenom?.[0]?.toUpperCase()}</span>
+                    )}
+                    {r.prenom}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           {e.anecdote && (
             <div className="block framed">
               <div className="block-head">L'anecdote</div>

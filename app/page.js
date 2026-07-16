@@ -3,6 +3,7 @@ import { STAGES, stageForDate, stageDays, TRIP_DAYS, todayLocal, dayNumberOf, fm
 import TripMap from "./TripMap";
 import PushButton from "./PushButton";
 import Post from "./Post";
+import Dashboard from "./Dashboard";
 import FooterNote from "./FooterNote";
 
 export const revalidate = 120;
@@ -17,6 +18,22 @@ export default async function Home() {
 
   const posts = (data || []).map((r) => (r.reflexion_privee ? { ...r, reflexion: null } : r));
 
+  // rencontres liées aux posts (sans le champ privé "reseaux")
+  const dates = posts.map((p) => p.date);
+  if (dates.length) {
+    const { data: links } = await db.from("entry_rencontres").select("entry_date, rencontre_id").in("entry_date", dates);
+    const rIds = [...new Set((links || []).map((l) => l.rencontre_id))];
+    if (rIds.length) {
+      const { data: rencs } = await db.from("rencontres").select("id, prenom, nom, photo_url, pays").in("id", rIds);
+      const byId = Object.fromEntries((rencs || []).map((r) => [r.id, r]));
+      const byDate = {};
+      (links || []).forEach((l) => {
+        (byDate[l.entry_date] = byDate[l.entry_date] || []).push(byId[l.rencontre_id]);
+      });
+      posts.forEach((p) => { p.rencontres_liees = (byDate[p.date] || []).filter(Boolean); });
+    }
+  }
+
   const points = [...posts].reverse().filter((p) => p.lat && p.lng)
     .map((p) => ({ lat: p.lat, lng: p.lng, titre: p.titre, day_number: p.day_number, date: p.date }));
 
@@ -26,6 +43,15 @@ export default async function Home() {
   const current = stageForDate(today);
   const active = current || (posts[0] ? stageForDate(posts[0].date) : STAGES[0]);
   const c = active?.couleur || "#F2A93B";
+
+  // stats pour le dashboard
+  const { count: rencCount } = await db.from("rencontres").select("*", { count: "exact", head: true });
+  const stats = {
+    jours: posts.length,
+    villes: new Set(posts.flatMap((p) => p.lieux || [])).size,
+    photos: posts.reduce((s, p) => s + (p.photos?.length || 0), 0),
+    rencontres: rencCount || 0,
+  };
 
   // regrouper par étape pour insérer les bandeaux
   const groups = [];
@@ -42,13 +68,7 @@ export default async function Home() {
   return (
     <main style={{ "--stage": c, paddingBottom: 70 }}>
       <div className="container-wide" style={{ paddingTop: 30 }}>
-        <p className="eyebrow">Mexique · Guatemala · Belize · Salvador</p>
-        <h1 className="display" style={{ fontSize: "clamp(30px, 6vw, 52px)", margin: "10px 0 6px" }}>
-          Cent jours,<br />un jour à la fois.
-        </h1>
-        <p style={{ color: "var(--text2)", maxWidth: 460, marginBottom: 24 }}>
-          Chaque soir, je raconte la journée. Voilà ce que ça donne.
-        </p>
+        <Dashboard stats={stats} dayNum={dayNum} started={started} />
 
         <TripMap points={points} />
 

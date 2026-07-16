@@ -5,6 +5,7 @@ import PushButton from "../PushButton";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { fetchMeteo } from "../../lib/weather";
+import RencontresManager from "./RencontresManager";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
@@ -53,6 +54,9 @@ export default function Journal() {
   const [showInbox, setShowInbox] = useState(false);
   const [comments, setComments] = useState([]);
   const [showComments, setShowComments] = useState(false);
+  const [showRencontres, setShowRencontres] = useState(false);
+  const [allRencontres, setAllRencontres] = useState([]);
+  const [linkedRencontres, setLinkedRencontres] = useState([]);
   const [exporting, setExporting] = useState(false);
   const recognitionRef = useRef(null);
   const scrollRef = useRef(null);
@@ -70,6 +74,14 @@ export default function Journal() {
     })();
   }, [isAdmin]);
 
+  // ouverture automatique d'un panneau via ?panel=
+  useEffect(() => {
+    if (!isAdmin) return;
+    const p = new URLSearchParams(window.location.search).get("panel");
+    if (p === "rencontres") setShowRencontres(true);
+    else if (p === "comments") setShowComments(true);
+  }, [isAdmin]);
+
   function startInterview() {
     setMessages([{ role: "assistant", content: "Alors, cette journée ? Raconte-moi comme tu veux, dans l'ordre que tu veux — je remets tout en forme après." }]);
     setExtracted(emptyExtracted());
@@ -81,9 +93,24 @@ export default function Journal() {
     setHebergement("");
     setPhotoPrincipale(null);
     setReflexionPrivee(false);
+    setLinkedRencontres([]);
     setPost(null);
     setError(null);
     setPhase("chat");
+  }
+
+  async function loadLinkedRencontres(d) {
+    try {
+      const [allRes, linkRes] = await Promise.all([
+        api("/api/rencontres"),
+        api(`/api/entry-rencontres?date=${d}`),
+      ]);
+      if (allRes.ok) setAllRencontres(await allRes.json());
+      if (linkRes.ok) {
+        const linked = await linkRes.json();
+        setLinkedRencontres(linked.map((r) => r.id));
+      }
+    } catch {}
   }
 
   function openDate(d) {
@@ -100,6 +127,7 @@ export default function Journal() {
       setPhotoPrincipale(existing.photo_principale || null);
       setReflexionPrivee(!!existing.reflexion_privee);
       setPhotos(existing.photos || []);
+      loadLinkedRencontres(d);
       setPost({
         titre: existing.titre,
         lieux: existing.lieux,
@@ -130,7 +158,10 @@ export default function Journal() {
       const parsed = await res.json();
       setExtracted((prev) => ({ ...prev, ...parsed.extracted }));
       setMessages((m) => [...m, { role: "assistant", content: parsed.reply }]);
-      if (parsed.done) setTimeout(() => setPhase("moods"), 600);
+      if (parsed.done) {
+        api("/api/rencontres").then((r) => r.ok && r.json().then(setAllRencontres)).catch(() => {});
+        setTimeout(() => setPhase("moods"), 600);
+      }
     } catch (e) {
       setError("Petit souci de connexion — réessaie d'envoyer ton message.");
     } finally {
@@ -244,6 +275,13 @@ export default function Journal() {
       const res = await api("/api/entries", { method: "POST", body: JSON.stringify(entry) });
       if (!res.ok) throw new Error((await res.json()).error);
       const saved = await res.json();
+      // enregistrer les liaisons rencontres
+      try {
+        await api("/api/entry-rencontres", {
+          method: "POST",
+          body: JSON.stringify({ entry_date: date, rencontre_ids: linkedRencontres }),
+        });
+      } catch {}
       setEntries((es) => [saved, ...es.filter((x) => x.date !== date)].sort((a, b) => (a.date < b.date ? 1 : -1)));
       setPhase("saved");
     } catch (e) {
@@ -340,6 +378,9 @@ export default function Journal() {
         <Link href="/" className="btn-secondary" style={{ marginLeft: "auto", padding: "8px 12px", fontSize: 13, textDecoration: "none" }}>
           ← Site
         </Link>
+        <Link href="/budget" className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13, textDecoration: "none" }}>
+          💰 Budget
+        </Link>
         {phase !== "date" && (
           <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => setPhase("date")}>
             Calendrier
@@ -347,7 +388,7 @@ export default function Journal() {
         )}
       </header>
 
-      {phase === "date" && !showInbox && !showComments && (
+      {phase === "date" && !showInbox && !showComments && !showRencontres && (
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
           <h2 className="serif" style={{ fontSize: 19 }}>Quelle journée veux-tu raconter ?</h2>
           <p style={{ fontSize: 13, color: "var(--muted)" }}>Un point doré = une note existe déjà (tape pour la modifier).</p>
@@ -359,6 +400,9 @@ export default function Journal() {
             </button>
             <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setShowComments(true)}>
               💬 Commentaires ({comments.length})
+            </button>
+            <button className="btn-secondary" style={{ width: "100%" }} onClick={() => setShowRencontres(true)}>
+              🤝 Gérer les rencontres
             </button>
             <button className="btn-secondary" style={{ width: "100%" }} onClick={exportData} disabled={exporting}>
               {exporting ? "Préparation…" : "⬇️ Exporter toutes mes données"}
@@ -373,6 +417,8 @@ export default function Journal() {
           </div>
         </div>
       )}
+
+      {showRencontres && <RencontresManager onClose={() => setShowRencontres(false)} />}
 
       {showComments && (
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 18px" }}>
@@ -522,6 +568,40 @@ export default function Journal() {
           <div>
             <label className="lbl">🛏️ Où as-tu dormi ?</label>
             <input className="input" value={hebergement} onChange={(e) => setHebergement(e.target.value)} placeholder="Nom de l'hôtel, hostel, Airbnb…" />
+          </div>
+
+          <div>
+            <label className="lbl">🤝 Rencontres du jour</label>
+            {allRencontres.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                Aucune fiche encore. Crée-les via « Gérer les rencontres » sur l'écran d'accueil, elles apparaîtront ici.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {allRencontres.map((r) => {
+                  const on = linkedRencontres.includes(r.id);
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() =>
+                        setLinkedRencontres((ids) =>
+                          on ? ids.filter((x) => x !== r.id) : [...ids, r.id]
+                        )
+                      }
+                      style={{
+                        display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 999, cursor: "pointer",
+                        border: "1.5px solid " + (on ? "var(--accent)" : "var(--line2)"),
+                        background: on ? "var(--accent)" : "var(--card)",
+                        color: on ? "#fff" : "var(--ink2)", fontSize: 13,
+                      }}
+                    >
+                      {r.photo_url && <img src={r.photo_url} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />}
+                      {r.prenom} {r.nom || ""}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {photos.length > 0 && (
