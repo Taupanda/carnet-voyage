@@ -9,6 +9,7 @@ import { STAGES, stageForDate, stageDays, TRIP_DAYS, todayLocal, fmtDate } from 
 export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   const [filter, setFilter] = useState(null);
   const [mapOpen, setMapOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const today = todayLocal();
   const current = stageForDate(today);
   const joursAvantDepart = Math.max(0, Math.ceil((new Date(STAGES[0].debut) - new Date(today)) / 86400000));
@@ -24,15 +25,10 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
     else groups[groups.length - 1].posts.push(p);
   }
 
-  const byDay = {};
-  sortedPosts.forEach((p) => { byDay[p.day_number] = p; });
-
-  function goToDay(n) {
-    if (filter) setFilter(null);
-    setTimeout(() => {
-      const el = document.getElementById(`jour-${n}`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 60);
+  function pickFilter(n) {
+    setFilter(n);
+    setPanelOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const Panel = (
@@ -60,34 +56,26 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         </div>
       </div>
 
-      {/* filtres */}
+      {/* étapes (liste lisible, sert aussi de filtre) */}
       <div className="rp-block">
-        <div className="rp-head">Filtrer par étape</div>
-        <div className="rp-filters">
-          <button className={"rp-chip" + (filter === null ? " on" : "")} style={{ "--c": "var(--accent)" }} onClick={() => setFilter(null)}>
-            <span className="rp-dot" />Tout
+        <div className="rp-head">Les étapes</div>
+        <div className="rp-stages">
+          <button className={"rp-stage" + (filter === null ? " on" : "")} onClick={() => pickFilter(null)}>
+            <span className="rp-stage-dot" style={{ background: "var(--accent)" }} />
+            <span className="rp-stage-nm">Tout le voyage</span>
+            <span className="rp-stage-ct">{sortedPosts.length}</span>
           </button>
-          {STAGES.map((s) => (
-            <button key={s.n} className={"rp-chip" + (filter === s.n ? " on" : "")} style={{ "--c": s.couleur }} onClick={() => setFilter(s.n)}>
-              <span className="rp-dot" />{String(s.n).padStart(2, "0")} {s.nom}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 100 jours */}
-      <div className="rp-block">
-        <div className="rp-head">Les 100 jours</div>
-        <div className="rp-cal">
-          {Array.from({ length: 101 }, (_, n) => {
-            const post = byDay[n];
-            const stage = post ? stageForDate(post.date) : null;
+          {STAGES.map((s) => {
+            const cnt = sortedPosts.filter((p) => stageForDate(p.date)?.n === s.n).length;
+            const now = current?.n === s.n;
             return (
-              <button key={n} className={"rp-cal-day" + (post ? " done" : "")}
-                style={post ? { background: stage?.couleur || "var(--accent)", color: "#fff" } : {}}
-                onClick={() => post && goToDay(n)} disabled={!post}
-                title={post ? `Jour ${n} — ${post.titre}` : `Jour ${n}`}>
-                {n}
+              <button key={s.n} className={"rp-stage" + (filter === s.n ? " on" : "")} onClick={() => pickFilter(s.n)} style={{ "--c": s.couleur }}>
+                <span className="rp-stage-n">{String(s.n).padStart(2, "0")}</span>
+                <span className="rp-stage-nm">
+                  {s.nom}
+                  {now && <span style={{ color: s.couleur, fontWeight: 700, fontSize: 9.5 }}> · EN COURS</span>}
+                </span>
+                {cnt > 0 && <span className="rp-stage-ct">{cnt}</span>}
               </button>
             );
           })}
@@ -108,9 +96,6 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
     <div className="home3">
       {/* fil central : posts uniquement */}
       <div className="home3-feed">
-        {/* panneau en haut sur mobile (le fixe est masqué < 1024px) */}
-        <div className="home3-panel-mobile">{Panel}</div>
-
         {shown.length === 0 ? (
           <p className="empty">{posts.length === 0 ? "Le carnet est encore vierge." : "Aucun post pour cette étape."}</p>
         ) : (
@@ -143,6 +128,21 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
 
       {/* panneau fixe à droite (desktop) */}
       <aside className="home3-panel">{Panel}</aside>
+
+      {/* bouton mobile : ouvrir la vue d'ensemble */}
+      <button className="home3-fab" onClick={() => setPanelOpen(true)} aria-label="Vue d'ensemble">
+        🧭 Vue d'ensemble
+      </button>
+
+      {/* panneau mobile en overlay */}
+      {panelOpen && (
+        <div className="home3-overlay" onClick={() => setPanelOpen(false)}>
+          <div className="home3-overlay-panel" onClick={(e) => e.stopPropagation()}>
+            <button className="home3-overlay-close" onClick={() => setPanelOpen(false)}>✕</button>
+            {Panel}
+          </div>
+        </div>
+      )}
 
       {mapOpen && (
         <div className="lb" onClick={() => setMapOpen(false)}>

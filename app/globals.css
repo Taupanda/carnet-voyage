@@ -466,18 +466,52 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .rp-chip.on { background: var(--c); border-color: var(--c); color: #fff; }
 .rp-chip.on .rp-dot { background: rgba(255,255,255,0.9); }
 
-.rp-cal { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
-.rp-cal-day {
-  aspect-ratio: 1; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.03); font-family: "Space Mono", monospace; font-size: 10px;
-  color: rgba(239,232,220,0.35); cursor: default; padding: 0; display: flex; align-items: center; justify-content: center;
-}
-.rp-cal-day.done { cursor: pointer; border-color: transparent; font-weight: 700; }
-.rp-cal-day.done:hover { transform: scale(1.18); z-index: 2; }
-
 .rp-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .rp-kpi { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; }
 .rp-kpi-n { font-family: "Fraunces", serif; font-weight: 600; font-size: 24px; color: #fff; line-height: 1; }
 .rp-kpi-l { font-family: "Space Mono", monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(239,232,220,0.5); margin-top: 4px; }
 
 .post { scroll-margin-top: 20px; }
+
+/* liste des étapes dans le panneau */
+.rp-stages { display: flex; flex-direction: column; gap: 3px; }
+.rp-stage {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 9px 10px; border-radius: 9px; cursor: pointer;
+  border: 1px solid transparent; background: rgba(255,255,255,0.03);
+  color: rgba(239,232,220,0.85);
+}
+.rp-stage:hover { background: rgba(255,255,255,0.08); }
+.rp-stage.on { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+.rp-stage-n { font-family: "Fraunces", serif; font-weight: 600; font-size: 15px; color: var(--c); min-width: 24px; }
+.rp-stage-dot { width: 12px; height: 12px; border-radius: 50%; min-width: 12px; }
+.rp-stage-nm { flex: 1; font-size: 13px; }
+.rp-stage-ct { font-family: "Space Mono", monospace; font-size: 10.5px; color: rgba(239,232,220,0.45); background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 999px; }
+
+/* bouton flottant mobile + overlay */
+.home3-fab { display: none; }
+.home3-overlay { display: none; }
+
+@media (max-width: 1023px) {
+  .home3-fab {
+    display: flex; align-items: center; gap: 7px;
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 45; padding: 12px 20px; border-radius: 999px; border: none;
+    background: var(--side-bg); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(23,20,15,0.35);
+  }
+  .home3-overlay {
+    display: block; position: fixed; inset: 0; z-index: 60;
+    background: rgba(23,20,15,0.6); animation: fade .18s ease;
+  }
+  .home3-overlay-panel {
+    position: absolute; bottom: 0; left: 0; right: 0; max-height: 88vh; overflow-y: auto;
+    background: var(--side-bg); color: var(--side-ink);
+    border-radius: 20px 20px 0 0; padding: 26px 20px 30px;
+  }
+  .home3-overlay-close {
+    position: absolute; top: 16px; right: 16px; z-index: 2;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    background: rgba(255,255,255,0.12); color: #fff; border: none; font-size: 16px;
+  }
+}
