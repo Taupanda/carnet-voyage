@@ -75,7 +75,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .side-link {
   display: flex; align-items: center; gap: 11px;
   padding: 11px 12px; border-radius: 10px; margin-bottom: 2px;
-  font-family: "Space Mono", monospace; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: "Figtree", system-ui, sans-serif; font-size: 14px; font-weight: 500; letter-spacing: 0;
   color: rgba(239,232,220,0.72); transition: all .15s;
 }
 .side-link:hover { background: rgba(255,255,255,0.06); color: var(--side-ink); }
@@ -100,7 +100,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
   display: flex; align-items: center; justify-content: center;
 }
 .nav-mobile { display: flex; flex-direction: column; border-top: 1px solid var(--line); background: var(--card); padding: 10px; gap: 2px; box-shadow: 0 12px 24px rgba(33,29,23,0.12); }
-.nav-mobile-link { display: flex; align-items: center; gap: 12px; padding: 15px 14px; border-radius: 12px; font-family: "Space Mono", monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink2); }
+.nav-mobile-link { display: flex; align-items: center; gap: 12px; padding: 15px 14px; border-radius: 12px; font-family: "Figtree", system-ui, sans-serif; font-size: 15px; font-weight: 500; letter-spacing: 0; color: var(--ink2); }
 .nav-mobile-link:hover, .nav-mobile-link.active { background: var(--accent-soft); color: var(--accent); }
 
 @media (min-width: 1024px) {
