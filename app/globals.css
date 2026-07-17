@@ -515,3 +515,52 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
     background: rgba(255,255,255,0.12); color: #fff; border: none; font-size: 16px;
   }
 }
+
+/* ============ WORKOUT ============ */
+.wk-stats { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+@media (min-width: 620px) { .wk-stats { grid-template-columns: 2fr 1fr; } }
+.wk-stat-main { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 18px; }
+.wk-ring {
+  --pct: 0;
+  width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
+  background: conic-gradient(var(--accent) calc(var(--pct) * 1%), var(--line) 0);
+  display: flex; align-items: center; justify-content: center;
+}
+.wk-ring::before { content: ""; position: absolute; width: 66px; height: 66px; border-radius: 50%; background: var(--card); }
+.wk-ring-n { position: relative; font-family: "Fraunces", serif; font-weight: 600; font-size: 24px; color: var(--accent); }
+.wk-ring-n i { font-size: 13px; font-style: normal; }
+.wk-stat-label { font-family: "Space Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.wk-stat-sub { font-size: 14px; color: var(--ink2); margin-top: 4px; }
+.wk-streak { background: var(--side-bg); color: #fff; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.wk-streak-flame { font-size: 26px; }
+.wk-streak-n { font-family: "Fraunces", serif; font-weight: 600; font-size: 34px; line-height: 1; margin-top: 2px; }
+.wk-streak-l { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.6); margin-top: 3px; }
+
+.wk-grid-wrap { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.wk-grid-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+.wk-legend { display: flex; gap: 12px; }
+.wk-legend span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.wk-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.wk-grid { display: grid; grid-template-columns: repeat(28, 1fr); gap: 3px; }
+@media (max-width: 620px) { .wk-grid { grid-template-columns: repeat(14, 1fr); } }
+.wk-grid-cell { aspect-ratio: 1; border-radius: 3px; }
+
+.wk-card { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 18px; }
+.wk-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.wk-card-title { font-family: "Fraunces", serif; font-weight: 600; font-size: 18px; }
+.wk-exos { display: flex; flex-direction: column; gap: 8px; }
+.wk-exo { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border-radius: 10px; background: #FBF7F0; }
+.wk-exo.done { background: rgba(92,107,76,0.1); }
+.wk-check { width: 26px; height: 26px; border-radius: 7px; border: 1.5px solid var(--line2); background: var(--card); cursor: pointer; flex-shrink: 0; color: var(--olive); font-weight: 700; }
+.wk-exo.done .wk-check { background: var(--olive); color: #fff; border-color: var(--olive); }
+.wk-exo-nom { font-weight: 600; font-size: 14.5px; }
+.wk-exo-detail { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); margin-top: 4px; flex-wrap: wrap; }
+.wk-mini { width: 42px; border: 1px solid var(--line2); border-radius: 6px; padding: 3px 6px; font-size: 12px; text-align: center; background: var(--card); }
+
+.wk-plan-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 6px; cursor: pointer; }
+.wk-plan-row:hover { border-color: var(--accent); }
+.wk-plan-jour { font-weight: 600; width: 90px; }
+.wk-plan-titre { flex: 1; color: var(--ink2); font-size: 14px; }
+.wk-plan-repos { flex: 1; color: var(--muted); font-size: 14px; }
+.wk-plan-vide { flex: 1; color: var(--accent); font-size: 13px; }
+.wk-plan-edit { opacity: 0.5; font-size: 13px; }

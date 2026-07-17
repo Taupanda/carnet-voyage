@@ -422,6 +422,10 @@ export default function Journal() {
                 <span className="bo-tile-ic">💰</span>
                 <span className="bo-tile-label">Budget</span>
               </a>
+              <a className="bo-tile" href="/workout">
+                <span className="bo-tile-ic">💪</span>
+                <span className="bo-tile-label">Workout</span>
+              </a>
               <button className="bo-tile" onClick={() => setShowComments(true)}>
                 <span className="bo-tile-ic">💬</span>
                 <span className="bo-tile-label">Commentaires</span>

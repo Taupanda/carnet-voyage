@@ -214,6 +214,7 @@ export function BackOfficeNav({ active }) {
   const items = [
     { id: "journal", label: "Journal", href: "/journal", ic: "📖" },
     { id: "budget", label: "Budget", href: "/budget", ic: "💰" },
+    { id: "workout", label: "Workout", href: "/workout", ic: "💪" },
     { id: "rencontres", label: "Rencontres", href: "/journal?panel=rencontres", ic: "🤝" },
     { id: "commentaires", label: "Commentaires", href: "/journal?panel=comments", ic: "💬" },
   ];
