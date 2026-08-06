@@ -630,3 +630,15 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .chk-row.done .chk-box { background: var(--olive); color: #fff; border-color: var(--olive); }
 .chk-text { flex: 1; font-size: 14.5px; }
 .chk-row.done .chk-text { text-decoration: line-through; color: var(--muted); }
+
+/* ============ RÉACTIONS ============ */
+.reactions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.react-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; border: 1.5px solid var(--line2); background: var(--card); color: var(--ink2); cursor: pointer; font-size: 13px; }
+.react-btn:hover { border-color: var(--accent); }
+.react-btn.on { border-color: var(--accent); background: var(--accent-soft); }
+.react-emo { font-size: 16px; line-height: 1; }
+
+/* ============ CARTE DE SUIVI ============ */
+.carte-now { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.carte-now-label { font-family: "Space Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.carte-now-stage { font-family: "Fraunces", serif; font-weight: 600; font-size: 20px; margin-top: 3px; }

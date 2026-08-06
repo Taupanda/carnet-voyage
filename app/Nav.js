@@ -7,6 +7,7 @@ import { useMode } from "./ModeProvider";
 
 const LINKS = [
   { href: "/", label: "Journal", ic: "📖" },
+  { href: "/carte", label: "Carte", ic: "🗺️" },
   { href: "/itineraire", label: "Itinéraire", ic: "🧭" },
   { href: "/album", label: "Album", ic: "🖼️" },
   { href: "/semaines", label: "Récaps", ic: "📮" },

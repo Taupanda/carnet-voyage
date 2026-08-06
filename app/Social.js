@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthProvider";
 import { supabaseBrowser } from "../lib/supabaseClient";
 
+const REACTIONS = ["😍", "😂", "😮", "🔥", "👏"];
+
 function timeAgo(iso) {
   const s = Math.floor((Date.now() - new Date(iso)) / 1000);
   if (s < 60) return "à l'instant";
@@ -36,6 +38,7 @@ export async function attachProfiles(sb, rows) {
 export default function Social({ entryDate, onNeedLogin }) {
   const { user, profile } = useAuth();
   const [likes, setLikes] = useState([]);
+  const [reactions, setReactions] = useState([]);
   const [comments, setComments] = useState([]);
   const [text, setText] = useState("");
   const [openC, setOpenC] = useState(false);
@@ -44,12 +47,14 @@ export default function Social({ entryDate, onNeedLogin }) {
 
   const load = useCallback(async () => {
     const sb = supabaseBrowser();
-    const [likeRes, cmtRes] = await Promise.all([
+    const [likeRes, reactRes, cmtRes] = await Promise.all([
       sb.from("likes").select("user_id").eq("entry_date", entryDate),
+      sb.from("reactions").select("user_id, emoji").eq("entry_date", entryDate),
       sb.from("comments").select("*").eq("entry_date", entryDate).order("created_at", { ascending: true }),
     ]);
     if (cmtRes.error) setErr("Commentaires indisponibles : " + cmtRes.error.message);
     setLikes(likeRes.data || []);
+    setReactions(reactRes.data || []);
     setComments(await attachProfiles(sb, cmtRes.data));
   }, [entryDate]);
 
@@ -67,6 +72,21 @@ export default function Social({ entryDate, onNeedLogin }) {
     } else {
       setLikes((ls) => [...ls, { user_id: user.id }]);
       const { error } = await sb.from("likes").insert({ entry_date: entryDate, user_id: user.id });
+      if (error) { setErr("Échec : " + error.message); load(); }
+    }
+  }
+
+  async function toggleReaction(emoji) {
+    if (!user) return onNeedLogin();
+    const sb = supabaseBrowser();
+    const mine = reactions.some((r) => r.user_id === user.id && r.emoji === emoji);
+    if (mine) {
+      setReactions((rs) => rs.filter((r) => !(r.user_id === user.id && r.emoji === emoji)));
+      const { error } = await sb.from("reactions").delete().eq("entry_date", entryDate).eq("user_id", user.id).eq("emoji", emoji);
+      if (error) { setErr("Échec : " + error.message); load(); }
+    } else {
+      setReactions((rs) => [...rs, { user_id: user.id, emoji }]);
+      const { error } = await sb.from("reactions").insert({ entry_date: entryDate, user_id: user.id, emoji });
       if (error) { setErr("Échec : " + error.message); load(); }
     }
   }
@@ -106,6 +126,19 @@ export default function Social({ entryDate, onNeedLogin }) {
           {comments.length > 0 && <span className="mono">{comments.length}</span>}
           <span className="cmt-label">{comments.length === 0 ? "Commenter" : ""}</span>
         </button>
+      </div>
+
+      <div className="reactions">
+        {REACTIONS.map((emo) => {
+          const count = reactions.filter((r) => r.emoji === emo).length;
+          const mine = user && reactions.some((r) => r.user_id === user.id && r.emoji === emo);
+          return (
+            <button key={emo} className={"react-btn" + (mine ? " on" : "")} onClick={() => toggleReaction(emo)} aria-pressed={!!mine}>
+              <span className="react-emo">{emo}</span>
+              {count > 0 && <span className="mono">{count}</span>}
+            </button>
+          );
+        })}
       </div>
 
       {openC && (
