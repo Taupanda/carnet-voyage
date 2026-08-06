@@ -391,17 +391,20 @@ export default function Journal() {
             {new Date(date + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
           </div>
         </div>
-        <Link href="/" className="btn-secondary" style={{ marginLeft: "auto", padding: "8px 12px", fontSize: 13, textDecoration: "none" }}>
-          ← Site
-        </Link>
-        <Link href="/budget" className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13, textDecoration: "none" }}>
-          💰 Budget
-        </Link>
-        {phase !== "date" && (
-          <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => setPhase("date")}>
-            Calendrier
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <button className="jr-tool" title="Rencontres" onClick={() => setShowRencontres(true)}>🤝</button>
+          <button className="jr-tool" title="Commentaires" onClick={() => setShowComments(true)}>
+            💬{comments.length > 0 && <i className="jr-badge">{comments.length}</i>}
           </button>
-        )}
+          <button className="jr-tool" title="Mots reçus" onClick={() => setShowInbox(true)}>
+            ✉️{inbox.filter((m) => !m.lu).length > 0 && <i className="jr-badge">{inbox.filter((m) => !m.lu).length}</i>}
+          </button>
+          <button className="jr-tool" title="Exporter les données" onClick={exportData} disabled={exporting}>{exporting ? "…" : "⬇️"}</button>
+          <Link href="/atelier" className="jr-tool" title="Atelier">🧰</Link>
+          {phase !== "date" && (
+            <button className="jr-tool" title="Calendrier" onClick={() => setPhase("date")}>🗓️</button>
+          )}
+        </div>
       </header>
 
       {phase === "date" && !showInbox && !showComments && !showRencontres && (
@@ -411,39 +414,7 @@ export default function Journal() {
           <MiniCalendar date={date} onSelect={openDate} entryDates={entries.map((e) => e.date)} entries={entries} />
           {error && <p className="error">{error}</p>}
 
-          <div style={{ marginTop: 4 }}>
-            <p className="lbl" style={{ marginBottom: 10 }}>Back-office</p>
-            <div className="bo-tiles">
-              <button className="bo-tile" onClick={() => setShowRencontres(true)}>
-                <span className="bo-tile-ic">🤝</span>
-                <span className="bo-tile-label">Rencontres</span>
-              </button>
-              <a className="bo-tile" href="/budget">
-                <span className="bo-tile-ic">💰</span>
-                <span className="bo-tile-label">Budget</span>
-              </a>
-              <a className="bo-tile" href="/workout">
-                <span className="bo-tile-ic">💪</span>
-                <span className="bo-tile-label">Workout</span>
-              </a>
-              <button className="bo-tile" onClick={() => setShowComments(true)}>
-                <span className="bo-tile-ic">💬</span>
-                <span className="bo-tile-label">Commentaires</span>
-                {comments.length > 0 && <span className="bo-tile-badge">{comments.length}</span>}
-              </button>
-              <button className="bo-tile" onClick={() => setShowInbox(true)}>
-                <span className="bo-tile-ic">✉️</span>
-                <span className="bo-tile-label">Mots reçus</span>
-                {inbox.filter((m) => !m.lu).length > 0 && <span className="bo-tile-badge">{inbox.filter((m) => !m.lu).length}</span>}
-              </button>
-              <button className="bo-tile" onClick={exportData} disabled={exporting}>
-                <span className="bo-tile-ic">⬇️</span>
-                <span className="bo-tile-label">{exporting ? "..." : "Export"}</span>
-              </button>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 8, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
+          <div style={{ marginTop: 4, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
             <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
               Rappel chaque soir à 20h, et le lendemain soir si la journée est encore vide.
             </p>

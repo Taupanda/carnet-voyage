@@ -7,6 +7,24 @@ import { BackOfficeNav } from "../budget/page";
 
 const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
+// Exercices poids du corps proposés en ajout rapide dans l'éditeur de programme.
+const PRESETS = [
+  { nom: "Pompes", series: "3", reps: "12" },
+  { nom: "Squats", series: "3", reps: "15" },
+  { nom: "Fentes", series: "3", reps: "12" },
+  { nom: "Jumping jacks", series: "3", reps: "30" },
+  { nom: "Gainage", series: "3", reps: "45 s" },
+  { nom: "Gainage latéral", series: "3", reps: "30 s" },
+  { nom: "Burpees", series: "3", reps: "10" },
+  { nom: "Mountain climbers", series: "3", reps: "20" },
+  { nom: "Dips (chaise)", series: "3", reps: "12" },
+  { nom: "Crunchs", series: "3", reps: "20" },
+  { nom: "Pont fessier", series: "3", reps: "15" },
+  { nom: "Chaise (mur)", series: "3", reps: "45 s" },
+  { nom: "Montées de genoux", series: "3", reps: "30" },
+  { nom: "Superman", series: "3", reps: "15" },
+];
+
 async function api(path, opts = {}) {
   const { data } = await supabaseBrowser().auth.getSession();
   const token = data.session?.access_token;
@@ -276,6 +294,14 @@ function DayEditor({ day, nom, onSave, onCancel }) {
       {!repos && (
         <>
           <input className="input" placeholder="Nom de la séance (ex. Push, Jambes, Cardio)" value={titre} onChange={(e) => setTitre(e.target.value)} style={{ marginBottom: 12 }} />
+          <div className="lbl" style={{ marginBottom: 6 }}>Ajout rapide · poids du corps</div>
+          <div className="wk-presets">
+            {PRESETS.map((p) => (
+              <button key={p.nom} type="button" className="wk-preset" onClick={() => setExos((xs) => [...xs, { ...p, charge: "" }])}>
+                + {p.nom}
+              </button>
+            ))}
+          </div>
           {exos.map((ex, i) => (
             <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
               <input className="input" placeholder="Exercice" value={ex.nom} onChange={(e) => upd(i, "nom", e.target.value)} style={{ flex: 2 }} />

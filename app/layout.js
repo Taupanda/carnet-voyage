@@ -3,6 +3,7 @@ import Nav from "./Nav";
 import AuthProvider from "./AuthProvider";
 import ModeProvider from "./ModeProvider";
 import ProfileRedirect from "./ProfileRedirect";
+import AdminLanding from "./AdminLanding";
 
 export const metadata = {
   title: "Carnet de voyage — Mexique & Amérique centrale",
@@ -31,6 +32,7 @@ export default function RootLayout({ children }) {
               <Nav />
               <div className="shell-main">{children}</div>
             </div>
+            <AdminLanding />
             <ProfileRedirect />
           </ModeProvider>
         </AuthProvider>

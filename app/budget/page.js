@@ -40,6 +40,7 @@ export default function Budget() {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  const [showTargets, setShowTargets] = useState(false); // paliers = action rare, repliée
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -126,69 +127,102 @@ export default function Budget() {
   return (
     <div>
       <BackOfficeNav active="budget" />
-      <main className="container-wide" style={{ paddingTop: 24, paddingBottom: 70 }}>
-        <h1 className="display" style={{ fontSize: "clamp(26px, 4vw, 38px)", marginBottom: 20 }}>Suivi budgétaire</h1>
+      <main className="container" style={{ paddingTop: 24, paddingBottom: 70, maxWidth: 640 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+          <h1 className="display" style={{ fontSize: "clamp(24px, 4vw, 34px)" }}>Budget</h1>
+          <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={() => setShowTargets((s) => !s)}>
+            ⚙️ Paliers
+          </button>
+        </div>
 
-        {/* résumé */}
-        <div className="budget-grid">
-          <div className="budget-card" style={{ gridColumn: "1 / -1" }}>
-            <div className="budget-total-label">Total dépensé</div>
-            <div className="budget-total">{Math.round(total)} €</div>
-            <div style={{ marginTop: 16 }}>
-              <Gauge label="Cette semaine (7 j)" spent={semaine} target={Number(budgets.hebdo)} />
-              <Gauge label="Ce mois (30 j)" spent={mois} target={Number(budgets.mensuel)} />
-              <Gauge label="Global" spent={total} target={Number(budgets.global)} />
+        {/* progression condensée */}
+        <div className="budget-card" style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <div className="budget-total-label">Total dépensé</div>
+              <div className="budget-total">{Math.round(total)} €</div>
+            </div>
+            <div className="mono" style={{ fontSize: 12, color: "var(--muted)", textAlign: "right", lineHeight: 1.7 }}>
+              7 j : {Math.round(semaine)} €<br />30 j : {Math.round(mois)} €
             </div>
           </div>
-
-          {/* répartition par catégorie */}
-          <div className="budget-card">
-            <div className="aside-head">Par catégorie</div>
-            {CATS.map((c) => {
-              const v = parCat[c.id] || 0;
-              const pct = total ? (v / total) * 100 : 0;
-              return (
-                <div key={c.id} style={{ marginBottom: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
-                    <span>{c.ic} {c.label}</span>
-                    <span className="mono" style={{ color: "var(--ink2)" }}>{Math.round(v)} €</span>
-                  </div>
-                  <div style={{ height: 6, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
-                    <div style={{ width: pct + "%", height: "100%", background: c.color }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* ajout dépense */}
-          <div className="budget-card">
-            <div className="aside-head">Ajouter une dépense</div>
-            <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ marginBottom: 8 }} />
-            <select className="input" value={categorie} onChange={(e) => setCategorie(e.target.value)} style={{ marginBottom: 8 }}>
-              {CATS.map((c) => <option key={c.id} value={c.id}>{c.ic} {c.label}</option>)}
-            </select>
-            <input className="input" type="number" inputMode="decimal" placeholder="Montant en €" value={montant} onChange={(e) => setMontant(e.target.value)} style={{ marginBottom: 8 }} />
-            <input className="input" placeholder="Note (facultatif)" value={note} onChange={(e) => setNote(e.target.value)} style={{ marginBottom: 8 }} />
-            {err && <p className="error" style={{ marginBottom: 8 }}>{err}</p>}
-            <button className="btn" style={{ width: "100%" }} onClick={addDepense} disabled={busy}>{busy ? "…" : "Ajouter"}</button>
-          </div>
-
-          {/* réglage budgets */}
-          <div className="budget-card">
-            <div className="aside-head">Mes budgets cibles (€)</div>
-            <label className="lbl">Par semaine</label>
-            <input className="input" type="number" value={budgets.hebdo} onChange={(e) => setBudgets({ ...budgets, hebdo: e.target.value })} style={{ marginBottom: 8 }} />
-            <label className="lbl">Par mois</label>
-            <input className="input" type="number" value={budgets.mensuel} onChange={(e) => setBudgets({ ...budgets, mensuel: e.target.value })} style={{ marginBottom: 8 }} />
-            <label className="lbl">Global (voyage)</label>
-            <input className="input" type="number" value={budgets.global} onChange={(e) => setBudgets({ ...budgets, global: e.target.value })} style={{ marginBottom: 10 }} />
-            <button className="btn-secondary" style={{ width: "100%" }} onClick={saveBudgets} disabled={busy}>Enregistrer les cibles</button>
+          <div style={{ marginTop: 14 }}>
+            <Gauge label="Cette semaine (7 j)" spent={semaine} target={Number(budgets.hebdo)} />
+            <Gauge label="Ce mois (30 j)" spent={mois} target={Number(budgets.mensuel)} />
+            <Gauge label="Global" spent={total} target={Number(budgets.global)} />
           </div>
         </div>
 
+        {/* paliers repliables (action rare) */}
+        {showTargets && (
+          <div className="budget-card" style={{ marginBottom: 14 }}>
+            <div className="aside-head">Mes paliers cibles (€)</div>
+            <div className="budget-add-row">
+              <div style={{ flex: "1 1 120px" }}>
+                <label className="lbl">Par semaine</label>
+                <input className="input" type="number" value={budgets.hebdo} onChange={(e) => setBudgets({ ...budgets, hebdo: e.target.value })} />
+              </div>
+              <div style={{ flex: "1 1 120px" }}>
+                <label className="lbl">Par mois</label>
+                <input className="input" type="number" value={budgets.mensuel} onChange={(e) => setBudgets({ ...budgets, mensuel: e.target.value })} />
+              </div>
+              <div style={{ flex: "1 1 120px" }}>
+                <label className="lbl">Global (voyage)</label>
+                <input className="input" type="number" value={budgets.global} onChange={(e) => setBudgets({ ...budgets, global: e.target.value })} />
+              </div>
+            </div>
+            <button className="btn-secondary" style={{ marginTop: 10 }} onClick={() => { saveBudgets(); setShowTargets(false); }} disabled={busy}>
+              Enregistrer les paliers
+            </button>
+          </div>
+        )}
+
+        {/* AJOUT DÉPENSE — action principale, mise en avant */}
+        <div className="budget-card budget-add" style={{ marginBottom: 14 }}>
+          <div className="aside-head" style={{ color: "var(--accent)" }}>➕ Ajouter une dépense</div>
+          <div className="budget-add-row">
+            <div style={{ flex: "1.4 1 140px" }}>
+              <label className="lbl">Montant (€)</label>
+              <input className="input" style={{ fontFamily: "Fraunces, serif", fontWeight: 600, fontSize: 22 }} type="number" inputMode="decimal" placeholder="0" value={montant} onChange={(e) => setMontant(e.target.value)} />
+            </div>
+            <div style={{ flex: "1 1 130px" }}>
+              <label className="lbl">Catégorie</label>
+              <select className="input" value={categorie} onChange={(e) => setCategorie(e.target.value)}>
+                {CATS.map((c) => <option key={c.id} value={c.id}>{c.ic} {c.label}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: "1 1 130px" }}>
+              <label className="lbl">Date</label>
+              <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+          </div>
+          <input className="input" placeholder="Note (facultatif)" value={note} onChange={(e) => setNote(e.target.value)} style={{ marginTop: 8 }} />
+          {err && <p className="error" style={{ marginTop: 8 }}>{err}</p>}
+          <button className="btn" style={{ width: "100%", marginTop: 10 }} onClick={addDepense} disabled={busy}>{busy ? "…" : "Ajouter la dépense"}</button>
+        </div>
+
+        {/* répartition par catégorie */}
+        <div className="budget-card" style={{ marginBottom: 14 }}>
+          <div className="aside-head">Par catégorie</div>
+          {CATS.map((c) => {
+            const v = parCat[c.id] || 0;
+            const pct = total ? (v / total) * 100 : 0;
+            return (
+              <div key={c.id} style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                  <span>{c.ic} {c.label}</span>
+                  <span className="mono" style={{ color: "var(--ink2)" }}>{Math.round(v)} €</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
+                  <div style={{ width: pct + "%", height: "100%", background: c.color }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         {/* historique */}
-        <div style={{ marginTop: 24 }}>
+        <div>
           <div className="aside-head" style={{ marginBottom: 10 }}>Historique ({depenses.length})</div>
           {depenses.map((d) => {
             const cat = CATS.find((c) => c.id === d.categorie);
