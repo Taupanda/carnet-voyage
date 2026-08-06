@@ -1,11 +1,14 @@
-import { supabasePublic, supabaseAdmin } from "../lib/server";
+import { supabaseAdmin } from "../lib/server";
 import { STAGES, stageForDate, TRIP_DAYS, todayLocal, dayNumberOf } from "../lib/stages";
 import HomeFeed from "./HomeFeed";
 
 export const revalidate = 120;
 
 export default async function Home() {
-  const db = supabasePublic();
+  // service_role (serveur uniquement) : contourne la RLS. anon n'a plus accès à
+  // entries (voir migration lock_entries_rls). Le filtre published + le masquage
+  // de la réflexion privée ci-dessous restent appliqués avant envoi au client.
+  const db = supabaseAdmin();
   const { data } = await db
     .from("entries")
     .select("*")

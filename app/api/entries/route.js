@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin, supabasePublic, checkAdmin } from "../../../lib/server";
+import { supabaseAdmin, checkAdmin } from "../../../lib/server";
 
 export async function GET(request) {
   const isAdmin = await checkAdmin(request);
-  const db = isAdmin ? supabaseAdmin() : supabasePublic();
+  // Toujours service_role côté serveur (anon n'a plus accès à entries). Le filtre
+  // status=published et le masquage de reflexion_privee ci-dessous protègent le public.
+  const db = supabaseAdmin();
   let query = db.from("entries").select("*").order("date", { ascending: false });
   if (!isAdmin) query = query.eq("status", "published");
   const { data, error } = await query;

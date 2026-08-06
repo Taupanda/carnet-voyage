@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { supabasePublic } from "../../lib/server";
+import { supabaseAdmin } from "../../lib/server";
 import { STAGES, stageForDate, TRIP_START, TRIP_DAYS, TRIP_DATES, todayLocal } from "../../lib/stages";
 
 export const revalidate = 120;
 
 export default async function Calendrier() {
-  const db = supabasePublic();
+  const db = supabaseAdmin();
   const { data } = await db
     .from("entries")
     .select("date, day_number, titre, photos")

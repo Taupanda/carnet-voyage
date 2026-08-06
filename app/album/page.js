@@ -1,10 +1,10 @@
-import { supabasePublic } from "../../lib/server";
+import { supabaseAdmin } from "../../lib/server";
 import AlbumClient from "./AlbumClient";
 
 export const revalidate = 120;
 
 export default async function Album() {
-  const db = supabasePublic();
+  const db = supabaseAdmin();
   const { data } = await db
     .from("entries")
     .select("date, day_number, titre, photos, lieux")

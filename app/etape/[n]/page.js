@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { supabasePublic } from "../../../lib/server";
+import { supabaseAdmin } from "../../../lib/server";
 import { STAGES, stageDays, fmtDate } from "../../../lib/stages";
 import Post from "../../Post";
 
@@ -14,7 +14,7 @@ export default async function Etape({ params }) {
   const stage = STAGES.find((s) => String(s.n) === params.n);
   if (!stage) notFound();
 
-  const db = supabasePublic();
+  const db = supabaseAdmin();
   const { data } = await db
     .from("entries")
     .select("*")
