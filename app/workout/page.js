@@ -3,7 +3,6 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { BackOfficeNav } from "../budget/page";
 
 const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -100,9 +99,9 @@ export default function Workout() {
 
   return (
     <div>
-      <BackOfficeNav active="workout" />
       <main className="container-wide" style={{ paddingTop: 24, paddingBottom: 70 }}>
-        <h1 className="display" style={{ fontSize: "clamp(26px, 4vw, 38px)", marginBottom: 20 }}>Workout</h1>
+        <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Atelier</Link>
+        <h1 className="display" style={{ fontSize: "clamp(26px, 4vw, 38px)", margin: "10px 0 20px" }}>Workout</h1>
 
       {/* bandeau gamification */}
       <div className="wk-stats">

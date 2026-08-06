@@ -575,17 +575,17 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 }
 .mode-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
-.atelier-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-@media (min-width: 720px) { .atelier-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+.atelier-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.atelier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (min-width: 720px) { .atelier-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; } }
 .app-tile {
-  display: flex; flex-direction: column; gap: 2px;
-  background: var(--card); border: 1px solid var(--line); border-top: 5px solid var(--c);
-  border-radius: 16px; padding: 22px 18px; transition: transform .15s, box-shadow .15s;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;
+  background: var(--card); border: 1px solid var(--line); border-top: 4px solid var(--c);
+  border-radius: 14px; padding: 18px 8px; transition: transform .15s, box-shadow .15s;
 }
 .app-tile:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(33,29,23,0.08); }
-.app-tile-ic { font-size: 30px; }
-.app-tile-label { font-family: "Fraunces", serif; font-weight: 600; font-size: 19px; margin-top: 8px; }
-.app-tile-desc { font-size: 13px; color: var(--muted); }
+.app-tile-ic { font-size: 26px; }
+.app-tile-label { font-family: "Figtree", system-ui, sans-serif; font-weight: 600; font-size: 13.5px; }
 
 /* ============ CONVERTISSEUR ============ */
 .conv-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
@@ -628,8 +628,12 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .chk-row:last-of-type { border-bottom: none; }
 .chk-box { width: 24px; height: 24px; flex-shrink: 0; border-radius: 7px; border: 1.5px solid var(--line2); background: var(--card); color: var(--olive); font-weight: 700; cursor: pointer; }
 .chk-row.done .chk-box { background: var(--olive); color: #fff; border-color: var(--olive); }
-.chk-text { flex: 1; font-size: 14.5px; }
+.chk-text { flex: 1; font-size: 14.5px; cursor: text; }
 .chk-row.done .chk-text { text-decoration: line-through; color: var(--muted); }
+.chk-drag { cursor: grab; color: var(--muted); font-size: 16px; user-select: none; padding: 0 2px; flex-shrink: 0; }
+.chk-drag:active { cursor: grabbing; }
+.chk-row.dragging { background: var(--accent-soft); border-radius: 8px; border-bottom-color: transparent; }
+.chk-edit { flex: 1; padding: 7px 9px; font-size: 14.5px; }
 
 /* ============ RÉACTIONS ============ */
 .reactions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }

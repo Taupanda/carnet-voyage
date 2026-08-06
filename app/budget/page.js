@@ -126,9 +126,9 @@ export default function Budget() {
 
   return (
     <div>
-      <BackOfficeNav active="budget" />
       <main className="container" style={{ paddingTop: 24, paddingBottom: 70, maxWidth: 640 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+        <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Atelier</Link>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, margin: "10px 0 16px" }}>
           <h1 className="display" style={{ fontSize: "clamp(24px, 4vw, 34px)" }}>Budget</h1>
           <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={() => setShowTargets((s) => !s)}>
             ⚙️ Paliers
@@ -244,22 +244,3 @@ export default function Budget() {
   );
 }
 
-export function BackOfficeNav({ active }) {
-  const items = [
-    { id: "journal", label: "Journal", href: "/journal", ic: "📖" },
-    { id: "budget", label: "Budget", href: "/budget", ic: "💰" },
-    { id: "workout", label: "Workout", href: "/workout", ic: "💪" },
-    { id: "rencontres", label: "Rencontres", href: "/journal?panel=rencontres", ic: "🤝" },
-    { id: "commentaires", label: "Commentaires", href: "/journal?panel=comments", ic: "💬" },
-  ];
-  return (
-    <div className="bo-nav">
-      <Link href="/" className="bo-back">← Site</Link>
-      {items.map((it) => (
-        <Link key={it.id} href={it.href} className={"bo-link" + (active === it.id ? " on" : "")}>
-          <span>{it.ic}</span> {it.label}
-        </Link>
-      ))}
-    </div>
-  );
-}

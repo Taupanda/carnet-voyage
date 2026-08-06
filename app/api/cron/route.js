@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { supabaseAdmin } from "../../../lib/server";
-import { stageForDate, STAGES } from "../../../lib/stages";
+import { stageForDate } from "../../../lib/stages";
 
 // Fuseau du voyage (Mexique / Amérique centrale). Réglable via TRIP_TIMEZONE.
 // On dérive la date locale avec Intl → correct même en cas de changement d'heure,
@@ -105,43 +105,8 @@ export async function GET(request) {
     actions.push("tout est à jour, pas de rappel");
   }
 
-  // --- New stage starting today? Alert readers. ---
-  const stage = STAGES.find((s) => s.debut === today);
-  if (stage) {
-    const { data: readers } = await db.from("push_subs").select("*");
-    if (readers?.length) {
-      const sent = await sendTo(readers, {
-        title: `Nouvelle étape : ${stage.nom}`,
-        body: `Étape ${stage.n} sur 12 du voyage commence.`,
-        url: "/",
-        tag: `stage-${stage.n}`,
-      });
-      actions.push(`alerte étape ${stage.n} envoyée à ${sent} abonné(s)`);
-    }
-  }
-
-  // --- Digest hebdo (dimanche soir local) ---
-  const dow = new Date(today + "T00:00:00Z").getUTCDay(); // 0 = dimanche
-  if (dow === 0) {
-    const monday = ymd(new Date(now - 6 * 86400000));
-    const { data: weekEntries } = await db
-      .from("entries").select("date").eq("status", "published").gte("date", monday).lte("date", today);
-    const n = (weekEntries || []).length;
-    if (n > 0) {
-      const { data: recap } = await db
-        .from("weekly_recaps").select("titre").eq("semaine_debut", monday).eq("status", "published").maybeSingle();
-      const { data: readers } = await db.from("push_subs").select("*");
-      if (readers?.length) {
-        const sent = await sendTo(readers, {
-          title: recap?.titre ? `Récap : ${recap.titre}` : "Le récap de la semaine",
-          body: `${n} nouvelle${n > 1 ? "s" : ""} journée${n > 1 ? "s" : ""} cette semaine sur le carnet.`,
-          url: recap ? "/semaines" : "/",
-          tag: "digest-weekly",
-        });
-        actions.push(`digest hebdo envoyé à ${sent} abonné(s)`);
-      }
-    }
-  }
+  // Plus de notification visiteur automatique (ni alerte d'étape ni digest) :
+  // le récap hebdo est envoyé manuellement depuis l'éditeur (/resumes).
 
   return NextResponse.json({ ok: true, localDate: today, missing, actions });
 }

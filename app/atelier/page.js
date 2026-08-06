@@ -1,36 +1,47 @@
 "use client";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
+import { useMode } from "../ModeProvider";
 
 const APPS = [
-  { href: "/journal", label: "Journal", desc: "Écrire & publier", ic: "✏️", c: "#BC5B2E" },
-  { href: "/budget", label: "Budget", desc: "Suivi des dépenses", ic: "💰", c: "#5C6B4C" },
-  { href: "/workout", label: "Workout", desc: "Séances & assiduité", ic: "💪", c: "#C99A3B" },
-  { href: "/convertisseur", label: "Convertisseur", desc: "Peso ⇄ euro", ic: "💱", c: "#3F8CA5" },
-  { href: "/reservations", label: "Réservations", desc: "Hôtels, transport, billets", ic: "🏨", c: "#8B5A8C" },
-  { href: "/coffre", label: "Coffre", desc: "Documents importants", ic: "🔐", c: "#6B7280" },
-  { href: "/checklist", label: "Check-list", desc: "Valise & préparatifs", ic: "✅", c: "#5C6B4C" },
-  { href: "/resumes", label: "Résumés", desc: "Le récap hebdo (IA)", ic: "📮", c: "#C99A3B" },
+  { href: "/journal", label: "Journal", ic: "✏️", c: "#BC5B2E" },
+  { href: "/budget", label: "Budget", ic: "💰", c: "#5C6B4C" },
+  { href: "/workout", label: "Workout", ic: "💪", c: "#C99A3B" },
+  { href: "/convertisseur", label: "Change", ic: "💱", c: "#3F8CA5" },
+  { href: "/reservations", label: "Réserv.", ic: "🏨", c: "#8B5A8C" },
+  { href: "/coffre", label: "Coffre", ic: "🔐", c: "#6B7280" },
+  { href: "/checklist", label: "Check-list", ic: "✅", c: "#5C6B4C" },
+  { href: "/resumes", label: "Résumés", ic: "📮", c: "#C99A3B" },
+  { href: "/livre-d-or", label: "Livre d'or", ic: "💛", c: "#D9A441" },
 ];
 
 export default function Atelier() {
   return (
     <AdminGate>
-      <main className="container-wide" style={{ paddingTop: 30, paddingBottom: 70 }}>
-        <p className="eyebrow">Mode éditeur</p>
-        <h1 className="display" style={{ fontSize: "clamp(26px, 5vw, 40px)", margin: "8px 0 6px" }}>Atelier</h1>
-        <p style={{ color: "var(--muted)", marginBottom: 26 }}>Tes outils de bord, en un clic.</p>
-
-        <div className="atelier-grid">
-          {APPS.map((a) => (
-            <Link key={a.href} href={a.href} className="app-tile" style={{ "--c": a.c }}>
-              <span className="app-tile-ic">{a.ic}</span>
-              <span className="app-tile-label">{a.label}</span>
-              <span className="app-tile-desc">{a.desc}</span>
-            </Link>
-          ))}
-        </div>
-      </main>
+      <AtelierBody />
     </AdminGate>
+  );
+}
+
+function AtelierBody() {
+  const { setMode } = useMode();
+  return (
+    <main className="container-wide" style={{ paddingTop: 26, paddingBottom: 70 }}>
+      <div className="atelier-top">
+        <h1 className="display" style={{ fontSize: "clamp(24px, 5vw, 36px)" }}>Ton atelier</h1>
+        <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={() => setMode("user")}>
+          👁 Voir le site
+        </button>
+      </div>
+
+      <div className="atelier-grid">
+        {APPS.map((a) => (
+          <Link key={a.href} href={a.href} className="app-tile" style={{ "--c": a.c }}>
+            <span className="app-tile-ic">{a.ic}</span>
+            <span className="app-tile-label">{a.label}</span>
+          </Link>
+        ))}
+      </div>
+    </main>
   );
 }

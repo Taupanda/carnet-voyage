@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import webpush from "web-push";
 import { supabaseAdmin, checkAdmin, callClaude, extractJson } from "../../../lib/server";
 
 // Lundi (AAAA-MM-JJ) de la semaine contenant `dateStr`.
@@ -30,6 +31,39 @@ export async function POST(request) {
   }
   const body = await request.json();
   const db = supabaseAdmin();
+
+  // --- Envoyer le récap en push aux abonnés (le publie aussi) ---
+  if (body.action === "send") {
+    const { data: recap } = await db.from("weekly_recaps").select("*").eq("id", body.id).single();
+    if (!recap) return NextResponse.json({ error: "résumé introuvable" }, { status: 404 });
+    if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+      return NextResponse.json({ error: "VAPID non configuré" }, { status: 500 });
+    }
+    await db.from("weekly_recaps").update({ status: "published", updated_at: new Date().toISOString() }).eq("id", recap.id);
+
+    webpush.setVapidDetails("mailto:carnet@voyage.app", process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+    const { data: subs } = await db.from("push_subs").select("*");
+    const txt = (recap.contenu || "").replace(/\s+/g, " ").trim();
+    const payload = JSON.stringify({
+      title: recap.titre || "Le récap de la semaine",
+      body: txt.slice(0, 120) + (txt.length > 120 ? "…" : ""),
+      url: "/semaines",
+      tag: `recap-${recap.id}`,
+    });
+    const results = await Promise.allSettled(
+      (subs || []).map((s) =>
+        webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload)
+      )
+    );
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      if (r.status === "rejected" && [404, 410].includes(r.reason?.statusCode)) {
+        await db.from("push_subs").delete().eq("endpoint", subs[i].endpoint);
+      }
+    }
+    const sent = results.filter((r) => r.status === "fulfilled").length;
+    return NextResponse.json({ ok: true, sent });
+  }
 
   // --- Générer un brouillon depuis les posts de la semaine ---
   if (body.action === "generate") {

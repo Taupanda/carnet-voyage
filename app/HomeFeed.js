@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import TripMap from "./TripMap";
 import Post from "./Post";
-import FooterNote from "./FooterNote";
 import PushButton from "./PushButton";
 import { STAGES, stageForDate, stageDays, TRIP_DAYS, todayLocal, fmtDate } from "../lib/stages";
 
@@ -117,11 +117,11 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
 
         <footer style={{ marginTop: 40, paddingTop: 28, borderTop: "1px solid var(--line)", textAlign: "center" }}>
           <p className="mono" style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14, letterSpacing: "0.06em" }}>
-            RECEVOIR UN MOT À CHAQUE NOUVELLE ÉTAPE
+            RECEVOIR LE RÉCAP DE LA SEMAINE
           </p>
-          <PushButton role="reader" label="Me prévenir" labelDone="Tu seras prévenu ✓" />
-          <div style={{ marginTop: 22, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
-            <FooterNote />
+          <PushButton role="reader" label="M'abonner au récap" labelDone="Abonné ✓" />
+          <div style={{ marginTop: 22 }}>
+            <Link href="/livre-d-or" className="btn-secondary" style={{ display: "inline-block", textDecoration: "none" }}>💛 Laisser un mot</Link>
           </div>
         </footer>
       </div>

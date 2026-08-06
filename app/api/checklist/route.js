@@ -19,14 +19,14 @@ export async function POST(request) {
   if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const { groupe, texte } = await request.json();
+  const { groupe, texte, ordre } = await request.json();
   if (!texte || !String(texte).trim()) {
     return NextResponse.json({ error: "texte requis" }, { status: 400 });
   }
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("checklist_items")
-    .insert({ groupe: groupe || "general", texte: String(texte).trim() })
+    .insert({ groupe: groupe || "general", texte: String(texte).trim(), ordre: Number.isFinite(ordre) ? ordre : 0 })
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -43,6 +43,7 @@ export async function PATCH(request) {
   if (typeof fields.done === "boolean") patch.done = fields.done;
   if (typeof fields.texte === "string") patch.texte = fields.texte;
   if (typeof fields.groupe === "string") patch.groupe = fields.groupe;
+  if (typeof fields.ordre === "number") patch.ordre = fields.ordre;
   const db = supabaseAdmin();
   const { data, error } = await db.from("checklist_items").update(patch).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

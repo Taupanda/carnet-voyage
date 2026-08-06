@@ -65,6 +65,23 @@ function ResumesBody() {
     else setErr(((await res.json()).error) || "Échec.");
   }
 
+  async function sendRecap() {
+    if (!current?.id) return;
+    if (!confirm("Envoyer ce récap en notification à tous les abonnés ?")) return;
+    setBusy(true);
+    setErr(null);
+    const res = await api("/api/weekly-recap", { method: "POST", body: JSON.stringify({ action: "send", id: current.id }) });
+    setBusy(false);
+    if (res.ok) {
+      const r = await res.json();
+      setCurrent((c) => (c ? { ...c, status: "published" } : c));
+      load();
+      alert(`Récap envoyé à ${r.sent} abonné(s).`);
+    } else {
+      setErr(((await res.json()).error) || "Échec de l'envoi.");
+    }
+  }
+
   async function del(id) {
     if (!confirm("Supprimer ce résumé ?")) return;
     await api("/api/weekly-recap", { method: "DELETE", body: JSON.stringify({ id }) });
@@ -101,13 +118,10 @@ function ResumesBody() {
           <textarea className="input" rows={8} value={current.contenu || ""} onChange={(e) => setCurrent({ ...current, contenu: e.target.value })} style={{ lineHeight: 1.6 }} />
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
             <button className="btn-secondary" onClick={() => save("draft")} disabled={busy}>Enregistrer le brouillon</button>
-            {current.status === "published" ? (
-              <button className="btn-secondary" onClick={() => save("draft")} disabled={busy}>Dépublier</button>
-            ) : (
-              <button className="btn" onClick={() => save("published")} disabled={busy}>Publier</button>
-            )}
+            <button className="btn" onClick={sendRecap} disabled={busy || !current.id}>📨 Envoyer aux abonnés</button>
             <button className="btn-danger" onClick={() => del(current.id)} style={{ marginLeft: "auto" }}>Supprimer</button>
           </div>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>L'envoi publie aussi le récap (accessible via le lien de la notification).</p>
         </div>
       )}
 

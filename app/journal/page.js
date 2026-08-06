@@ -380,31 +380,17 @@ export default function Journal() {
 
   return (
     <main style={{ display: "flex", flexDirection: "column", height: "100dvh", maxWidth: 560, margin: "0 auto" }}>
-      <header style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid var(--line)", background: "var(--bg2)" }}>
-        <div style={{ width: 48, height: 48, borderRadius: "50%", border: "2px dashed var(--gold)", color: "var(--gold)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span className="serif" style={{ fontSize: 16, fontWeight: 700 }}>{dNum >= 0 ? dNum : "—"}</span>
-          <span style={{ fontSize: 7, textTransform: "uppercase" }}>{dNum >= 0 ? "jour" : "avant"}</span>
-        </div>
-        <div>
-          <div className="serif" style={{ fontSize: 16 }}>Carnet de bord</div>
-          <div style={{ fontSize: 12, color: "var(--muted)", textTransform: "capitalize" }}>
-            {new Date(date + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+      <header style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: "1px solid var(--line)", background: "var(--bg2)" }}>
+        <Link href="/atelier" className="mono" style={{ fontSize: 13, color: "var(--muted)", textDecoration: "none" }}>← Atelier</Link>
+        <div style={{ marginLeft: "auto", textAlign: "right" }}>
+          <div className="serif" style={{ fontSize: 14 }}>Jour {dNum >= 0 ? dNum : "—"}</div>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", textTransform: "capitalize" }}>
+            {new Date(date + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" })}
           </div>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <button className="jr-tool" title="Rencontres" onClick={() => setShowRencontres(true)}>🤝</button>
-          <button className="jr-tool" title="Commentaires" onClick={() => setShowComments(true)}>
-            💬{comments.length > 0 && <i className="jr-badge">{comments.length}</i>}
-          </button>
-          <button className="jr-tool" title="Mots reçus" onClick={() => setShowInbox(true)}>
-            ✉️{inbox.filter((m) => !m.lu).length > 0 && <i className="jr-badge">{inbox.filter((m) => !m.lu).length}</i>}
-          </button>
-          <button className="jr-tool" title="Exporter les données" onClick={exportData} disabled={exporting}>{exporting ? "…" : "⬇️"}</button>
-          <Link href="/atelier" className="jr-tool" title="Atelier">🧰</Link>
-          {phase !== "date" && (
-            <button className="jr-tool" title="Calendrier" onClick={() => setPhase("date")}>🗓️</button>
-          )}
-        </div>
+        {phase !== "date" && (
+          <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => setPhase("date")}>🗓️ Calendrier</button>
+        )}
       </header>
 
       {phase === "date" && !showInbox && !showComments && !showRencontres && (
@@ -413,6 +399,12 @@ export default function Journal() {
           <p style={{ fontSize: 13, color: "var(--muted)" }}>Un point doré = une note existe déjà (tape pour la modifier).</p>
           <MiniCalendar date={date} onSelect={openDate} entryDates={entries.map((e) => e.date)} entries={entries} />
           {error && <p className="error">{error}</p>}
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => setShowRencontres(true)}>🤝 Rencontres</button>
+            <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => setShowComments(true)}>💬 Commentaires{comments.length > 0 ? ` (${comments.length})` : ""}</button>
+            <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={exportData} disabled={exporting}>{exporting ? "…" : "⬇️ Export"}</button>
+          </div>
 
           <div style={{ marginTop: 4, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
             <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 10 }}>
