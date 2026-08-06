@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/", label: "Journal", ic: "📖" },
   { href: "/itineraire", label: "Itinéraire", ic: "🧭" },
   { href: "/album", label: "Album", ic: "🖼️" },
+  { href: "/semaines", label: "Récaps", ic: "📮" },
   { href: "/rencontres", label: "Rencontres", ic: "🤝" },
   { href: "/recos", label: "Conseils", ic: "💡" },
 ];

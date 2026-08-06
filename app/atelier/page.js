@@ -10,6 +10,7 @@ const APPS = [
   { href: "/reservations", label: "Réservations", desc: "Hôtels, transport, billets", ic: "🏨", c: "#8B5A8C" },
   { href: "/coffre", label: "Coffre", desc: "Documents importants", ic: "🔐", c: "#6B7280" },
   { href: "/checklist", label: "Check-list", desc: "Valise & préparatifs", ic: "✅", c: "#5C6B4C" },
+  { href: "/resumes", label: "Résumés", desc: "Le récap hebdo (IA)", ic: "📮", c: "#C99A3B" },
 ];
 
 export default function Atelier() {
