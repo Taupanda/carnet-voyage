@@ -7,7 +7,7 @@ const APPS = [
   { href: "/budget", label: "Budget", desc: "Suivi des dépenses", ic: "💰", c: "#5C6B4C" },
   { href: "/workout", label: "Workout", desc: "Séances & assiduité", ic: "💪", c: "#C99A3B" },
   { href: "/convertisseur", label: "Convertisseur", desc: "Peso ⇄ euro", ic: "💱", c: "#3F8CA5" },
-  // Réservations : ajouté en phase 2 (nécessite table + bucket Supabase)
+  { href: "/reservations", label: "Réservations", desc: "Hôtels, transport, billets", ic: "🏨", c: "#8B5A8C" },
 ];
 
 export default function Atelier() {
