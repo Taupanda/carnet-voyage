@@ -622,3 +622,11 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 /* ============ BUDGET : ajout de dépense mis en avant ============ */
 .budget-add { border-top: 4px solid var(--accent); }
 .budget-add-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ============ CHECK-LIST ============ */
+.chk-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--line); }
+.chk-row:last-of-type { border-bottom: none; }
+.chk-box { width: 24px; height: 24px; flex-shrink: 0; border-radius: 7px; border: 1.5px solid var(--line2); background: var(--card); color: var(--olive); font-weight: 700; cursor: pointer; }
+.chk-row.done .chk-box { background: var(--olive); color: #fff; border-color: var(--olive); }
+.chk-text { flex: 1; font-size: 14.5px; }
+.chk-row.done .chk-text { text-decoration: line-through; color: var(--muted); }

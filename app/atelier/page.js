@@ -8,6 +8,8 @@ const APPS = [
   { href: "/workout", label: "Workout", desc: "Séances & assiduité", ic: "💪", c: "#C99A3B" },
   { href: "/convertisseur", label: "Convertisseur", desc: "Peso ⇄ euro", ic: "💱", c: "#3F8CA5" },
   { href: "/reservations", label: "Réservations", desc: "Hôtels, transport, billets", ic: "🏨", c: "#8B5A8C" },
+  { href: "/coffre", label: "Coffre", desc: "Documents importants", ic: "🔐", c: "#6B7280" },
+  { href: "/checklist", label: "Check-list", desc: "Valise & préparatifs", ic: "✅", c: "#5C6B4C" },
 ];
 
 export default function Atelier() {
