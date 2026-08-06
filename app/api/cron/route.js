@@ -3,15 +3,19 @@ import webpush from "web-push";
 import { supabaseAdmin } from "../../../lib/server";
 import { stageForDate, STAGES } from "../../../lib/stages";
 
-// Mexico / Central America ≈ UTC-6.
-// Cron runs once a day at 02:00 UTC = 20:00 local.
-const LOCAL_OFFSET = -6;
+// Fuseau du voyage (Mexique / Amérique centrale). Réglable via TRIP_TIMEZONE.
+// On dérive la date locale avec Intl → correct même en cas de changement d'heure,
+// contrairement à un offset codé en dur.
+const TRIP_TZ = process.env.TRIP_TIMEZONE || "America/Mexico_City";
 
-function localNow() {
-  return new Date(Date.now() + LOCAL_OFFSET * 3600 * 1000);
-}
-function ymd(d) {
-  return d.toISOString().slice(0, 10);
+function ymd(date) {
+  // en-CA formate en AAAA-MM-JJ.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TRIP_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
 }
 
 async function sendTo(subs, payload) {
@@ -51,12 +55,12 @@ export async function GET(request) {
   }
 
   const db = supabaseAdmin();
-  const local = localNow();
-  const today = ymd(local);
+  const now = Date.now();
+  const today = ymd(new Date(now));
   const actions = [];
 
   // --- Which recent days are still missing a note? ---
-  const since = ymd(new Date(local.getTime() - 3 * 86400000));
+  const since = ymd(new Date(now - 3 * 86400000));
   const { data: recent } = await db
     .from("entries")
     .select("date")
@@ -66,7 +70,7 @@ export async function GET(request) {
 
   const missing = [];
   for (let i = 0; i <= 2; i++) {
-    const d = ymd(new Date(local.getTime() - i * 86400000));
+    const d = ymd(new Date(now - i * 86400000));
     // only count days inside the trip
     if (stageForDate(d) && !written.has(d)) missing.push(d);
   }

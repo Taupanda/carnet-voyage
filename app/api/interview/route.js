@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { callClaude, checkAdmin } from "../../../lib/server";
+import { callClaude, checkAdmin, extractJson } from "../../../lib/server";
 
 export async function POST(request) {
   if (!(await checkAdmin(request))) {
@@ -31,7 +31,7 @@ Champs non répondus : null.`;
           .join("\n")}`,
       },
     ]);
-    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    const parsed = extractJson(raw);
     return NextResponse.json(parsed);
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
