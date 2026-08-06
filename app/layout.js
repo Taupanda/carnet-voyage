@@ -1,6 +1,7 @@
 import "./globals.css";
 import Nav from "./Nav";
 import AuthProvider from "./AuthProvider";
+import ModeProvider from "./ModeProvider";
 import ProfileRedirect from "./ProfileRedirect";
 
 export const metadata = {
@@ -25,11 +26,13 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <AuthProvider>
-          <div className="shell">
-            <Nav />
-            <div className="shell-main">{children}</div>
-          </div>
-          <ProfileRedirect />
+          <ModeProvider>
+            <div className="shell">
+              <Nav />
+              <div className="shell-main">{children}</div>
+            </div>
+            <ProfileRedirect />
+          </ModeProvider>
         </AuthProvider>
       </body>
     </html>

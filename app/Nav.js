@@ -3,24 +3,25 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import AuthBar from "./AuthBar";
-import { useAuth } from "./AuthProvider";
+import { useMode } from "./ModeProvider";
 
 const LINKS = [
   { href: "/", label: "Journal", ic: "📖" },
   { href: "/itineraire", label: "Itinéraire", ic: "🧭" },
   { href: "/album", label: "Album", ic: "🖼️" },
-  { href: "/calendrier", label: "100 jours", ic: "🗓️" },
   { href: "/rencontres", label: "Rencontres", ic: "🤝" },
   { href: "/recos", label: "Conseils", ic: "💡" },
 ];
 
 export default function Nav() {
   const path = usePathname();
-  const { user } = useAuth();
+  const { isAdmin, adminView, mode, setMode } = useMode();
   const [open, setOpen] = useState(false);
-  const isAdmin = !!user?.email && user.email.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase();
 
   if (path?.startsWith("/journal")) return null;
+
+  const toggleMode = () => setMode(mode === "editor" ? "user" : "editor");
+  const toggleLabel = mode === "editor" ? "👁 Voir en visiteur" : "✏️ Mode éditeur";
 
   return (
     <>
@@ -33,12 +34,20 @@ export default function Nav() {
             <span className="ic">{l.ic}</span>{l.label}
           </Link>
         ))}
-        {isAdmin && (
-          <Link href="/journal" className="side-link" style={{ color: "var(--accent)" }}>
-            <span className="ic">✏️</span>Éditeur
-          </Link>
+        {adminView && (
+          <>
+            <div className="side-div" />
+            <Link href="/atelier" className={"side-link" + (path === "/atelier" ? " active" : "")} style={path === "/atelier" ? undefined : { color: "var(--accent)" }}>
+              <span className="ic">🧰</span>Atelier
+            </Link>
+          </>
         )}
         <div className="side-quote">« Not all those who wander are lost. »</div>
+        {isAdmin && (
+          <div style={{ padding: "0 6px 10px" }}>
+            <button className="mode-toggle" onClick={toggleMode}>{toggleLabel}</button>
+          </div>
+        )}
         <div className="side-auth"><AuthBar /></div>
       </aside>
 
@@ -58,10 +67,15 @@ export default function Nav() {
                 {l.ic} {l.label}
               </Link>
             ))}
-            {isAdmin && (
-              <Link href="/journal" className="nav-mobile-link" style={{ color: "var(--accent)" }} onClick={() => setOpen(false)}>
-                ✏️ Mode éditeur
+            {adminView && (
+              <Link href="/atelier" className={"nav-mobile-link" + (path === "/atelier" ? " active" : "")} style={path === "/atelier" ? undefined : { color: "var(--accent)" }} onClick={() => setOpen(false)}>
+                🧰 Atelier
               </Link>
+            )}
+            {isAdmin && (
+              <button className="mode-toggle" style={{ marginTop: 6 }} onClick={() => { toggleMode(); setOpen(false); }}>
+                {toggleLabel}
+              </button>
             )}
           </div>
         )}

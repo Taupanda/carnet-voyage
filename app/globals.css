@@ -564,3 +564,32 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .wk-plan-repos { flex: 1; color: var(--muted); font-size: 14px; }
 .wk-plan-vide { flex: 1; color: var(--accent); font-size: 13px; }
 .wk-plan-edit { opacity: 0.5; font-size: 13px; }
+
+/* ============ MODES (éditeur/utilisateur) + ATELIER ============ */
+.side-div { height: 1px; background: rgba(255,255,255,0.09); margin: 10px 6px; }
+.mode-toggle {
+  width: 100%; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--line2); background: var(--card); color: var(--ink);
+  font-family: "Figtree", system-ui, sans-serif; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.mode-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+.atelier-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 720px) { .atelier-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+.app-tile {
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--card); border: 1px solid var(--line); border-top: 5px solid var(--c);
+  border-radius: 16px; padding: 22px 18px; transition: transform .15s, box-shadow .15s;
+}
+.app-tile:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(33,29,23,0.08); }
+.app-tile-ic { font-size: 30px; }
+.app-tile-label { font-family: "Fraunces", serif; font-weight: 600; font-size: 19px; margin-top: 8px; }
+.app-tile-desc { font-size: 13px; color: var(--muted); }
+
+/* ============ CONVERTISSEUR ============ */
+.conv-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.conv-field { display: flex; flex-direction: column; gap: 6px; }
+.conv-input { font-family: "Fraunces", serif; font-weight: 600; font-size: 26px; padding: 14px; }
+.conv-swap { text-align: center; font-size: 20px; color: var(--accent); line-height: 1; }
+.conv-quick { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
