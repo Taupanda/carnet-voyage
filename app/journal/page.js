@@ -5,6 +5,7 @@ import PushButton from "../PushButton";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { fetchMeteo } from "../../lib/weather";
+import { compressImage } from "../../lib/compressImage";
 import RencontresManager from "./RencontresManager";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
@@ -199,8 +200,9 @@ export default function Journal() {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     for (const f of files) {
+      const c = await compressImage(f);
       const fd = new FormData();
-      fd.append("file", f);
+      fd.append("file", c, c.name || f.name);
       fd.append("date", date);
       try {
         const res = await api("/api/upload", { method: "POST", body: fd });

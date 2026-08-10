@@ -1,3 +1,6 @@
+const CACHE = "carnet-v1";
+
+// ---------- Notifications push ----------
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -32,5 +35,32 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
+// ---------- Cache offline (réseau d'abord, repli sur le cache) ----------
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return; // pas de cache cross-origin (Supabase, Mapbox…)
+  if (url.pathname.startsWith("/api/")) return; // ne pas cacher les réponses d'API
+
+  event.respondWith(
+    fetch(req)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(req))
+  );
+});
+
 self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (event) => event.waitUntil(clients.claim()));
+
+self.addEventListener("activate", (event) =>
+  event.waitUntil(
+    Promise.all([
+      caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))),
+      clients.claim(),
+    ])
+  )
+);

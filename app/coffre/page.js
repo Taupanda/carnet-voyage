@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import { compressImage } from "../../lib/compressImage";
 
 const CATS = [
   { id: "passeport", label: "Identité", ic: "🛂" },
@@ -29,8 +30,9 @@ async function api(path, opts = {}) {
 async function uploadDoc(file) {
   const { data } = await supabaseBrowser().auth.getSession();
   const token = data.session?.access_token;
+  const c = await compressImage(file);
   const fd = new FormData();
-  fd.append("file", file);
+  fd.append("file", c, c.name || file.name);
   const res = await fetch("/api/coffre-upload", {
     method: "POST",
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },

@@ -4,6 +4,7 @@ import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { todayLocal } from "../../lib/stages";
+import { compressImage } from "../../lib/compressImage";
 
 const TYPES = [
   { id: "hotel", label: "Hôtel", ic: "🏨" },
@@ -28,8 +29,9 @@ async function api(path, opts = {}) {
 async function uploadTicket(file) {
   const { data } = await supabaseBrowser().auth.getSession();
   const token = data.session?.access_token;
+  const c = await compressImage(file);
   const fd = new FormData();
-  fd.append("file", file);
+  fd.append("file", c, c.name || file.name);
   const res = await fetch("/api/ticket-upload", {
     method: "POST",
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }, // pas de Content-Type : le navigateur pose le boundary

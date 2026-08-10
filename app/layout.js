@@ -4,6 +4,7 @@ import AuthProvider from "./AuthProvider";
 import ModeProvider from "./ModeProvider";
 import ProfileRedirect from "./ProfileRedirect";
 import AdminLanding from "./AdminLanding";
+import ServiceWorkerRegister from "./ServiceWorkerRegister";
 
 export const metadata = {
   title: "Carnet de voyage — Mexique & Amérique centrale",
@@ -34,6 +35,7 @@ export default function RootLayout({ children }) {
             </div>
             <AdminLanding />
             <ProfileRedirect />
+            <ServiceWorkerRegister />
           </ModeProvider>
         </AuthProvider>
       </body>
