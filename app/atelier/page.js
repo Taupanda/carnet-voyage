@@ -28,7 +28,7 @@ function AtelierBody() {
   return (
     <main className="container-wide" style={{ paddingTop: 26, paddingBottom: 70 }}>
       <div className="atelier-top">
-        <h1 className="display" style={{ fontSize: "clamp(24px, 5vw, 36px)" }}>Ton atelier</h1>
+        <h1 className="display" style={{ fontSize: "clamp(24px, 5vw, 36px)" }}>Menu</h1>
         <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={() => setMode("user")}>
           👁 Voir le site
         </button>

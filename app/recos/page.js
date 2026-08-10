@@ -15,6 +15,7 @@ const CATS = [
 
 export default function Recos() {
   const { user } = useAuth();
+  const isAdmin = !!user?.email && user.email.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase();
   const [recos, setRecos] = useState([]);
   const [filter, setFilter] = useState(null); // null = tout
   const [titre, setTitre] = useState("");
@@ -54,8 +55,15 @@ export default function Recos() {
     }
   }
 
-  async function del(id) {
-    await supabaseBrowser().from("recos").delete().eq("id", id);
+  async function del(r) {
+    if (!confirm("Supprimer cette suggestion ?")) return;
+    if (user?.id === r.user_id) {
+      await supabaseBrowser().from("recos").delete().eq("id", r.id);
+    } else if (isAdmin) {
+      const { data } = await supabaseBrowser().auth.getSession();
+      const token = data.session?.access_token;
+      await fetch("/api/moderate", { method: "DELETE", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ table: "recos", id: r.id }) });
+    }
     load();
   }
 
@@ -147,8 +155,8 @@ export default function Recos() {
                 <span className="mono reco-by">{r.profiles?.prenom || "Quelqu'un"} {r.profiles?.nom || ""}</span>
                 <span className="chip" style={{ marginLeft: "auto" }}>{catInfo?.emoji} {catInfo?.label}</span>
                 {s && <span className="chip" style={{ borderColor: color, color }}>{s.nom}</span>}
-                {user?.id === r.user_id && (
-                  <button className="cmt-del" onClick={() => del(r.id)} aria-label="Supprimer">✕</button>
+                {(user?.id === r.user_id || isAdmin) && (
+                  <button className="cmt-del" onClick={() => del(r)} aria-label="Supprimer">✕</button>
                 )}
               </div>
               <div className="reco-titre">{r.titre}</div>

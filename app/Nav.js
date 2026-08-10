@@ -39,7 +39,7 @@ export default function Nav() {
           <>
             <div className="side-div" />
             <Link href="/atelier" className={"side-link" + (path === "/atelier" ? " active" : "")} style={path === "/atelier" ? undefined : { color: "var(--accent)" }}>
-              <span className="ic">🧰</span>Atelier
+              <span className="ic">🧰</span>Menu
             </Link>
           </>
         )}
@@ -70,7 +70,7 @@ export default function Nav() {
             ))}
             {adminView && (
               <Link href="/atelier" className={"nav-mobile-link" + (path === "/atelier" ? " active" : "")} style={path === "/atelier" ? undefined : { color: "var(--accent)" }} onClick={() => setOpen(false)}>
-                🧰 Atelier
+                🧰 Menu
               </Link>
             )}
             {isAdmin && (

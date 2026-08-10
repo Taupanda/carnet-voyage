@@ -174,7 +174,7 @@ function ResaBody() {
 
   return (
     <main className="container-wide" style={{ paddingTop: 24, paddingBottom: 70 }}>
-      <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Atelier</Link>
+      <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Menu</Link>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, margin: "10px 0 22px" }}>
         <h1 className="display" style={{ fontSize: "clamp(26px, 4vw, 38px)" }}>Réservations</h1>
         <button className="btn" onClick={() => { setForm(EMPTY); setShowForm((s) => !s); setErr(null); }}>

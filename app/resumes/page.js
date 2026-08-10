@@ -91,7 +91,7 @@ function ResumesBody() {
 
   return (
     <main className="container" style={{ paddingTop: 24, paddingBottom: 70, maxWidth: 640 }}>
-      <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Atelier</Link>
+      <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Menu</Link>
       <h1 className="display" style={{ fontSize: "clamp(26px, 4vw, 38px)", margin: "10px 0 6px" }}>Résumés hebdo</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 20 }}>
         L'IA rédige un brouillon à partir de tes posts publiés. Tu valides avant publication.

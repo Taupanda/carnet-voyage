@@ -1,5 +1,6 @@
 import PhotoGridV2 from "./PhotoGridV2";
 import PostSocial from "./PostSocial";
+import PostAdmin from "./PostAdmin";
 import { stageForDate } from "../lib/stages";
 import { meteoInfo } from "../lib/weather";
 
@@ -38,6 +39,7 @@ export default function Post({ e }) {
     <article className="post" style={{ "--stage": c }} id={`jour-${e.day_number}`}>
       <div className="post-inner">
         <div className="post-main">
+          <PostAdmin date={e.date} />
           <div className="post-jour">Jour {e.day_number}{stage ? ` — ${stage.nom}` : ""}</div>
           <h2 className="post-title">{e.titre}</h2>
           <div className="post-date">{dateLabel}</div>

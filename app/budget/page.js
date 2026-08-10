@@ -127,7 +127,7 @@ export default function Budget() {
   return (
     <div>
       <main className="container" style={{ paddingTop: 24, paddingBottom: 70, maxWidth: 640 }}>
-        <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Atelier</Link>
+        <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Menu</Link>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, margin: "10px 0 16px" }}>
           <h1 className="display" style={{ fontSize: "clamp(24px, 4vw, 34px)" }}>Budget</h1>
           <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={() => setShowTargets((s) => !s)}>

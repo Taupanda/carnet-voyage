@@ -100,7 +100,7 @@ export default function Workout() {
   return (
     <div>
       <main className="container-wide" style={{ paddingTop: 24, paddingBottom: 70 }}>
-        <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Atelier</Link>
+        <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Menu</Link>
         <h1 className="display" style={{ fontSize: "clamp(26px, 4vw, 38px)", margin: "10px 0 20px" }}>Workout</h1>
 
       {/* bandeau gamification */}

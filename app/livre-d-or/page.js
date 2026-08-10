@@ -58,6 +58,16 @@ export default function LivreDor() {
     setPrivs((ms) => ms.map((m) => (m.id === id ? { ...m, lu: true } : m)));
   }
 
+  async function delMsg(id) {
+    if (!confirm("Supprimer ce message ?")) return;
+    const sb = supabaseBrowser();
+    const { data: sess } = await sb.auth.getSession();
+    const token = sess.session?.access_token;
+    await fetch("/api/moderate", { method: "DELETE", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ table: "messages", id }) });
+    setPublics((ms) => ms.filter((m) => m.id !== id));
+    setPrivs((ms) => ms.filter((m) => m.id !== id));
+  }
+
   return (
     <main className="container" style={{ paddingTop: 30, paddingBottom: 70, maxWidth: 640 }}>
       <p className="eyebrow">Un mot pour la route</p>
@@ -98,6 +108,7 @@ export default function LivreDor() {
               <Avatar p={m.profiles} />
               <b>{m.profiles?.prenom || "Quelqu'un"} {m.profiles?.nom || ""}</b>
               <span className="mono" style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>{timeAgo(m.created_at)}</span>
+              {isAdmin && <button className="cmt-del" onClick={() => delMsg(m.id)} aria-label="Supprimer">✕</button>}
             </div>
             <p style={{ color: "var(--ink2)", fontSize: 14.5, marginTop: 6, whiteSpace: "pre-wrap" }}>{m.contenu}</p>
           </div>
@@ -116,7 +127,10 @@ export default function LivreDor() {
                 <span className="mono" style={{ marginLeft: "auto", fontSize: 11, color: "var(--muted)" }}>{timeAgo(m.created_at)}</span>
               </div>
               <p style={{ color: "var(--ink2)", fontSize: 14.5, marginTop: 6, whiteSpace: "pre-wrap" }}>{m.contenu}</p>
-              {!m.lu && <button className="btn-secondary" style={{ marginTop: 8, padding: "6px 12px", fontSize: 12 }} onClick={() => markRead(m.id)}>Marquer comme lu</button>}
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                {!m.lu && <button className="btn-secondary" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => markRead(m.id)}>Marquer comme lu</button>}
+                <button className="btn-danger" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => delMsg(m.id)}>Supprimer</button>
+              </div>
             </div>
           ))}
         </div>

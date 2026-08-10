@@ -133,7 +133,7 @@ function ChecklistBody() {
 
   return (
     <main className="container" style={{ paddingTop: 24, paddingBottom: 70, maxWidth: 640 }}>
-      <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Atelier</Link>
+      <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Menu</Link>
       <h1 className="display" style={{ fontSize: "clamp(26px, 4vw, 38px)", margin: "10px 0 6px" }}>Check-list</h1>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
         <div style={{ flex: 1, height: 8, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>

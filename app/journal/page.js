@@ -35,6 +35,7 @@ export default function Journal() {
   const [phase, setPhase] = useState("date");
   const [date, setDate] = useState(todayStr());
   const [entries, setEntries] = useState([]);
+  const [entriesLoaded, setEntriesLoaded] = useState(false);
   const [messages, setMessages] = useState([]);
   const [extracted, setExtracted] = useState(emptyExtracted());
   const [input, setInput] = useState("");
@@ -68,6 +69,7 @@ export default function Journal() {
     (async () => {
       const listRes = await api("/api/entries");
       if (listRes.ok) setEntries(await listRes.json());
+      setEntriesLoaded(true);
       const inboxRes = await api("/api/inbox");
       if (inboxRes.ok) setInbox(await inboxRes.json());
       const cmtRes = await api("/api/comments");
@@ -82,6 +84,14 @@ export default function Journal() {
     if (p === "rencontres") setShowRencontres(true);
     else if (p === "comments") setShowComments(true);
   }, [isAdmin]);
+
+  // Deep-link ?date= : ouvre directement ce post pour édition (bouton « Éditer » du blog)
+  useEffect(() => {
+    if (!isAdmin || !entriesLoaded) return;
+    const d = new URLSearchParams(window.location.search).get("date");
+    if (d) openDate(d);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, entriesLoaded]);
 
   function startInterview() {
     setMessages([{ role: "assistant", content: "Alors, cette journée ? Raconte-moi comme tu veux, dans l'ordre que tu veux — je remets tout en forme après." }]);
@@ -381,7 +391,7 @@ export default function Journal() {
   return (
     <main style={{ display: "flex", flexDirection: "column", height: "100dvh", maxWidth: 560, margin: "0 auto" }}>
       <header style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: "1px solid var(--line)", background: "var(--bg2)" }}>
-        <Link href="/atelier" className="mono" style={{ fontSize: 13, color: "var(--muted)", textDecoration: "none" }}>← Atelier</Link>
+        <Link href="/atelier" className="mono" style={{ fontSize: 13, color: "var(--muted)", textDecoration: "none" }}>← Menu</Link>
         <div style={{ marginLeft: "auto", textAlign: "right" }}>
           <div className="serif" style={{ fontSize: 14 }}>Jour {dNum >= 0 ? dNum : "—"}</div>
           <div style={{ fontSize: 11.5, color: "var(--muted)", textTransform: "capitalize" }}>
