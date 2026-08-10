@@ -75,19 +75,24 @@ function ConvBody() {
 
       <div className="conv-card">
         <div className="conv-field">
-          <label className="lbl">Euros (€)</label>
-          <input className="input conv-input" inputMode="decimal" placeholder="0" value={eur} onChange={(e) => onEur(e.target.value)} />
+          <label className="lbl">Pesos (MXN)</label>
+          <input className="input conv-input" inputMode="decimal" placeholder="0" value={mxn} onChange={(e) => onMxn(e.target.value)} />
         </div>
         <div className="conv-swap">⇅</div>
         <div className="conv-field">
-          <label className="lbl">Pesos (MXN)</label>
-          <input className="input conv-input" inputMode="decimal" placeholder="0" value={mxn} onChange={(e) => onMxn(e.target.value)} />
+          <label className="lbl">Euros (€)</label>
+          <input className="input conv-input" inputMode="decimal" placeholder="0" value={eur} onChange={(e) => onEur(e.target.value)} />
         </div>
       </div>
 
       <div className="conv-quick">
-        {[10, 20, 50, 100, 200].map((v) => (
-          <button key={v} className="filter" onClick={() => onEur(String(v))}>{v} €</button>
+        {[50, 100, 200, 500, 1000].map((v) => (
+          <button key={"m" + v} className="filter" onClick={() => onMxn(String(v))}>{v} MXN</button>
+        ))}
+      </div>
+      <div className="conv-quick" style={{ marginTop: 8 }}>
+        {[10, 20, 50, 100].map((v) => (
+          <button key={"e" + v} className="filter" onClick={() => onEur(String(v))}>{v} €</button>
         ))}
       </div>
     </main>

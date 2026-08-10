@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import { todayLocal } from "../../lib/stages";
 
 const TYPES = [
   { id: "hotel", label: "Hôtel", ic: "🏨" },
@@ -57,6 +58,8 @@ function ResaBody() {
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [filterType, setFilterType] = useState(null);
+  const [query, setQuery] = useState("");
 
   async function load() {
     const res = await api("/api/reservations");
@@ -121,6 +124,54 @@ function ResaBody() {
     setList((l) => l.filter((r) => r.id !== id));
   }
 
+  const today = todayLocal();
+  const activeToday = (r) => {
+    if (!r.date_debut) return false;
+    const fin = r.date_fin || r.date_debut;
+    return r.date_debut <= today && today <= fin;
+  };
+  const q = query.trim().toLowerCase();
+  const todayList = list.filter(activeToday);
+  const others = list
+    .filter((r) => !activeToday(r))
+    .filter((r) => !filterType || r.type === filterType)
+    .filter((r) => !q || [r.titre, r.lieu, r.notes].some((s) => (s || "").toLowerCase().includes(q)));
+
+  const Card = (r) => {
+    const t = typeOf(r.type);
+    const files = Array.isArray(r.fichiers) ? r.fichiers : [];
+    return (
+      <div key={r.id} className="renc-card">
+        <div className="renc-body">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 20 }}>{t.ic}</span>
+            <span className="renc-pays" style={{ margin: 0 }}>{t.label}</span>
+            <button className="cmt-del" style={{ marginLeft: "auto" }} onClick={() => del(r.id)}>✕</button>
+          </div>
+          <div className="renc-name" style={{ marginTop: 6, cursor: "pointer" }} onClick={() => edit(r)}>{r.titre}</div>
+          {r.lieu && <div className="renc-meta" style={{ marginTop: 2 }}>📍 {r.lieu}</div>}
+          {(r.date_debut || r.date_fin) && (
+            <div className="mono" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
+              {fmtDate(r.date_debut)}{r.date_fin && r.date_fin !== r.date_debut ? " → " + fmtDate(r.date_fin) : ""}
+            </div>
+          )}
+          {r.notes && <div className="renc-meta" style={{ marginTop: 8 }}>{r.notes}</div>}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+            {r.plateforme_url && (
+              <a href={r.plateforme_url} target="_blank" rel="noopener noreferrer" className="filter">🔗 Plateforme</a>
+            )}
+            {files.map((f) => (
+              <a key={f.path} href={f.url || "#"} target="_blank" rel="noopener noreferrer" className="filter">
+                {f.type === "application/pdf" ? "📄" : "🖼️"} {f.name?.slice(0, 18) || "Billet"}
+              </a>
+            ))}
+            <button className="filter" onClick={() => edit(r)}>✏️ Modifier</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <main className="container-wide" style={{ paddingTop: 24, paddingBottom: 70 }}>
       <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Atelier</Link>
@@ -182,49 +233,32 @@ function ResaBody() {
         </div>
       )}
 
-      {/* liste */}
+      {/* aujourd'hui */}
+      {loaded && todayList.length > 0 && (
+        <div style={{ marginBottom: 26 }}>
+          <div className="aside-head" style={{ marginBottom: 10 }}>📍 Aujourd'hui</div>
+          <div className="renc-grid">{todayList.map(Card)}</div>
+        </div>
+      )}
+
+      {/* toutes + filtre / recherche */}
+      <div className="aside-head" style={{ marginBottom: 10 }}>Toutes les réservations</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+        <div className="filters" style={{ margin: 0 }}>
+          <button className={"filter" + (!filterType ? " on" : "")} onClick={() => setFilterType(null)}>Tout</button>
+          {TYPES.map((t) => (
+            <button key={t.id} className={"filter" + (filterType === t.id ? " on" : "")} onClick={() => setFilterType(t.id)}>{t.ic} {t.label}</button>
+          ))}
+        </div>
+        <input className="input" placeholder="Rechercher (titre, lieu, note)…" value={query} onChange={(e) => setQuery(e.target.value)} style={{ flex: 1, minWidth: 180 }} />
+      </div>
+
       {!loaded ? (
         <p className="empty">Chargement…</p>
-      ) : list.length === 0 ? (
-        <p className="empty">Aucune réservation pour l'instant.</p>
+      ) : others.length === 0 ? (
+        <p className="empty">{list.length === 0 ? "Aucune réservation pour l'instant." : "Aucune réservation ne correspond."}</p>
       ) : (
-        <div className="renc-grid">
-          {list.map((r) => {
-            const t = typeOf(r.type);
-            const files = Array.isArray(r.fichiers) ? r.fichiers : [];
-            return (
-              <div key={r.id} className="renc-card">
-                <div className="renc-body">
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 20 }}>{t.ic}</span>
-                    <span className="renc-pays" style={{ margin: 0 }}>{t.label}</span>
-                    <button className="cmt-del" style={{ marginLeft: "auto" }} onClick={() => del(r.id)}>✕</button>
-                  </div>
-                  <div className="renc-name" style={{ marginTop: 6, cursor: "pointer" }} onClick={() => edit(r)}>{r.titre}</div>
-                  {r.lieu && <div className="renc-meta" style={{ marginTop: 2 }}>📍 {r.lieu}</div>}
-                  {(r.date_debut || r.date_fin) && (
-                    <div className="mono" style={{ fontSize: 12, color: "var(--muted)", marginTop: 6 }}>
-                      {fmtDate(r.date_debut)}{r.date_fin && r.date_fin !== r.date_debut ? " → " + fmtDate(r.date_fin) : ""}
-                    </div>
-                  )}
-                  {r.notes && <div className="renc-meta" style={{ marginTop: 8 }}>{r.notes}</div>}
-
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
-                    {r.plateforme_url && (
-                      <a href={r.plateforme_url} target="_blank" rel="noopener noreferrer" className="filter">🔗 Plateforme</a>
-                    )}
-                    {files.map((f) => (
-                      <a key={f.path} href={f.url || "#"} target="_blank" rel="noopener noreferrer" className="filter">
-                        {f.type === "application/pdf" ? "📄" : "🖼️"} {f.name?.slice(0, 18) || "Billet"}
-                      </a>
-                    ))}
-                    <button className="filter" onClick={() => edit(r)}>✏️ Modifier</button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <div className="renc-grid">{others.map(Card)}</div>
       )}
     </main>
   );
