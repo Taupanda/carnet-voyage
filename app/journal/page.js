@@ -6,16 +6,17 @@ import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
+import { dayNumberOf } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
 const EMOJIS = ["😄", "🥰", "😌", "🤩", "😴", "😭", "🤯", "😤", "🥵", "🤒", "🌞", "🌧️", "💃", "🧘", "🍹", "🏖️"];
-const TRIP_START = new Date("2026-09-08T00:00:00");
+// Numérotation des jours : source partagée (lib/stages, respecte le MODE TEST).
 
 const emptyExtracted = () => ({ lieu: null, activites: null, rencontres: null, anecdote: null, adresse: null, reflexion: null, photos: null });
 const todayStr = () => new Date().toISOString().slice(0, 10);
-const dayNumber = (d) => Math.round((new Date(d + "T00:00:00") - TRIP_START) / 86400000);
+const dayNumber = (d) => dayNumberOf(d);
 
 async function api(path, opts = {}) {
   const { data } = await supabaseBrowser().auth.getSession();
