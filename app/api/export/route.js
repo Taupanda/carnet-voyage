@@ -29,7 +29,7 @@ export async function GET(request) {
   return new NextResponse(JSON.stringify(payload, null, 2), {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="carnet-export-${new Date().toISOString().slice(0, 10)}.json"`,
+      "Content-Disposition": `attachment; filename="aventures-maxou-export-${new Date().toISOString().slice(0, 10)}.json"`,
     },
   });
 }

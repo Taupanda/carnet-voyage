@@ -97,7 +97,7 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
       {/* fil central : posts uniquement */}
       <div className="home3-feed">
         {shown.length === 0 ? (
-          <p className="empty">{posts.length === 0 ? "Le carnet est encore vierge." : "Aucun post pour cette étape."}</p>
+          <p className="empty">{posts.length === 0 ? "Les aventures n'ont pas encore commencé." : "Aucun post pour cette étape."}</p>
         ) : (
           groups.map((g) => (
             <div key={g.key}>

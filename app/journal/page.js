@@ -342,7 +342,7 @@ export default function Journal() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `carnet-export-${todayStr()}.json`;
+      a.download = `aventures-maxou-export-${todayStr()}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -383,9 +383,9 @@ export default function Journal() {
       <main className="container" style={{ paddingTop: 60, maxWidth: 420, textAlign: "center" }}>
         <h1 className="serif" style={{ fontSize: 22, marginBottom: 12 }}>Mode éditeur</h1>
         <p style={{ color: "var(--text2)", marginBottom: 18 }}>
-          Cet espace est réservé à l'auteur du carnet.
+          Cet espace est réservé à l'auteur.
         </p>
-        <Link href="/" className="btn-secondary" style={{ display: "inline-block", textDecoration: "none" }}>← Retour au carnet</Link>
+        <Link href="/" className="btn-secondary" style={{ display: "inline-block", textDecoration: "none" }}>← Retour aux aventures</Link>
       </main>
     );
   }

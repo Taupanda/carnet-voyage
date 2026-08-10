@@ -7,7 +7,7 @@ import AdminLanding from "./AdminLanding";
 import ServiceWorkerRegister from "./ServiceWorkerRegister";
 
 export const metadata = {
-  title: "Carnet de voyage — Mexique & Amérique centrale",
+  title: "Les aventures de Maxou — Mexique & Amérique centrale",
   description: "Un voyage en solo, raconté un jour à la fois.",
   manifest: "/manifest.json",
 };

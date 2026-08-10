@@ -82,7 +82,7 @@ export async function GET(request) {
       if (missing.length === 1 && missing[0] === today) {
         payload = {
           title: "Alors, cette journée ?",
-          body: "Deux minutes pour raconter, et c'est dans le carnet.",
+          body: "Deux minutes pour raconter, et c'est dans les aventures.",
           url: "/journal",
           tag: "reminder",
           requireInteraction: true,

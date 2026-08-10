@@ -15,7 +15,7 @@ export default function Dashboard({ stats, dayNum, started }) {
       {/* hero */}
       <div className="dash-hero">
         <div className="dash-hero-inner">
-          <p className="eyebrow" style={{ color: "rgba(255,255,255,0.85)" }}>Carnet de voyage</p>
+          <p className="eyebrow" style={{ color: "rgba(255,255,255,0.85)" }}>Les aventures de Maxou</p>
           <h1 className="display" style={{ fontSize: "clamp(30px, 5vw, 50px)", color: "#fff", margin: "8px 0 10px", lineHeight: 1.05 }}>
             Max // Atlas
           </h1>

@@ -1,6 +1,6 @@
 {
-  "name": "Carnet de voyage",
-  "short_name": "Carnet",
+  "name": "Les aventures de Maxou",
+  "short_name": "Maxou",
   "description": "100 jours au Mexique et en Amérique centrale",
   "start_url": "/",
   "display": "standalone",

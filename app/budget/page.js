@@ -100,7 +100,7 @@ export default function Budget() {
   if (!isAdmin) return (
     <main className="container" style={{ paddingTop: 60, maxWidth: 420, textAlign: "center" }}>
       <p style={{ color: "var(--ink2)", marginBottom: 16 }}>Espace réservé à l'auteur.</p>
-      <Link href="/" className="btn" style={{ display: "inline-block", textDecoration: "none" }}>← Retour au carnet</Link>
+      <Link href="/" className="btn" style={{ display: "inline-block", textDecoration: "none" }}>← Retour aux aventures</Link>
     </main>
   );
 

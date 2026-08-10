@@ -6,10 +6,10 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {
-    data = { title: "Carnet de voyage", body: event.data ? event.data.text() : "" };
+    data = { title: "Les aventures de Maxou", body: event.data ? event.data.text() : "" };
   }
 
-  const title = data.title || "Carnet de voyage";
+  const title = data.title || "Les aventures de Maxou";
   const options = {
     body: data.body || "",
     icon: "/icon-192.png",
