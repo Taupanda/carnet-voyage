@@ -28,7 +28,7 @@ export default function Nav() {
     <>
       {/* ---- sidebar desktop ---- */}
       <aside className="sidebar">
-        <div className="side-brand">CARNET<span>.</span></div>
+        <div className="side-brand"><img src="/logo-blanc.png" alt="Carnet de voyage" className="side-logo" /></div>
         <div className="side-sub">Mexique · Amérique centrale</div>
         {LINKS.map((l) => (
           <Link key={l.href} href={l.href} className={"side-link" + (path === l.href ? " active" : "")}>
@@ -55,7 +55,7 @@ export default function Nav() {
       {/* ---- topbar mobile ---- */}
       <div className="topbar">
         <div className="topbar-inner">
-          <Link href="/" className="topbar-brand" onClick={() => setOpen(false)}>CARNET<span>.</span></Link>
+          <Link href="/" className="topbar-brand" onClick={() => setOpen(false)}><img src="/logo-terracota.png" alt="Carnet de voyage" className="topbar-logo" /></Link>
           <AuthBar />
           <button className="nav-burger" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}>
             {open ? "✕" : "☰"}
