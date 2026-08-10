@@ -13,6 +13,7 @@ const APPS = [
   { href: "/checklist", label: "Check-list", ic: "✅", c: "#5C6B4C" },
   { href: "/resumes", label: "Résumés", ic: "📮", c: "#C99A3B" },
   { href: "/livre-d-or", label: "Livre d'or", ic: "💛", c: "#D9A441" },
+  { href: "/livre", label: "Le livre", ic: "📖", c: "#8B5A2E" },
 ];
 
 export default function Atelier() {
