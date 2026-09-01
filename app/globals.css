@@ -577,6 +577,13 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 }
 .mode-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
+/* choix du mode de saisie (journal) */
+.mode-card { display: flex; align-items: center; gap: 14px; text-align: left; padding: 18px; border-radius: 14px; border: 1.5px solid var(--line2); background: var(--card); color: var(--ink); cursor: pointer; }
+.mode-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+.mode-card-ic { font-size: 26px; flex-shrink: 0; }
+.mode-card-title { display: block; font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; }
+.mode-card-sub { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+
 .atelier-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
 .atelier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 @media (min-width: 720px) { .atelier-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; } }

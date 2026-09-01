@@ -53,6 +53,7 @@ export default function Journal() {
   const [post, setPost] = useState(null);
   const [error, setError] = useState(null);
   const [recording, setRecording] = useState(false);
+  const [saisieMode, setSaisieMode] = useState("ia"); // "ia" | "manuel"
   const [inbox, setInbox] = useState([]);
   const [showInbox, setShowInbox] = useState(false);
   const [comments, setComments] = useState([]);
@@ -63,6 +64,9 @@ export default function Journal() {
   const [quickRenc, setQuickRenc] = useState(null);
   const [exporting, setExporting] = useState(false);
   const recognitionRef = useRef(null);
+  const wantRecRef = useRef(false);
+  const baseTextRef = useRef("");
+  const wakeLockRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
 
@@ -95,7 +99,27 @@ export default function Journal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, entriesLoaded]);
 
+  // Dictée : après un retour d'arrière-plan / déverrouillage, on ré-acquiert le
+  // wake lock et on relance la reconnaissance si l'utilisateur voulait dicter.
+  useEffect(() => {
+    function onVis() {
+      if (document.visibilityState === "visible" && wantRecRef.current) {
+        requestWakeLock();
+        try { recognitionRef.current?.start(); } catch {}
+      }
+    }
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      wantRecRef.current = false;
+      try { recognitionRef.current?.stop(); } catch {}
+      releaseWakeLock();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function startInterview() {
+    setSaisieMode("ia");
     setMessages([{ role: "assistant", content: "Alors, cette journée ? Raconte-moi comme tu veux, dans l'ordre que tu veux — je remets tout en forme après." }]);
     setExtracted(emptyExtracted());
     setPhotos([]);
@@ -110,6 +134,13 @@ export default function Journal() {
     setPost(null);
     setError(null);
     setPhase("chat");
+  }
+
+  function startManual() {
+    setSaisieMode("manuel");
+    setPost({ titre: "", lieux: [], coords: null, recit: [{ activite: "", detail: "" }], rencontres: "", anecdote: "", adresse: "", reflexion: "" });
+    setError(null);
+    setPhase("moods");
   }
 
   async function loadLinkedRencontres(d) {
@@ -168,7 +199,14 @@ export default function Journal() {
       });
       setPhase("summary");
     } else {
-      startInterview();
+      // nouvelle journée : on réinitialise et on demande le mode de saisie
+      setExtracted(emptyExtracted());
+      setMessages([]);
+      setPhotos([]);
+      setNoteHumeur(3); setNoteEnergie(3); setNoteSociale(3); setNoteAventure(3);
+      setHebergement(""); setPhotoPrincipale(null); setReflexionPrivee(false);
+      setLinkedRencontres([]); setPost(null);
+      setPhase("choose");
     }
   }
 
@@ -216,39 +254,71 @@ export default function Journal() {
     }
   }
 
-  function toggleRecording() {
-    if (recording) {
-      recognitionRef.current?.stop();
-      setRecording(false);
-      return;
-    }
+  // ---- Dictée vocale robuste ----
+  async function requestWakeLock() {
+    try { if ("wakeLock" in navigator) wakeLockRef.current = await navigator.wakeLock.request("screen"); } catch {}
+  }
+  function releaseWakeLock() {
+    try { wakeLockRef.current?.release?.(); } catch {}
+    wakeLockRef.current = null;
+  }
+  function buildRecognition() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      setError("La dictée n'est pas disponible sur ce navigateur — utilise le micro du clavier.");
-      return;
-    }
     const rec = new SR();
     rec.lang = "fr-FR";
     rec.continuous = true;
     rec.interimResults = true;
-    let finalText = "";
     rec.onresult = (ev) => {
-      let interim = "";
+      let finalChunk = "", interim = "";
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
         const t = ev.results[i][0].transcript;
-        if (ev.results[i].isFinal) finalText += t + " ";
+        if (ev.results[i].isFinal) finalChunk += t + " ";
         else interim += t;
       }
-      setInput((prev) => (prev.replace(/\u200b.*$/, "") + finalText + "\u200b" + interim).trimStart());
+      if (finalChunk) baseTextRef.current += finalChunk;
+      setInput((baseTextRef.current + interim).replace(/\s{2,}/g, " ").trimStart());
+    };
+    rec.onerror = (e) => {
+      // micro refusé : on arrête. Autres erreurs (no-speech, aborted, network) :
+      // onend relancera tant que l'utilisateur veut dicter.
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        wantRecRef.current = false;
+        setRecording(false);
+        releaseWakeLock();
+        setError("Micro refusé — autorise le micro pour ce site dans les réglages du navigateur.");
+      }
     };
     rec.onend = () => {
-      setRecording(false);
-      setInput((p) => p.replace(/\u200b/g, ""));
+      if (wantRecRef.current) {
+        // redémarrage auto : survit aux pauses et au verrouillage d'écran
+        try { rec.start(); } catch { setTimeout(() => { try { rec.start(); } catch {} }, 300); }
+      } else {
+        setRecording(false);
+        releaseWakeLock();
+      }
     };
-    rec.onerror = () => setRecording(false);
-    recognitionRef.current = rec;
+    return rec;
+  }
+  async function toggleRecording() {
+    if (recording) {
+      wantRecRef.current = false;
+      try { recognitionRef.current?.stop(); } catch {}
+      setRecording(false);
+      releaseWakeLock();
+      return;
+    }
+    const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+    if (!SR) {
+      setError("La dictée n'est pas dispo sur ce navigateur (souvent le cas sur iPhone). Astuce : utilise le micro du clavier, il écrit directement dans le champ.");
+      return;
+    }
     setError(null);
-    rec.start();
+    baseTextRef.current = input ? input.replace(/\s+$/, "") + " " : "";
+    wantRecRef.current = true;
+    await requestWakeLock();
+    const rec = buildRecognition();
+    recognitionRef.current = rec;
+    try { rec.start(); } catch {}
     setRecording(true);
   }
 
@@ -425,6 +495,22 @@ export default function Journal() {
             </p>
             <PushButton role="admin" label="Activer mes rappels" labelDone="Rappels activés ✓" />
           </div>
+        </div>
+      )}
+
+      {phase === "choose" && (
+        <div style={{ flex: 1, overflowY: "auto", padding: "26px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
+          <button className="btn-secondary" style={{ alignSelf: "flex-start", padding: "6px 12px", fontSize: 13 }} onClick={() => setPhase("date")}>← Calendrier</button>
+          <h2 className="serif" style={{ fontSize: 20 }}>Comment veux-tu saisir cette journée ?</h2>
+          <p style={{ fontSize: 13.5, color: "var(--muted)" }}>Dans les deux cas tu gardes la main sur le texte final. L'assistant t'aide juste à remplir.</p>
+          <button className="mode-card" onClick={startManual}>
+            <span className="mode-card-ic">✍️</span>
+            <span><span className="mode-card-title">Saisie manuelle</span><span className="mode-card-sub">Je remplis les champs moi-même</span></span>
+          </button>
+          <button className="mode-card" onClick={startInterview}>
+            <span className="mode-card-ic">✨</span>
+            <span><span className="mode-card-title">Avec l'assistant IA</span><span className="mode-card-sub">Je raconte, l'IA pré-remplit le journal</span></span>
+          </button>
         </div>
       )}
 
@@ -645,30 +731,30 @@ export default function Journal() {
             </div>
           )}
 
-          {extracted.reflexion && extracted.reflexion !== "rien" && (
-            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "var(--muted)" }}>
-              <input type="checkbox" checked={reflexionPrivee} onChange={(e) => setReflexionPrivee(e.target.checked)} style={{ width: 18, height: 18 }} />
-              Garder ma réflexion privée (invisible sur le blog)
-            </label>
-          )}
           {error && <p className="error">{error}</p>}
-          <button className="btn" style={{ marginTop: "auto" }} onClick={generatePost} disabled={loading}>
-            {loading ? "Mise en forme…" : "Voir mon post"}
+          <button className="btn" style={{ marginTop: "auto" }} onClick={saisieMode === "manuel" ? () => { setError(null); setPhase("summary"); } : generatePost} disabled={loading}>
+            {loading ? "Mise en forme…" : saisieMode === "manuel" ? "Rédiger le post →" : "Voir mon post"}
           </button>
         </div>
       )}
 
       {phase === "summary" && post && (
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
-          <p style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>Aperçu — touche un texte pour le modifier</p>
-          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} />
+          <p style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+            {saisieMode === "manuel" ? "Remplis ta journée" : "Aperçu — touche un texte pour le modifier"}
+          </p>
+          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} manual={saisieMode === "manuel"} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
           {error && <p className="error">{error}</p>}
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => saveEntry("draft")} disabled={loading}>Brouillon</button>
             <button className="btn" style={{ flex: 1 }} onClick={() => saveEntry("published")} disabled={loading}>Publier</button>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn-secondary" style={{ flex: 1 }} onClick={startInterview}>Refaire l'interview</button>
+            {saisieMode === "ia" ? (
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={startInterview}>Refaire l'interview</button>
+            ) : (
+              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setPhase("moods")}>← Ressentis & photos</button>
+            )}
             {entries.some((e) => e.date === date) && (
               <button className="btn-danger" onClick={deleteEntry}>Supprimer</button>
             )}
@@ -687,10 +773,12 @@ export default function Journal() {
   );
 }
 
-function EditablePost({ post, setPost, photos, notes, dayNum }) {
+function EditablePost({ post, setPost, photos, notes, dayNum, manual = false, reflexionPrivee, setReflexionPrivee }) {
   const recit = Array.isArray(post.recit) ? post.recit : [];
   const upd = (field, value) => setPost((p) => ({ ...p, [field]: value }));
   const updRecit = (i, k, v) => upd("recit", recit.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
+  const addRecit = () => upd("recit", [...recit, { activite: "", detail: "" }]);
+  const delRecit = (i) => upd("recit", recit.filter((_, j) => j !== i));
 
   const ta = (field, value, extra = {}) => (
     <textarea
@@ -707,7 +795,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum }) {
       <div className="post-header">
         <div style={{ flex: 1 }}>
           <div className="post-day">Jour {dayNum >= 0 ? dayNum : "—"}</div>
-          <input className="input serif" style={{ fontSize: 17, marginTop: 4 }} value={post.titre || ""} onChange={(e) => upd("titre", e.target.value)} />
+          <input className="input serif" style={{ fontSize: 17, marginTop: 4 }} value={post.titre || ""} onChange={(e) => upd("titre", e.target.value)} placeholder="Titre de la journée" />
         </div>
         <div className="post-moods">
           <div className="mood-item"><span className="mood-small">😊{notes.h}</span><span className="mood-caption">humeur</span></div>
@@ -717,8 +805,15 @@ function EditablePost({ post, setPost, photos, notes, dayNum }) {
         </div>
       </div>
 
-      {post.lieux?.length > 0 && (
-        <div className="chips">{post.lieux.map((l, i) => <span key={i} className="chip">📍 {l}</span>)}</div>
+      {manual ? (
+        <div className="section">
+          <div className="section-head">Lieux</div>
+          <input className="input" placeholder="Villes / lieux, séparés par des virgules" value={(post.lieux || []).join(", ")} onChange={(e) => upd("lieux", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
+        </div>
+      ) : (
+        post.lieux?.length > 0 && (
+          <div className="chips">{post.lieux.map((l, i) => <span key={i} className="chip">📍 {l}</span>)}</div>
+        )
       )}
       {post.coords?.lat && (
         <div className="map-banner">📍 {post.lieux?.[0]} · {post.coords.lat.toFixed(2)}, {post.coords.lng.toFixed(2)} <span style={{ marginLeft: "auto", fontSize: 10.5, fontStyle: "italic", color: "var(--muted)" }}>carte interactive à venir</span></div>
@@ -729,18 +824,30 @@ function EditablePost({ post, setPost, photos, notes, dayNum }) {
       )}
 
       <div className="section">
+        {manual && <div className="section-head">Le récit de la journée</div>}
         {recit.map((item, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
-            <input className="input" style={{ fontWeight: 700 }} value={item.activite || ""} onChange={(e) => updRecit(i, "activite", e.target.value)} placeholder="Activité" />
-            <textarea className="input" style={{ fontSize: 13.5 }} rows={2} value={item.detail || ""} onChange={(e) => updRecit(i, "detail", e.target.value)} />
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input className="input" style={{ fontWeight: 700, flex: 1 }} value={item.activite || ""} onChange={(e) => updRecit(i, "activite", e.target.value)} placeholder="Activité" />
+              {manual && recit.length > 1 && <button className="cmt-del" onClick={() => delRecit(i)} aria-label="Retirer">✕</button>}
+            </div>
+            <textarea className="input" style={{ fontSize: 13.5 }} rows={2} value={item.detail || ""} onChange={(e) => updRecit(i, "detail", e.target.value)} placeholder="Détail (facultatif)" />
           </div>
         ))}
+        {manual && <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={addRecit}>+ Ajouter une activité</button>}
       </div>
 
-      {post.rencontres && (<div className="section"><div className="section-head">Rencontres</div>{ta("rencontres", post.rencontres)}</div>)}
-      {post.anecdote && (<div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>)}
-      {post.adresse && (<div className="section"><div className="section-head">Bonne adresse</div>{ta("adresse", post.adresse)}</div>)}
-      {post.reflexion && (<div className="section box-reflexion"><div className="section-head">Ce que je garde</div>{ta("reflexion", post.reflexion)}</div>)}
+      {(manual || post.rencontres) && (<div className="section"><div className="section-head">Rencontres (texte)</div>{ta("rencontres", post.rencontres)}</div>)}
+      {(manual || post.anecdote) && (<div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>)}
+      {(manual || post.adresse) && (<div className="section"><div className="section-head">Bonne adresse</div>{ta("adresse", post.adresse)}</div>)}
+      {(manual || post.reflexion) && (<div className="section box-reflexion"><div className="section-head">Ce que je garde</div>{ta("reflexion", post.reflexion)}</div>)}
+
+      {(manual || post.reflexion) && setReflexionPrivee && (
+        <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
+          <input type="checkbox" checked={!!reflexionPrivee} onChange={(e) => setReflexionPrivee(e.target.checked)} style={{ width: 18, height: 18 }} />
+          Garder ma réflexion privée (invisible sur le blog)
+        </label>
+      )}
     </div>
   );
 }
