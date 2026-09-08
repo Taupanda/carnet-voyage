@@ -19,8 +19,16 @@ export default function PostAdmin({ date }) {
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({ date }),
     });
-    if (res.ok) router.refresh();
-    else alert("Échec de la suppression.");
+    if (res.ok) {
+      router.refresh();
+      return;
+    }
+    const detail = await res.json().catch(() => null);
+    alert(
+      res.status === 401
+        ? "Suppression refusée : session admin non reconnue. Reconnecte-toi."
+        : "Échec de la suppression : " + (detail?.error || res.status)
+    );
   }
 
   return (

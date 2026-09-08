@@ -393,11 +393,17 @@ export default function Journal() {
   async function deleteEntry() {
     if (!confirm("Supprimer définitivement cette journée ?")) return;
     try {
-      await api("/api/entries", { method: "DELETE", body: JSON.stringify({ date }) });
+      const res = await api("/api/entries", { method: "DELETE", body: JSON.stringify({ date }) });
+      // fetch ne rejette pas sur un 401/500 : sans ce test, la journée disparaissait
+      // de l'écran alors qu'elle était toujours en base.
+      if (!res.ok) {
+        const detail = await res.json().catch(() => null);
+        throw new Error(detail?.error || `erreur ${res.status}`);
+      }
       setEntries((es) => es.filter((x) => x.date !== date));
       setPhase("date");
     } catch (e) {
-      setError("Échec de la suppression.");
+      setError("Échec de la suppression : " + e.message);
     }
   }
 

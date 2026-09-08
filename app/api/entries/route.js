@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabaseAdmin, checkAdmin } from "../../../lib/server";
+
+// Les pages publiques qui listent les posts sont en ISR (export const revalidate).
+// Sans purge explicite, un post supprimé (ou publié/modifié) reste visible jusqu'à
+// l'expiration du cache — `router.refresh()` côté client ne suffit pas, il relit
+// le rendu déjà mis en cache par le serveur.
+function purgePublicPages() {
+  for (const p of ["/", "/album", "/calendrier", "/etapes", "/semaines", "/livre"]) {
+    revalidatePath(p);
+  }
+  revalidatePath("/etape/[n]", "page"); // toutes les pages d'étape
+}
 
 export async function GET(request) {
   const isAdmin = await checkAdmin(request);
@@ -29,6 +41,7 @@ export async function POST(request) {
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  purgePublicPages();
   return NextResponse.json(data);
 }
 
@@ -37,8 +50,23 @@ export async function DELETE(request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { date } = await request.json();
+  if (!date) return NextResponse.json({ error: "date manquante" }, { status: 400 });
   const db = supabaseAdmin();
+
+  // Tout ce qui est rattaché au post par sa date part avec lui : sinon les lignes
+  // restent orphelines (et ressortiraient sur un nouveau post créé à la même date).
+  for (const table of ["comments", "likes", "reactions", "entry_rencontres"]) {
+    const { error } = await db.from(table).delete().eq("entry_date", date);
+    if (error) {
+      return NextResponse.json(
+        { error: `suppression ${table} : ${error.message}` },
+        { status: 500 }
+      );
+    }
+  }
+
   const { error } = await db.from("entries").delete().eq("date", date);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  purgePublicPages();
   return NextResponse.json({ ok: true });
 }
