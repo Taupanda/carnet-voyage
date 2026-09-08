@@ -67,7 +67,21 @@ export default function RencontresManager({ onClose }) {
 
   async function del(id) {
     if (!confirm("Supprimer cette rencontre ?")) return;
-    await api("/api/rencontres", { method: "DELETE", body: JSON.stringify({ id }) });
+    setBusy(true);
+    setErr(null);
+    // fetch ne rejette pas sur un 401/500 : sans ce test, l'échec passait
+    // inaperçu et le rechargement faisait « réapparaître » la rencontre.
+    const res = await api("/api/rencontres", { method: "DELETE", body: JSON.stringify({ id }) });
+    setBusy(false);
+    if (!res.ok) {
+      const detail = await res.json().catch(() => null);
+      setErr(
+        res.status === 401
+          ? "Suppression refusée : session admin non reconnue. Reconnecte-toi."
+          : "Échec de la suppression : " + (detail?.error || res.status)
+      );
+      return;
+    }
     load();
   }
 
@@ -114,6 +128,7 @@ export default function RencontresManager({ onClose }) {
       ) : (
         <>
           <button className="btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => setEditing({ ...EMPTY })}>+ Nouvelle rencontre</button>
+          {err && <p className="error">{err}</p>}
           {list.length === 0 && <p className="empty">Aucune rencontre enregistrée.</p>}
           {list.map((r) => (
             <div key={r.id} className="pm" style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -127,7 +142,7 @@ export default function RencontresManager({ onClose }) {
                 <div style={{ fontSize: 12, color: "var(--muted)" }}>{[r.pays, r.lieu_rencontre].filter(Boolean).join(" · ")}</div>
               </div>
               <button className="btn-secondary" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => setEditing(r)}>Éditer</button>
-              <button className="cmt-del" onClick={() => del(r.id)}>✕</button>
+              <button className="cmt-del" onClick={() => del(r.id)} disabled={busy}>✕</button>
             </div>
           ))}
         </>
