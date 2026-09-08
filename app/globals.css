@@ -333,11 +333,6 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .tips-block { background: var(--accent-soft); border: 1px solid #E3C7B4; border-radius: 10px; padding: 12px 14px; }
 .tips-ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .tips-ul li { display: flex; gap: 8px; font-size: 12.5px; line-height: 1.55; color: var(--ink2); }
-.transport-row { display: flex; gap: 12px; padding: 12px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
-.transport-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.transport-route { font-weight: 700; font-size: 13.5px; }
-.transport-sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: "Space Mono", monospace; }
-.transport-note { font-size: 12.5px; color: var(--ink2); margin-top: 4px; }
 .cal-itin { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
 @media (min-width: 620px) { .cal-itin { grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; } }
 .cal-itin-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 1px solid var(--line); }

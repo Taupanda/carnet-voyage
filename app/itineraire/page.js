@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { PHASES, TRANSPORT } from "../../lib/itinerary";
+import { PHASES } from "../../lib/itinerary";
 
 const ItineraryMap = dynamic(() => import("./ItineraryMap"), { ssr: false });
 
@@ -150,24 +150,6 @@ export default function Itineraire() {
                 </div>
               );
             })}
-          </div>
-
-          {/* transports */}
-          <div style={{ marginTop: 30 }}>
-            <p className="block-head" style={{ marginBottom: 12 }}>Les transports du parcours</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {TRANSPORT.map((t, i) => (
-                <div key={i} className="transport-row" style={t.urgent ? { borderLeft: "3px solid var(--stage-2)" } : {}}>
-                  <span className="transport-icon">{t.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div className="transport-route">{t.from} → {t.to}</div>
-                    <div className="mono transport-sub">{t.mode} · {t.duration} · {t.date}</div>
-                    {t.note && <div className="transport-note">{t.note}</div>}
-                  </div>
-                  {t.urgent && <span className="mono" style={{ fontSize: 10, color: "var(--stage-2)", alignSelf: "center" }}>À RÉSERVER TÔT</span>}
-                </div>
-              ))}
-            </div>
           </div>
         </>
       ) : (
