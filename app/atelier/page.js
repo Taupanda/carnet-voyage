@@ -11,6 +11,7 @@ const APPS = [
   { href: "/reservations", label: "Réserv.", ic: "🏨", c: "#8B5A8C" },
   { href: "/coffre", label: "Coffre", ic: "🔐", c: "#6B7280" },
   { href: "/checklist", label: "Check-list", ic: "✅", c: "#5C6B4C" },
+  { href: "/vocabulaire", label: "Vocabulaire", ic: "🗣️", c: "#3F8CA5" },
   { href: "/resumes", label: "Résumés", ic: "📮", c: "#C99A3B" },
   { href: "/livre-d-or", label: "Livre d'or", ic: "💛", c: "#D9A441" },
   { href: "/livre", label: "Le livre", ic: "📖", c: "#8B5A2E" },
