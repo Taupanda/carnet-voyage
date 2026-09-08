@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { supabaseAdmin, checkAdmin } from "../../../lib/server";
+import { supabaseAdmin, checkAdmin, removePhotos } from "../../../lib/server";
 
 // Les pages publiques qui listent les posts sont en ISR (export const revalidate).
 // Sans purge explicite, un post supprimé (ou publié/modifié) reste visible jusqu'à
@@ -53,6 +53,13 @@ export async function DELETE(request) {
   if (!date) return NextResponse.json({ error: "date manquante" }, { status: 400 });
   const db = supabaseAdmin();
 
+  // Relu avant la suppression : après, les URLs des photos ne sont plus récupérables.
+  const { data: existing } = await db
+    .from("entries")
+    .select("photos, photo_principale")
+    .eq("date", date)
+    .maybeSingle();
+
   // Tout ce qui est rattaché au post par sa date part avec lui : sinon les lignes
   // restent orphelines (et ressortiraient sur un nouveau post créé à la même date).
   for (const table of ["comments", "likes", "reactions", "entry_rencontres"]) {
@@ -67,6 +74,9 @@ export async function DELETE(request) {
 
   const { error } = await db.from("entries").delete().eq("date", date);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // photo_principale est l'une des photos du post : le dédoublonnage est fait
+  // par removePhotos.
+  await removePhotos([...(existing?.photos || []), existing?.photo_principale]);
   purgePublicPages();
   return NextResponse.json({ ok: true });
 }

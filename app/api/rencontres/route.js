@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { supabaseAdmin, checkAdmin } from "../../../lib/server";
+import { supabaseAdmin, checkAdmin, removePhotos } from "../../../lib/server";
 
 // La page d'accueil lit les rencontres côté serveur (compteur + « Croisé·es ce
 // jour-là » sur chaque post) et elle est en ISR : sans purge, une rencontre
@@ -59,6 +59,13 @@ export async function DELETE(request) {
   if (!id) return NextResponse.json({ error: "id manquant" }, { status: 400 });
   const db = supabaseAdmin();
 
+  // Relu avant la suppression : après, l'URL de la photo n'est plus récupérable.
+  const { data: existing } = await db
+    .from("rencontres")
+    .select("photo_url")
+    .eq("id", id)
+    .maybeSingle();
+
   // Les liens post ↔ rencontre doivent partir en premier : tant qu'ils existent,
   // la ligne `rencontres` est référencée et la suppression est rejetée.
   const { error: linkError } = await db
@@ -74,6 +81,7 @@ export async function DELETE(request) {
 
   const { error } = await db.from("rencontres").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await removePhotos([existing?.photo_url]);
   purgeAccueil();
   return NextResponse.json({ ok: true });
 }
