@@ -28,6 +28,23 @@ async function api(path, opts = {}) {
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
+// Affichage : toujours deux décimales, au format français (1 234,56).
+function eur(n) {
+  const v = Number(n);
+  return (Number.isFinite(v) ? v : 0).toLocaleString("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+// Saisie : en français le séparateur décimal est la virgule, et un champ
+// type="number" la rejette (valeur vidée). On lit donc les montants en texte et
+// on accepte « 12,50 » comme « 12.50 ».
+function parseMontant(v) {
+  const n = Number(String(v ?? "").replace(",", ".").trim());
+  return Number.isFinite(n) ? n : NaN;
+}
+
 export default function Budget() {
   const { user, loading } = useAuth();
   const isAdmin = !!user?.email && user.email.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase();
@@ -68,10 +85,11 @@ export default function Budget() {
   const mois = sumSince(30);
 
   async function addDepense() {
-    if (!montant || Number(montant) <= 0) { setErr("Montant invalide."); return; }
+    const valeur = parseMontant(montant);
+    if (!Number.isFinite(valeur) || valeur <= 0) { setErr("Montant invalide."); return; }
     setBusy(true);
     setErr(null);
-    const res = await api("/api/depenses", { method: "POST", body: JSON.stringify({ date, categorie, montant: Number(montant), note }) });
+    const res = await api("/api/depenses", { method: "POST", body: JSON.stringify({ date, categorie, montant: valeur, note }) });
     setBusy(false);
     if (res.ok) {
       const saved = await res.json();
@@ -88,9 +106,9 @@ export default function Budget() {
   async function saveBudgets() {
     setBusy(true);
     const res = await api("/api/budgets", { method: "POST", body: JSON.stringify({
-      hebdo: Number(budgets.hebdo) || null,
-      mensuel: Number(budgets.mensuel) || null,
-      global: Number(budgets.global) || null,
+      hebdo: parseMontant(budgets.hebdo) || null,
+      mensuel: parseMontant(budgets.mensuel) || null,
+      global: parseMontant(budgets.global) || null,
     }) });
     setBusy(false);
     if (res.ok) setErr(null);
@@ -112,7 +130,7 @@ export default function Budget() {
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
           <span>{label}</span>
           <span className="mono" style={{ color: over ? "#C2453A" : "var(--ink2)" }}>
-            {Math.round(spent)} € {target ? `/ ${target} €` : ""}
+            {eur(spent)} € {target ? `/ ${eur(target)} €` : ""}
           </span>
         </div>
         {target > 0 && (
@@ -140,16 +158,16 @@ export default function Budget() {
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
             <div>
               <div className="budget-total-label">Total dépensé</div>
-              <div className="budget-total">{Math.round(total)} €</div>
+              <div className="budget-total">{eur(total)} €</div>
             </div>
             <div className="mono" style={{ fontSize: 12, color: "var(--muted)", textAlign: "right", lineHeight: 1.7 }}>
-              7 j : {Math.round(semaine)} €<br />30 j : {Math.round(mois)} €
+              7 j : {eur(semaine)} €<br />30 j : {eur(mois)} €
             </div>
           </div>
           <div style={{ marginTop: 14 }}>
-            <Gauge label="Cette semaine (7 j)" spent={semaine} target={Number(budgets.hebdo)} />
-            <Gauge label="Ce mois (30 j)" spent={mois} target={Number(budgets.mensuel)} />
-            <Gauge label="Global" spent={total} target={Number(budgets.global)} />
+            <Gauge label="Cette semaine (7 j)" spent={semaine} target={parseMontant(budgets.hebdo)} />
+            <Gauge label="Ce mois (30 j)" spent={mois} target={parseMontant(budgets.mensuel)} />
+            <Gauge label="Global" spent={total} target={parseMontant(budgets.global)} />
           </div>
         </div>
 
@@ -160,15 +178,15 @@ export default function Budget() {
             <div className="budget-add-row">
               <div style={{ flex: "1 1 120px" }}>
                 <label className="lbl">Par semaine</label>
-                <input className="input" type="number" value={budgets.hebdo} onChange={(e) => setBudgets({ ...budgets, hebdo: e.target.value })} />
+                <input className="input" type="text" inputMode="decimal" value={budgets.hebdo} onChange={(e) => setBudgets({ ...budgets, hebdo: e.target.value })} />
               </div>
               <div style={{ flex: "1 1 120px" }}>
                 <label className="lbl">Par mois</label>
-                <input className="input" type="number" value={budgets.mensuel} onChange={(e) => setBudgets({ ...budgets, mensuel: e.target.value })} />
+                <input className="input" type="text" inputMode="decimal" value={budgets.mensuel} onChange={(e) => setBudgets({ ...budgets, mensuel: e.target.value })} />
               </div>
               <div style={{ flex: "1 1 120px" }}>
                 <label className="lbl">Global (voyage)</label>
-                <input className="input" type="number" value={budgets.global} onChange={(e) => setBudgets({ ...budgets, global: e.target.value })} />
+                <input className="input" type="text" inputMode="decimal" value={budgets.global} onChange={(e) => setBudgets({ ...budgets, global: e.target.value })} />
               </div>
             </div>
             <button className="btn-secondary" style={{ marginTop: 10 }} onClick={() => { saveBudgets(); setShowTargets(false); }} disabled={busy}>
@@ -183,7 +201,7 @@ export default function Budget() {
           <div className="budget-add-row">
             <div style={{ flex: "1.4 1 140px" }}>
               <label className="lbl">Montant (€)</label>
-              <input className="input" style={{ fontFamily: "Fraunces, serif", fontWeight: 600, fontSize: 22 }} type="number" inputMode="decimal" placeholder="0" value={montant} onChange={(e) => setMontant(e.target.value)} />
+              <input className="input" style={{ fontFamily: "Fraunces, serif", fontWeight: 600, fontSize: 22 }} type="text" inputMode="decimal" placeholder="0,00" value={montant} onChange={(e) => setMontant(e.target.value)} />
             </div>
             <div style={{ flex: "1 1 130px" }}>
               <label className="lbl">Catégorie</label>
@@ -211,7 +229,7 @@ export default function Budget() {
               <div key={c.id} style={{ marginBottom: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
                   <span>{c.ic} {c.label}</span>
-                  <span className="mono" style={{ color: "var(--ink2)" }}>{Math.round(v)} €</span>
+                  <span className="mono" style={{ color: "var(--ink2)" }}>{eur(v)} €</span>
                 </div>
                 <div style={{ height: 6, borderRadius: 999, background: "var(--line)", overflow: "hidden" }}>
                   <div style={{ width: pct + "%", height: "100%", background: c.color }} />
@@ -233,7 +251,7 @@ export default function Budget() {
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{cat?.label} {d.note && <span style={{ color: "var(--muted)", fontWeight: 400 }}>· {d.note}</span>}</div>
                   <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>{new Date(d.date + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</div>
                 </div>
-                <span className="mono" style={{ fontWeight: 700 }}>{Math.round(d.montant)} €</span>
+                <span className="mono" style={{ fontWeight: 700 }}>{eur(d.montant)} €</span>
                 <button className="cmt-del" onClick={() => delDepense(d.id)}>✕</button>
               </div>
             );

@@ -392,7 +392,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 @media (min-width: 720px) { .budget-grid { grid-template-columns: 1fr 1fr; } }
 .budget-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
 .budget-total-label { font-family: "Space Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
-.budget-total { font-family: "Fraunces", serif; font-weight: 600; font-size: 42px; color: var(--accent); line-height: 1; margin-top: 4px; }
+.budget-total { font-family: "Fraunces", serif; font-weight: 600; font-size: clamp(28px, 8vw, 42px); color: var(--accent); line-height: 1; margin-top: 4px; }
 .depense-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
 
 /* ============ DASHBOARD (home) ============ */

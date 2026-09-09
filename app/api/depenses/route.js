@@ -12,11 +12,17 @@ export async function GET(request) {
 export async function POST(request) {
   if (!(await checkAdmin(request))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = await request.json();
+  // Arrondi au centime : borne la précision stockée et évite les traînées de
+  // flottant (0.1 + 0.2) qui ressortiraient à l'affichage sur deux décimales.
+  const montant = Math.round(Number(body.montant) * 100) / 100;
+  if (!Number.isFinite(montant)) {
+    return NextResponse.json({ error: "montant invalide" }, { status: 400 });
+  }
   const db = supabaseAdmin();
   const payload = {
     date: body.date,
     categorie: body.categorie,
-    montant: body.montant,
+    montant,
     note: body.note || null,
   };
   if (body.id) payload.id = body.id;
