@@ -22,6 +22,28 @@ const dayNumber = (d) => dayNumberOf(d);
 const joindre = (a, b) =>
   [(a || "").trim(), (b || "").trim()].filter(Boolean).join(" ").replace(/\s{2,}/g, " ");
 
+// Comparaison souple : casse et ponctuation varient d'un instantané à l'autre.
+const cleTexte = (s) => (s || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+const nbMots = (s) => cleTexte(s).split(" ").filter(Boolean).length;
+
+// Ajoute un segment à l'accumulé — sauf quand il ne fait que redire ce qui
+// précède. Certains moteurs (WebKit surtout) renvoient des INSTANTANÉS
+// cumulatifs plutôt que des segments distincts : « alors », puis « alors
+// aujourd'hui », puis « alors aujourd'hui c'était »… Les concaténer produit la
+// bouillie répétitive ; il faut ne garder que le plus complet.
+function fusionner(acc, seg) {
+  const a = cleTexte(acc);
+  const b = cleTexte(seg);
+  if (!a) return (seg || "").trim();
+  if (!b) return acc;
+  if (a === b) return acc;                       // instantané identique
+  if (b.startsWith(a)) return (seg || "").trim(); // instantané plus complet
+  // Segment déjà présent en fin d'accumulé. Exigence de 3 mots minimum : sur un
+  // mot court, une vraie répétition dictée ("oui oui") serait avalée à tort.
+  if (a.endsWith(b) && nbMots(seg) >= 3) return acc;
+  return acc + " " + (seg || "").trim();
+}
+
 async function api(path, opts = {}) {
   const { data } = await supabaseBrowser().auth.getSession();
   const token = data.session?.access_token;
@@ -281,12 +303,16 @@ export default function Journal() {
     rec.onresult = (ev) => {
       let final = "", interim = "";
       for (let i = 0; i < ev.results.length; i++) {
-        const t = ev.results[i][0].transcript;
-        if (ev.results[i].isFinal) final += t + " ";
-        else interim += t;
+        const t = ev.results[i][0]?.transcript || "";
+        if (!t.trim()) continue;
+        // Les définitifs se cumulent (via fusionner, qui écarte les redites).
+        // Le provisoire, lui, n'est jamais cumulé : seul le dernier compte —
+        // les précédents sont des versions tronquées de la même phrase.
+        if (ev.results[i].isFinal) final = fusionner(final, t);
+        else interim = t.trim();
       }
       sessionTextRef.current = final;
-      setInput(joindre(baseTextRef.current, final + interim));
+      setInput(joindre(baseTextRef.current, fusionner(final, interim)));
     };
     rec.onerror = (e) => {
       // micro refusé : on arrête. Autres erreurs (no-speech, aborted, network) :
@@ -301,7 +327,7 @@ export default function Journal() {
     rec.onend = () => {
       recActiveRef.current = false;
       // session close : ce qu'elle a reconnu rejoint le texte acquis
-      baseTextRef.current = joindre(baseTextRef.current, sessionTextRef.current);
+      baseTextRef.current = fusionner(baseTextRef.current, sessionTextRef.current);
       sessionTextRef.current = "";
       if (wantRecRef.current) {
         // Chrome coupe après quelques secondes de silence. On repart sur un
