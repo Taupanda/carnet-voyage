@@ -18,6 +18,10 @@ const emptyExtracted = () => ({ lieu: null, activites: null, rencontres: null, a
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const dayNumber = (d) => dayNumberOf(d);
 
+// Recolle deux fragments dictés avec exactement une espace entre eux.
+const joindre = (a, b) =>
+  [(a || "").trim(), (b || "").trim()].filter(Boolean).join(" ").replace(/\s{2,}/g, " ");
+
 async function api(path, opts = {}) {
   const { data } = await supabaseBrowser().auth.getSession();
   const token = data.session?.access_token;
@@ -65,7 +69,9 @@ export default function Journal() {
   const [exporting, setExporting] = useState(false);
   const recognitionRef = useRef(null);
   const wantRecRef = useRef(false);
-  const baseTextRef = useRef("");
+  const baseTextRef = useRef("");     // texte acquis avant la session en cours
+  const sessionTextRef = useRef("");  // finaux de la session en cours
+  const recActiveRef = useRef(false); // une session tourne-t-elle déjà ?
   const wakeLockRef = useRef(null);
   const scrollRef = useRef(null);
   const fileRef = useRef(null);
@@ -105,7 +111,7 @@ export default function Journal() {
     function onVis() {
       if (document.visibilityState === "visible" && wantRecRef.current) {
         requestWakeLock();
-        try { recognitionRef.current?.start(); } catch {}
+        demarrerDictee(); // sans effet si une session tourne déjà
       }
     }
     document.addEventListener("visibilitychange", onVis);
@@ -262,6 +268,10 @@ export default function Journal() {
     try { wakeLockRef.current?.release?.(); } catch {}
     wakeLockRef.current = null;
   }
+  // Contre les répétitions, un seul principe : ne jamais CUMULER un delta, mais
+  // RECONSTRUIRE le texte de la session à chaque événement. Si le navigateur
+  // rejoue des résultats déjà vus — ce qu'il fait au redémarrage — on retombe
+  // sur le même texte, donc rien ne peut se dupliquer.
   function buildRecognition() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new SR();
@@ -269,14 +279,14 @@ export default function Journal() {
     rec.continuous = true;
     rec.interimResults = true;
     rec.onresult = (ev) => {
-      let finalChunk = "", interim = "";
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      let final = "", interim = "";
+      for (let i = 0; i < ev.results.length; i++) {
         const t = ev.results[i][0].transcript;
-        if (ev.results[i].isFinal) finalChunk += t + " ";
+        if (ev.results[i].isFinal) final += t + " ";
         else interim += t;
       }
-      if (finalChunk) baseTextRef.current += finalChunk;
-      setInput((baseTextRef.current + interim).replace(/\s{2,}/g, " ").trimStart());
+      sessionTextRef.current = final;
+      setInput(joindre(baseTextRef.current, final + interim));
     };
     rec.onerror = (e) => {
       // micro refusé : on arrête. Autres erreurs (no-speech, aborted, network) :
@@ -289,15 +299,35 @@ export default function Journal() {
       }
     };
     rec.onend = () => {
+      recActiveRef.current = false;
+      // session close : ce qu'elle a reconnu rejoint le texte acquis
+      baseTextRef.current = joindre(baseTextRef.current, sessionTextRef.current);
+      sessionTextRef.current = "";
       if (wantRecRef.current) {
-        // redémarrage auto : survit aux pauses et au verrouillage d'écran
-        try { rec.start(); } catch { setTimeout(() => { try { rec.start(); } catch {} }, 300); }
+        // Chrome coupe après quelques secondes de silence. On repart sur un
+        // objet NEUF : relancer le même rejoue sa liste de résultats, et
+        // c'est précisément ce qui répétait les mots déjà dictés.
+        demarrerDictee();
       } else {
         setRecording(false);
         releaseWakeLock();
       }
     };
     return rec;
+  }
+
+  // Démarre une session, jamais deux en parallèle : deux moteurs actifs
+  // transcrivent chaque mot en double.
+  function demarrerDictee(reessai = true) {
+    if (recActiveRef.current) return;
+    const rec = buildRecognition();
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+      recActiveRef.current = true;
+    } catch {
+      if (reessai) setTimeout(() => demarrerDictee(false), 300);
+    }
   }
   async function toggleRecording() {
     if (recording) {
@@ -313,12 +343,11 @@ export default function Journal() {
       return;
     }
     setError(null);
-    baseTextRef.current = input ? input.replace(/\s+$/, "") + " " : "";
+    baseTextRef.current = input || "";
+    sessionTextRef.current = "";
     wantRecRef.current = true;
     await requestWakeLock();
-    const rec = buildRecognition();
-    recognitionRef.current = rec;
-    try { rec.start(); } catch {}
+    demarrerDictee();
     setRecording(true);
   }
 
