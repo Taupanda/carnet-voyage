@@ -52,17 +52,22 @@ export default function Post({ e }) {
             </div>
           )}
 
-          <ul className="bullets">
-            {recit.map((it, i) => (
-              <li key={i}>
-                <div>
-                  {it.activite && <b>{it.activite}</b>}
-                  {it.activite && it.detail ? " — " : ""}
-                  <span>{it.detail}</span>
+          {e.ouverture && <p className="post-lead">{e.ouverture}</p>}
+
+          {recit.length > 0 && (
+            <div className="moments">
+              {recit.map((it, i) => (
+                <div key={i} className="moment">
+                  {it.activite && <h3 className="moment-titre">{it.activite}</h3>}
+                  {it.detail && <p className="moment-texte">{it.detail}</p>}
                 </div>
-              </li>
-            ))}
-          </ul>
+              ))}
+            </div>
+          )}
+
+          {e.en_passant && (
+            <p className="post-passant"><span>En passant</span>{e.en_passant}</p>
+          )}
 
           {e.anecdote && (
             <div className="block framed">

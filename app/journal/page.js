@@ -166,7 +166,7 @@ export default function Journal() {
 
   function startManual() {
     setSaisieMode("manuel");
-    setPost({ titre: "", lieux: [], coords: null, recit: [{ activite: "", detail: "" }], rencontres: "", anecdote: "", adresse: "", reflexion: "" });
+    setPost({ titre: "", lieux: [], coords: null, ouverture: "", recit: [{ activite: "", detail: "" }], en_passant: "", rencontres: "", anecdote: "", adresse: "", reflexion: "" });
     setError(null);
     setPhase("moods");
   }
@@ -219,7 +219,9 @@ export default function Journal() {
         titre: existing.titre,
         lieux: existing.lieux,
         coords: existing.lat ? { lat: existing.lat, lng: existing.lng } : null,
+        ouverture: existing.ouverture,
         recit: existing.recit,
+        en_passant: existing.en_passant,
         rencontres: existing.rencontres,
         anecdote: existing.anecdote,
         adresse: existing.adresse,
@@ -402,7 +404,9 @@ export default function Journal() {
       lieux: post.lieux,
       lat: post.coords?.lat ?? null,
       lng: post.coords?.lng ?? null,
+      ouverture: post.ouverture,
       recit: post.recit,
+      en_passant: post.en_passant,
       rencontres: post.rencontres,
       anecdote: post.anecdote,
       adresse: post.adresse,
@@ -884,19 +888,33 @@ function EditablePost({ post, setPost, photos, notes, dayNum, manual = false, re
         <div className="photos">{photos.map((url, i) => <img key={i} src={url} alt="" />)}</div>
       )}
 
+      {(manual || post.ouverture) && (
+        <div className="section">
+          <div className="section-head">Ouverture — le fil de la journée</div>
+          {ta("ouverture", post.ouverture)}
+        </div>
+      )}
+
       <div className="section">
-        {manual && <div className="section-head">Le récit de la journée</div>}
+        <div className="section-head">Les moments {recit.length > 0 && `(${recit.length}/5)`}</div>
         {recit.map((item, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <input className="input" style={{ fontWeight: 700, flex: 1 }} value={item.activite || ""} onChange={(e) => updRecit(i, "activite", e.target.value)} placeholder="Activité" />
-              {manual && recit.length > 1 && <button className="cmt-del" onClick={() => delRecit(i)} aria-label="Retirer">✕</button>}
+              {recit.length > 1 && <button className="cmt-del" onClick={() => delRecit(i)} aria-label="Retirer">✕</button>}
             </div>
             <textarea className="input" style={{ fontSize: 13.5 }} rows={2} value={item.detail || ""} onChange={(e) => updRecit(i, "detail", e.target.value)} placeholder="Détail (facultatif)" />
           </div>
         ))}
-        {manual && <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={addRecit}>+ Ajouter une activité</button>}
+        {manual && recit.length < 5 && <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={addRecit}>+ Ajouter un moment</button>}
       </div>
+
+      {(manual || post.en_passant) && (
+        <div className="section">
+          <div className="section-head">En passant — trajets et intendance</div>
+          {ta("en_passant", post.en_passant)}
+        </div>
+      )}
 
       {(manual || post.rencontres) && (<div className="section"><div className="section-head">Rencontres (texte)</div>{ta("rencontres", post.rencontres)}</div>)}
       {(manual || post.anecdote) && (<div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>)}

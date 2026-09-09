@@ -728,3 +728,14 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .voc-count { font-family: "Space Mono", monospace; font-size: 10.5px; color: var(--muted); border: 1px solid var(--line2); border-radius: 999px; padding: 2px 7px; cursor: help; }
 .voc-edit { padding: 6px 12px; font-size: 12px; }
 @media (max-width: 520px) { .voc-fields { flex-direction: column; } }
+
+/* ---- Structure d'un post : chapô > moments > intendance ---- */
+/* Trois niveaux typographiques distincts, pour qu'un taxi ne pèse jamais
+   visuellement autant qu'une journée de marche. */
+.post-lead { font-size: 16px; line-height: 1.7; color: var(--ink); margin: 16px 0 2px; }
+.moments { display: flex; flex-direction: column; gap: 18px; margin: 18px 0 4px; }
+.moment-titre { font-family: "Fraunces", serif; font-weight: 600; font-size: 15.5px; color: var(--stage); margin-bottom: 5px; }
+.moment-texte { font-size: 14.5px; line-height: 1.65; color: var(--ink2); }
+.post-passant { font-size: 12.5px; line-height: 1.55; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; margin-top: 16px; }
+.post-passant span { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.11em; margin-right: 9px; }
+.book-lead { font-size: 14.5px; }

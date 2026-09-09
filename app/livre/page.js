@@ -10,7 +10,7 @@ export default async function Livre() {
   const db = supabaseAdmin();
   const { data } = await db
     .from("entries")
-    .select("date, day_number, titre, lieux, photos, photo_principale, recit, anecdote, adresse, reflexion")
+    .select("date, day_number, titre, lieux, photos, photo_principale, ouverture, recit, en_passant, anecdote, adresse, reflexion")
     .eq("status", "published")
     .order("date", { ascending: true });
   const posts = data || [];
@@ -72,19 +72,18 @@ export default async function Livre() {
                   <h2 className="display book-day-title">{e.titre}</h2>
                   <div className="book-day-date">{dateLabel}</div>
                   {e.lieux?.length > 0 && <div className="book-day-lieux">📍 {e.lieux.join(" · ")}</div>}
+                  {e.ouverture && <p className="post-lead book-lead">{e.ouverture}</p>}
                   {recit.length > 0 && (
-                    <ul className="bullets book-recit">
+                    <div className="moments book-recit">
                       {recit.map((it, i) => (
-                        <li key={i}>
-                          <div>
-                            {it.activite && <b>{it.activite}</b>}
-                            {it.activite && it.detail ? " — " : ""}
-                            <span>{it.detail}</span>
-                          </div>
-                        </li>
+                        <div key={i} className="moment">
+                          {it.activite && <h3 className="moment-titre">{it.activite}</h3>}
+                          {it.detail && <p className="moment-texte">{it.detail}</p>}
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   )}
+                  {e.en_passant && <p className="post-passant"><span>En passant</span>{e.en_passant}</p>}
                   {e.anecdote && <div className="book-block"><div className="block-head">L'anecdote</div><p>{e.anecdote}</p></div>}
                   {e.adresse && <div className="book-block"><div className="block-head">Bonne adresse</div><p>{e.adresse}</p></div>}
                   {e.reflexion && <div className="book-block quote"><div className="block-head">Ce que je garde</div><p>{e.reflexion}</p></div>}
