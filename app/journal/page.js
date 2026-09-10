@@ -881,6 +881,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
         </div>
       </div>
 
+      <div className="post-col-fiche">
       <div className="section">
         <div className="section-head">Lieux</div>
         <input className="input" placeholder="Villes / lieux, séparés par des virgules" value={(post.lieux || []).join(", ")} onChange={(e) => upd("lieux", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
@@ -890,7 +891,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
       )}
 
       {photos.length > 0 && setPhotoPrincipale && (
-        <div className="section section-full">
+        <div className="section">
           <div className="section-head">Photo principale — en tête du post</div>
           <div className="photo-pick">
             {photos.map((url, i) => {
@@ -906,12 +907,17 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
         </div>
       )}
 
-      <div className="section section-full">
+      <div className="section"><div className="section-head">Rencontres (texte)</div>{ta("rencontres", post.rencontres)}</div>
+      <div className="section"><div className="section-head">Bonne adresse</div>{ta("adresse", post.adresse)}</div>
+      </div>
+
+      <div className="post-col-recit">
+      <div className="section">
         <div className="section-head">Ouverture — le fil de la journée</div>
         {ta("ouverture", post.ouverture)}
       </div>
 
-      <div className="section section-full">
+      <div className="section">
         <div className="section-head">Les moments {recit.length > 0 && `(${recit.length}/5)`}</div>
         {recit.map((item, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
@@ -933,9 +939,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
       </div>
 
 
-      <div className="section"><div className="section-head">Rencontres (texte)</div>{ta("rencontres", post.rencontres)}</div>
       <div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>
-      <div className="section"><div className="section-head">Bonne adresse</div>{ta("adresse", post.adresse)}</div>
       <div className="section box-reflexion"><div className="section-head">Ce que je garde</div>{ta("reflexion", post.reflexion)}</div>
 
       {setReflexionPrivee && (
@@ -944,6 +948,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
           Garder ma réflexion privée (invisible sur le blog)
         </label>
       )}
+      </div>
     </div>
   );
 }

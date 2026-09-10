@@ -792,16 +792,35 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .moment-ordre button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .moment-ordre button:disabled { opacity: 0.3; cursor: default; }
 
+/* Sur mobile les deux colonnes n'existent pas : `display: contents` fait
+   disparaître les conteneurs, leurs champs retombent dans la colonne unique. */
+.post-col-fiche, .post-col-recit { display: contents; }
+
 @media (min-width: 900px) {
-  /* La relecture d'un post est un travail d'écran large : on laisse la page
-     respirer et on range les champs courts en deux colonnes. */
-  .jr-shell.jr-large { max-width: 1000px; }
-  .jr-shell.jr-large .jr-scroll { padding: 22px 24px; }
-  .jr-large .post-card { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; align-items: start; padding: 22px; }
-  .jr-large .post-card > .post-header,
-  .jr-large .post-card > .section-full,
-  .jr-large .post-card > label { grid-column: 1 / -1; }
-  .jr-large .post-card textarea.input { min-height: 92px; }
+  /* Relire un post est un travail d'écran large. Deux différences avec le
+     mobile : la page défile normalement au lieu d'être enfermée dans la hauteur
+     du viewport, et le formulaire se sépare en une fiche (champs factuels,
+     courts) et une colonne de récit, qui seule a besoin de largeur. */
+  .jr-shell.jr-large { height: auto; min-height: 100dvh; max-width: 1120px; }
+  .jr-shell.jr-large .jr-scroll { overflow: visible; padding: 26px 28px 40px; }
+
+  .jr-large .post-card {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 18px 30px;
+    align-items: start;
+    padding: 24px 26px;
+  }
+  .jr-large .post-card > .post-header { grid-column: 1 / -1; }
+  .jr-large .post-col-fiche,
+  .jr-large .post-col-recit { display: flex; flex-direction: column; gap: 16px; }
+  .jr-large .post-col-recit { position: sticky; top: 0; }
+  .jr-large .post-col-recit textarea.input { min-height: 96px; }
+  /* Le titre respire mais ne s'étire pas sur toute la page. */
+  .jr-large .post-header input.serif { max-width: 520px; }
+  /* Les actions suivent la largeur du formulaire, pas celle de l'écran. */
+  .jr-large .jr-scroll > div[style*="display:flex"],
+  .jr-large .jr-scroll > .error { max-width: 1120px; }
 }
 
 /* ---- Planning intégral : 101 lignes, densité maîtrisée ---- */
@@ -811,3 +830,10 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .plan-jour.passe { opacity: 0.5; }
 .plan-jour.auj { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .plan-jour.auj .plan-jnum { color: var(--accent); }
+
+@media (max-width: 560px) {
+  /* Le titre et les quatre ressentis ne tiennent pas côte à côte sur un
+     téléphone : le champ de titre s'y trouvait rogné à quelques caractères. */
+  .post-header { flex-direction: column; align-items: stretch; gap: 12px; }
+  .post-moods { align-self: flex-start; }
+}
