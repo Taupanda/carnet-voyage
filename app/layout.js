@@ -4,6 +4,7 @@ import AuthProvider from "./AuthProvider";
 import ModeProvider from "./ModeProvider";
 import ProfileRedirect from "./ProfileRedirect";
 import ServiceWorkerRegister from "./ServiceWorkerRegister";
+import BarreAdmin from "./BarreAdmin";
 
 export const metadata = {
   title: "Les aventures de Maxou — Mexique & Amérique centrale",
@@ -30,7 +31,10 @@ export default function RootLayout({ children }) {
           <ModeProvider>
             <div className="shell">
               <Nav />
-              <div className="shell-main">{children}</div>
+              <div className="shell-main">
+                <BarreAdmin />
+                {children}
+              </div>
             </div>
             <ProfileRedirect />
             <ServiceWorkerRegister />

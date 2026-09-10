@@ -18,7 +18,11 @@ export async function GET(request) {
   // Toujours service_role côté serveur (anon n'a plus accès à entries). Le filtre
   // status=published et le masquage de reflexion_privee ci-dessous protègent le public.
   const db = supabaseAdmin();
+  const demandee = new URL(request.url).searchParams.get("date");
   let query = db.from("entries").select("*").order("date", { ascending: false });
+  // Filtre facultatif : évite de rapatrier tout le voyage quand une seule
+  // journée est demandée (la barre d'actions ne teste qu'aujourd'hui).
+  if (/^\d{4}-\d{2}-\d{2}$/.test(demandee || "")) query = query.eq("date", demandee);
   if (!isAdmin) query = query.eq("status", "published");
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
