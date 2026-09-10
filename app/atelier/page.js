@@ -63,9 +63,9 @@ export default function Atelier() {
 function AtelierBody() {
   const path = usePathname();
   return (
-    <main className="container-wide" style={{ paddingTop: 26, paddingBottom: 70 }}>
+    <main className="container-wide" style={{ paddingTop: 14, paddingBottom: 20 }}>
       <div className="atelier-top">
-        <h1 className="display" style={{ fontSize: "clamp(24px, 5vw, 36px)" }}>Menu</h1>
+        <h1 className="display" style={{ fontSize: "clamp(19px, 3.5vw, 25px)" }}>Menu</h1>
       </div>
 
       {SECTIONS.map((s) => (

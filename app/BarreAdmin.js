@@ -9,11 +9,11 @@ import { todayLocal } from "../lib/stages";
 // Les gestes du quotidien, plus l'accès au Menu qui indexe tout le reste. Tout le reste vit dans le Menu : ici on ne
 // met que ce qui se fait plusieurs fois par jour, ou debout dans une rue.
 const GESTES = [
+  { href: "/atelier", label: "Menu", ic: "☰", sobre: true },
   { href: "/notes", label: "Noter", ic: "📝" },
   { href: "/journal", label: "Raconter", ic: "✏️", pastille: true },
   { href: "/planning", label: "Planning", ic: "🗓️" },
   { href: "/convertisseur", label: "Change", ic: "💱" },
-  { href: "/atelier", label: "Menu", ic: "🧰" },
 ];
 
 export default function BarreAdmin() {
@@ -52,7 +52,7 @@ export default function BarreAdmin() {
         const actif = pathname === g.href;
         return (
           <Link key={g.href} href={g.href} className={"barre-geste" + (actif ? " on" : "")}>
-            <span className="barre-ic">
+            <span className={"barre-ic" + (g.sobre ? " sobre" : "")}>
               {g.ic}
               {g.pastille && journeeManquante && <span className="barre-pastille" aria-hidden="true" />}
             </span>

@@ -983,6 +983,10 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .barre-geste:hover { border-color: var(--line2); color: var(--ink); }
 .barre-geste.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
 .barre-ic { position: relative; font-size: 16px; line-height: 1; flex-shrink: 0; }
+/* Le Menu n'est pas un geste mais un index : un glyphe sobre plutôt qu'un
+   pictogramme de couleur, pour qu'il ne concurrence pas les quatre actions. */
+.barre-ic.sobre { font-size: 17px; color: var(--muted); font-weight: 400; }
+.barre-geste.on .barre-ic.sobre { color: var(--accent); }
 .barre-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .barre-pastille {
   position: absolute; top: -3px; right: -4px;
@@ -1032,5 +1036,23 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .atelier-bloc-tete { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .atelier-bloc-tete h2 { font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; margin: 0; }
 .atelier-bloc-tete span { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.atelier-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+/* Le Menu doit tenir sur un écran : les tuiles passent du carré à la ligne —
+   picto et libellé côte à côte, hauteur divisée par trois. */
+.atelier-grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 5px; }
+.app-tile { flex-direction: row; align-items: center; justify-content: flex-start; text-align: left; gap: 8px; padding: 6px 9px; border-radius: 8px; min-width: 0; border-top: 1px solid var(--line); border-left: 3px solid var(--c); }
+.app-tile:hover { transform: none; box-shadow: none; border-color: var(--c); }
+.app-tile-ic { font-size: 14px; flex-shrink: 0; }
+.app-tile-label { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.atelier-bloc { margin-bottom: 11px; }
+.atelier-bloc-tete { margin-bottom: 5px; padding-bottom: 3px; gap: 7px; }
+.atelier-bloc-tete h2 { font-size: 13px; }
+.atelier-bloc-tete span { font-size: 9px; }
+.atelier-top { margin-bottom: 10px; }
+
+@media (max-width: 430px) {
+  /* Sur un petit téléphone la ligne d'intention passe à la ligne et coûte une
+     hauteur de texte par section. Le titre suffit à situer le groupe. */
+  .atelier-bloc-tete span { display: none; }
+  .atelier-bloc { margin-bottom: 9px; }
+}
 .app-tile.on { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); }
