@@ -6,6 +6,7 @@ import ProfileRedirect from "./ProfileRedirect";
 import ServiceWorkerRegister from "./ServiceWorkerRegister";
 import BarreAdmin from "./BarreAdmin";
 import ArriveeAdmin from "./ArriveeAdmin";
+import SuiviVisites from "./SuiviVisites";
 
 export const metadata = {
   title: "Les aventures de Maxou — Mexique & Amérique centrale",
@@ -22,7 +23,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap"
           rel="stylesheet"
         />
         <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
               </div>
             </div>
             <ArriveeAdmin />
+            <SuiviVisites />
             <ProfileRedirect />
             <ServiceWorkerRegister />
           </ModeProvider>

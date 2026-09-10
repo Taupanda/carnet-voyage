@@ -25,6 +25,16 @@ export async function GET(request) {
     db.from("depenses").select("montant").eq("date", jour),
   ]);
 
+  // Dernière position connue : la météo de l'accueil suit le voyage plutôt
+  // qu'un point fixe. Repli sur Mexico tant qu'aucun post n'est géolocalisé.
+  const { data: pos } = await db
+    .from("entries")
+    .select("lat, lng, lieux")
+    .not("lat", "is", null)
+    .order("date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   return NextResponse.json({
     notes: (notes.data || []).map((n) => n.texte),
     postDuJour: post.data ? post.data.status : null, // null | "draft" | "published"
@@ -32,5 +42,10 @@ export async function GET(request) {
     conseilsSemaine: conseils.count || 0,
     commentairesSemaine: commentaires.count || 0,
     depenseDuJour: (depenses.data || []).reduce((s, d) => s + Number(d.montant || 0), 0),
+    lieu: {
+      lat: pos?.lat ?? 19.4326,
+      lng: pos?.lng ?? -99.1332,
+      nom: pos?.lieux?.[0] || "Mexico",
+    },
   });
 }

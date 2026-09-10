@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { PHASES } from "../../lib/itinerary";
 
@@ -23,9 +24,14 @@ export default function Itineraire() {
   return (
     <main className="container-wide" style={{ paddingTop: 30, paddingBottom: 70 }}>
       <p className="eyebrow">Mexico · Belize · Guatemala · Salvador</p>
-      <h1 className="display" style={{ fontSize: "clamp(28px, 5vw, 44px)", margin: "8px 0 4px" }}>
-        L'itinéraire
+      <h1 className="display" style={{ fontSize: "clamp(24px, 4vw, 32px)", margin: "8px 0 12px" }}>
+        Mon voyage
       </h1>
+      <div className="voyage-bascule">
+        <Link href="/itineraire" className={"voyage-onglet" + (true ? " on" : "")}>Itinéraire</Link>
+        <Link href="/planning" className={"voyage-onglet" + (false ? " on" : "")}>Planning</Link>
+      </div>
+
       <p style={{ color: "var(--text2)", marginBottom: 20 }}>
         101 jours, 11 étapes, du plateau central à l'Amérique centrale.
       </p>

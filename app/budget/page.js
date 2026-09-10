@@ -203,7 +203,7 @@ export default function Budget() {
           <div className="budget-add-row">
             <div style={{ flex: "1.4 1 140px" }}>
               <label className="lbl">Montant (€)</label>
-              <input className="input" style={{ fontFamily: "Fraunces, serif", fontWeight: 600, fontSize: 22 }} type="text" inputMode="decimal" placeholder="0,00" value={montant} onChange={(e) => setMontant(e.target.value)} />
+              <input className="input" style={{ fontFamily: "var(--police)", fontWeight: 600, fontSize: 22 }} type="text" inputMode="decimal" placeholder="0,00" value={montant} onChange={(e) => setMontant(e.target.value)} />
             </div>
             <div style={{ flex: "1 1 130px" }}>
               <label className="lbl">Catégorie</label>

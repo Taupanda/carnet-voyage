@@ -101,7 +101,12 @@ function PlanningBody() {
   return (
     <main className="container" style={{ paddingTop: 24, paddingBottom: 70, maxWidth: 760 }}>
       <Link href="/atelier" className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>← Menu</Link>
-      <h1 className="display" style={{ fontSize: "clamp(26px, 4vw, 38px)", margin: "10px 0 4px" }}>Planning</h1>
+      <h1 className="display" style={{ fontSize: "clamp(24px, 4vw, 32px)", margin: "8px 0 12px" }}>Mon voyage</h1>
+      <div className="voyage-bascule">
+        <Link href="/itineraire" className={"voyage-onglet" + (false ? " on" : "")}>Itinéraire</Link>
+        <Link href="/planning" className={"voyage-onglet" + (true ? " on" : "")}>Planning</Link>
+      </div>
+
       <p style={{ color: "var(--ink2)", marginBottom: 18 }}>
         Les 101 jours du voyage, un par ligne. Épingle ce qui est déjà fixé — vol, hôtel
         réservé, rendez-vous — et cale le reste autour.

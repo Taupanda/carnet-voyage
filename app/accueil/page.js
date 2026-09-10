@@ -3,7 +3,9 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { todayLocal, afficheJour, dayNumberOf, stageForDate } from "../../lib/stages";
+import { todayLocal } from "../../lib/stages";
+import { meteoInfo, fetchMeteoJour } from "../../lib/weather";
+import { derniersOutils } from "../../lib/outils";
 
 const CATS = [
   { id: "repas", label: "Repas", ic: "🍽️" },
@@ -58,48 +60,45 @@ function AccueilBody() {
   }
   useEffect(() => { charger(); }, []);
 
-  const etape = stageForDate(jour);
-  const numero = afficheJour(dayNumberOf(jour));
-  const dateLongue = new Date(jour + "T00:00:00").toLocaleDateString("fr-FR", {
+  const dateCourte = new Date(jour + "T00:00:00").toLocaleDateString("fr-FR", {
     weekday: "long", day: "numeric", month: "long",
   });
 
   const aRaconter = etat && etat.postDuJour === null;
   const notes = etat?.notes || [];
-  const arrivees = etat ? etat.motsNonLus + etat.conseilsSemaine + etat.commentairesSemaine : 0;
 
   return (
-    <main className="container" style={{ paddingTop: 20, paddingBottom: 24, maxWidth: 620 }}>
+    <main className="container" style={{ paddingTop: 16, paddingBottom: 20, maxWidth: 620 }}>
       <div className="ac-tete">
-        <div>
-          <p className="ac-date">{dateLongue}</p>
-          <h1 className="ac-jour">
-            Jour {numero > 0 ? numero : "—"}
-            {etape && <span style={{ color: etape.couleur }}> · {etape.nom}</span>}
-          </h1>
-        </div>
-        {etat && etat.depenseDuJour > 0 && (
-          <span className="ac-depense-jour">{eur(etat.depenseDuJour)} € aujourd'hui</span>
-        )}
+        <span className="ac-marque">🌋</span>
+        <Link href="/moderation" className="ac-cloche" aria-label="Ce qui est arrivé">
+          🔔{etat && etat.motsNonLus > 0 && <i />}
+        </Link>
       </div>
 
-      {err && <p className="error" style={{ marginBottom: 14 }}>{err}</p>}
+      <h1 className="ac-salut">Bonjour Maxou</h1>
+      <p className="ac-lieu">
+        📍 {etat?.lieu?.nom || "…"} · <span>{dateCourte}</span>
+      </p>
 
-      {/* ---- L'action du soir, mise en avant ---- */}
+      {err && <p className="error" style={{ marginBottom: 12 }}>{err}</p>}
+
+      <Meteo lieu={etat?.lieu} />
+
       <Link href="/journal" className={"ac-raconter" + (aRaconter ? " du" : "")}>
-        <span className="ac-raconter-ic">✏️</span>
+        <span className="ac-raconter-ic">{etat?.postDuJour === "published" ? "✓" : "✏️"}</span>
         <span className="ac-raconter-corps">
           <b>Raconter ma journée</b>
           <span>
             {!etat
               ? "…"
               : etat.postDuJour === "published"
-              ? "La journée est publiée."
+              ? "Journée publiée"
               : etat.postDuJour === "draft"
-              ? "Un brouillon attend d'être publié."
+              ? "Brouillon en attente"
               : notes.length > 0
-              ? `${notes.length} note${notes.length > 1 ? "s" : ""} du calepin t'attendent.`
-              : "Rien d'écrit pour aujourd'hui."}
+              ? `${notes.length} note${notes.length > 1 ? "s" : ""} t'attendent`
+              : "Rien d'écrit aujourd'hui"}
           </span>
         </span>
         <span className="ac-raconter-fleche">→</span>
@@ -109,58 +108,64 @@ function AccueilBody() {
       <DepenseRapide jour={jour} onFait={charger} />
       <Convertisseur />
 
-      {/* ---- Ce qui est arrivé ---- */}
-      <section className="ac-bloc">
-        <div className="ac-bloc-tete">
-          <h2>Ce qui est arrivé</h2>
-          {arrivees > 0 && <span className="ac-compteur">{arrivees}</span>}
-        </div>
-        {!etat ? (
-          <p className="ac-vide">…</p>
-        ) : arrivees === 0 ? (
-          <p className="ac-vide">Rien de neuf.</p>
-        ) : (
-          <div className="ac-arrivees">
-            {etat.motsNonLus > 0 && (
-              <Link href="/livre-d-or" className="ac-arrivee">
-                <b>{etat.motsNonLus}</b> mot{etat.motsNonLus > 1 ? "s" : ""} privé{etat.motsNonLus > 1 ? "s" : ""} non lu{etat.motsNonLus > 1 ? "s" : ""}
-              </Link>
-            )}
-            {etat.conseilsSemaine > 0 && (
-              <Link href="/recos" className="ac-arrivee">
-                <b>{etat.conseilsSemaine}</b> conseil{etat.conseilsSemaine > 1 ? "s" : ""} cette semaine
-              </Link>
-            )}
-            {etat.commentairesSemaine > 0 && (
-              <Link href="/moderation" className="ac-arrivee">
-                <b>{etat.commentairesSemaine}</b> commentaire{etat.commentairesSemaine > 1 ? "s" : ""} cette semaine
-              </Link>
-            )}
-          </div>
-        )}
-      </section>
+      <BandeOutils />
+
     </main>
   );
 }
 
-/* ---------- Note rapide : le geste le plus fréquent ---------- */
+/* ---------- Note : à la voix ou au clavier, les deux au même rang ---------- */
 function NoteRapide({ jour, notes, onFait }) {
   const [texte, setTexte] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  const [ecoute, setEcoute] = useState(false);
+  const [dispo, setDispo] = useState(false);
   const champ = useRef(null);
+  const recRef = useRef(null);
 
-  async function noter() {
-    const t = texte.trim();
-    if (!t || busy) return;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setDispo(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
+  }, []);
+
+  async function enregistrer(t) {
+    const valeur = (t || "").trim();
+    if (!valeur || busy) return;
     setBusy(true);
     setErr(null);
-    const res = await api("/api/notes", { method: "POST", body: JSON.stringify({ date: jour, texte: t }) });
+    const res = await api("/api/notes", { method: "POST", body: JSON.stringify({ date: jour, texte: valeur }) });
     setBusy(false);
     if (!res.ok) { setErr(await motifEchec(res)); return; }
     setTexte("");
-    champ.current?.focus();
     onFait();
+  }
+
+  // Dictée d'une note : une phrase, puis on s'arrête. La reconstruction du texte
+  // à chaque événement — plutôt que le cumul — évite les répétitions des moteurs
+  // qui renvoient des instantanés cumulatifs.
+  function dicter() {
+    if (ecoute) { try { recRef.current?.stop(); } catch {} return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    recRef.current = rec;
+    rec.lang = "fr-FR";
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.onresult = (ev) => {
+      let dernier = "";
+      for (let i = 0; i < ev.results.length; i++) {
+        const t = ev.results[i][0]?.transcript || "";
+        if (!t.trim()) continue;
+        if (ev.results[i].isFinal) dernier = t.trim();
+        else if (!dernier) dernier = t.trim();
+      }
+      if (dernier) setTexte(dernier);
+    };
+    rec.onerror = () => { setEcoute(false); setErr("Micro indisponible."); };
+    rec.onend = () => { setEcoute(false); champ.current?.focus(); };
+    try { rec.start(); setEcoute(true); setErr(null); } catch {}
   }
 
   return (
@@ -169,24 +174,33 @@ function NoteRapide({ jour, notes, onFait }) {
         <h2>Noter</h2>
         <Link href="/notes" className="ac-lien">le calepin →</Link>
       </div>
-      <div className="cmt-form">
+      <div className="ac-note">
+        {dispo && (
+          <button
+            type="button"
+            className={"ac-micro" + (ecoute ? " on" : "")}
+            onClick={dicter}
+            aria-pressed={ecoute}
+            aria-label={ecoute ? "Arrêter la dictée" : "Dicter la note"}
+          >
+            🎤
+          </button>
+        )}
         <input
           ref={champ}
           className="input"
-          placeholder="Ce que je veux retenir…"
+          placeholder={ecoute ? "Je t'écoute…" : "Écrire ou dicter…"}
           value={texte}
           onChange={(e) => setTexte(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && noter()}
+          onKeyDown={(e) => e.key === "Enter" && enregistrer(texte)}
           disabled={busy}
         />
-        <button className="btn" style={{ padding: "10px 16px" }} onClick={noter} disabled={busy || !texte.trim()}>
+        <button className="btn ac-ok" onClick={() => enregistrer(texte)} disabled={busy || !texte.trim()}>
           {busy ? "…" : "+"}
         </button>
       </div>
       {err && <p className="error" style={{ marginTop: 8 }}>{err}</p>}
-      {notes.length > 0 && (
-        <p className="ac-apercu">{notes.slice(-2).join(" · ")}</p>
-      )}
+      {notes.length > 0 && <p className="ac-apercu">{notes.slice(-2).join(" · ")}</p>}
     </section>
   );
 }
@@ -311,5 +325,65 @@ function Convertisseur() {
         </label>
       </div>
     </section>
+  );
+}
+
+/* ---------- Météo du lieu où l'on est ---------- */
+function Meteo({ lieu }) {
+  const [m, setM] = useState(null);
+
+  useEffect(() => {
+    if (!lieu) return;
+    let annule = false;
+    fetchMeteoJour(lieu.lat, lieu.lng).then((d) => { if (!annule) setM(d); });
+    return () => { annule = true; };
+  }, [lieu?.lat, lieu?.lng]);
+
+  if (!m) return <div className="ac-meteo ac-meteo-vide" />;
+  const info = meteoInfo(m.code);
+
+  return (
+    <div className="ac-meteo">
+      <div className="ac-meteo-haut">
+        <span className="ac-meteo-ic">{info.emoji}</span>
+        <span>
+          <span className="ac-meteo-t">{m.t}°</span>
+          <span className="ac-meteo-l">
+            {info.label}
+            {m.tmin != null && ` · ${m.tmin}° la nuit`}
+          </span>
+        </span>
+      </div>
+      {m.heures.length > 0 && (
+        <div className="ac-heures">
+          {m.heures.map((h) => (
+            <span key={h.h} className="ac-heure">
+              <b>{String(h.h).padStart(2, "0")}h</b>
+              <span>{meteoInfo(h.code).emoji}</span>
+              <u>{h.t}°</u>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Les derniers outils ouverts, en icônes seules ---------- */
+function BandeOutils() {
+  const [outils, setOutils] = useState([]);
+  // L'historique vit dans le navigateur : on le lit après le montage pour que le
+  // rendu serveur et le rendu client partent du même état.
+  useEffect(() => { setOutils(derniersOutils(6)); }, []);
+  if (outils.length === 0) return null;
+
+  return (
+    <nav className="ac-bande" aria-label="Derniers outils ouverts">
+      {outils.map((o) => (
+        <Link key={o.href} href={o.href} className="ac-bande-ic" title={o.label} aria-label={o.label}>
+          {o.ic}
+        </Link>
+      ))}
+    </nav>
   );
 }

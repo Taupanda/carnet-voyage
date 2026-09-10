@@ -829,7 +829,7 @@ export default function Journal() {
                   <button key={i} onClick={() => setPhotoPrincipale(url)} style={{ position: "relative", padding: 0, border: "none", cursor: "pointer", borderRadius: 8, overflow: "hidden", outline: (photoPrincipale || photos[0]) === url ? "3px solid var(--accent)" : "none" }}>
                     <img src={url} alt="" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", display: "block" }} />
                     {(photoPrincipale || photos[0]) === url && (
-                      <span style={{ position: "absolute", top: 3, right: 3, background: "var(--accent)", color: "#fff", fontSize: 9, padding: "1px 5px", borderRadius: 4, fontFamily: "Space Mono, monospace" }}>★</span>
+                      <span style={{ position: "absolute", top: 3, right: 3, background: "var(--accent)", color: "#fff", fontSize: 9, padding: "1px 5px", borderRadius: 4, fontFamily: "var(--police)" }}>★</span>
                     )}
                   </button>
                 ))}
@@ -1071,7 +1071,7 @@ function NoteScale({ label, value, onChange }) {
               border: "1.5px solid " + (n <= value ? "var(--accent)" : "var(--line2)"),
               background: n <= value ? "var(--accent)" : "var(--card)",
               color: n <= value ? "#fff" : "var(--muted)",
-              fontFamily: "Space Mono, monospace", fontSize: 15, fontWeight: 700,
+              fontFamily: "var(--police)", fontSize: 15, fontWeight: 700,
             }}
           >
             {n}
