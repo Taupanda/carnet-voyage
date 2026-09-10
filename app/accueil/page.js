@@ -94,25 +94,6 @@ function AccueilBody() {
 
       <Meteo lieu={etat?.lieu} />
 
-      <Link href="/journal" className={"ac-raconter" + (aRaconter ? " du" : "")}>
-        <span className="ac-raconter-ic">{etat?.postDuJour === "published" ? "✓" : "✏️"}</span>
-        <span className="ac-raconter-corps">
-          <b>Raconter ma journée</b>
-          <span>
-            {!etat
-              ? "…"
-              : etat.postDuJour === "published"
-              ? "Journée publiée"
-              : etat.postDuJour === "draft"
-              ? "Brouillon en attente"
-              : notes.length > 0
-              ? `${notes.length} note${notes.length > 1 ? "s" : ""} t'attendent`
-              : "Rien d'écrit aujourd'hui"}
-          </span>
-        </span>
-        <span className="ac-raconter-fleche">→</span>
-      </Link>
-
       <div className="ac-capture">
         <NoteRapide jour={jour} notes={notes} onFait={charger} />
         <DepenseRapide jour={jour} onFait={charger} />
