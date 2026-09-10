@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import PhotoPicker from "./PhotoPicker";
 
 async function api(path, opts = {}) {
   const { data } = await supabaseBrowser().auth.getSession();
@@ -22,7 +23,6 @@ export default function RencontresManager({ onClose }) {
   const [editing, setEditing] = useState(null); // objet en cours d'édition, ou null
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
-  const fileRef = useRef(null);
 
   async function load() {
     const res = await api("/api/rencontres");
@@ -100,10 +100,7 @@ export default function RencontresManager({ onClose }) {
             ) : (
               <span className="avatar avatar-fallback" style={{ width: 64, height: 64, fontSize: 26 }}>{(editing.prenom || "?")[0]?.toUpperCase()}</span>
             )}
-            <button className="btn-secondary" style={{ padding: "9px 14px", fontSize: 13 }} onClick={() => fileRef.current?.click()} disabled={busy}>
-              {editing.photo_url ? "Changer la photo" : "Ajouter une photo"}
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" hidden onChange={uploadPhoto} />
+            <PhotoPicker onFiles={uploadPhoto} busy={busy} />
           </div>
 
           <div style={{ display: "flex", gap: 8 }}>

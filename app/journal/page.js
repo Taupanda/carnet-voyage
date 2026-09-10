@@ -8,6 +8,7 @@ import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
 import { dayNumberOf, todayLocal, afficheJour } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
+import PhotoPicker from "./PhotoPicker";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
@@ -91,6 +92,7 @@ export default function Journal() {
   const [quickRenc, setQuickRenc] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [notesJour, setNotesJour] = useState([]); // le calepin de la journée choisie
+  const [envoiPhotos, setEnvoiPhotos] = useState(0); // photos en cours d'envoi
   const recognitionRef = useRef(null);
   const wantRecRef = useRef(false);
   const baseTextRef = useRef("");     // texte acquis avant la session en cours
@@ -98,7 +100,6 @@ export default function Journal() {
   const recActiveRef = useRef(false); // une session tourne-t-elle déjà ?
   const wakeLockRef = useRef(null);
   const scrollRef = useRef(null);
-  const fileRef = useRef(null);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -271,6 +272,8 @@ export default function Journal() {
   async function handlePhotos(e) {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
+    if (!files.length) return;
+    setEnvoiPhotos((n) => n + files.length);
     for (const f of files) {
       const c = await compressImage(f);
       const fd = new FormData();
@@ -283,8 +286,15 @@ export default function Journal() {
         setPhotos((p) => [...p, url]);
       } catch (err) {
         setError("Échec de l'envoi d'une photo — réessaie.");
+      } finally {
+        setEnvoiPhotos((n) => Math.max(0, n - 1));
       }
     }
+  }
+
+  function retirerPhoto(url) {
+    setPhotos((p) => p.filter((x) => x !== url));
+    setPhotoPrincipale((pp) => (pp === url ? null : pp));
   }
 
   // ---- Dictée vocale robuste ----
@@ -721,8 +731,7 @@ export default function Journal() {
           </div>
           {error && <p className="error" style={{ margin: "0 12px 8px" }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid var(--line)", background: "var(--bg2)" }}>
-            <button className="btn-secondary" style={{ padding: 10, width: 42 }} onClick={() => fileRef.current?.click()} aria-label="Photos">📷</button>
-            <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={handlePhotos} />
+            <PhotoPicker onFiles={handlePhotos} busy={envoiPhotos > 0} compact />
             <button
               className="btn-secondary"
               style={{ padding: 10, width: 42, ...(recording ? { background: "var(--pink)", borderColor: "var(--pink)" } : {}) }}
@@ -806,6 +815,12 @@ export default function Journal() {
             )}
           </div>
 
+          <div>
+            <label className="lbl">Photos de la journée</label>
+            <PhotoPicker onFiles={handlePhotos} busy={envoiPhotos > 0} />
+            {envoiPhotos > 0 && <p className="photo-envoi">Envoi de {envoiPhotos} photo{envoiPhotos > 1 ? "s" : ""}…</p>}
+          </div>
+
           {photos.length > 0 && (
             <div>
               <label className="lbl">Photo principale (en tête du post)</label>
@@ -840,7 +855,7 @@ export default function Journal() {
               <ul>{notesJour.map((n) => <li key={n.id}>{n.texte}</li>)}</ul>
             </details>
           )}
-          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} photoPrincipale={photoPrincipale} setPhotoPrincipale={setPhotoPrincipale} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
+          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} photoPrincipale={photoPrincipale} setPhotoPrincipale={setPhotoPrincipale} onAjouterPhotos={handlePhotos} onRetirerPhoto={retirerPhoto} envoiPhotos={envoiPhotos} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
           {error && <p className="error">{error}</p>}
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => saveEntry("draft")} disabled={loading}>Brouillon</button>
@@ -873,7 +888,7 @@ export default function Journal() {
 // Toutes les sections sont éditables, que le post vienne de l'IA ou d'une saisie
 // manuelle. Auparavant un champ laissé vide par l'IA n'était même pas affiché :
 // impossible d'ajouter après coup une anecdote qu'elle n'avait pas relevée.
-function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, setPhotoPrincipale, reflexionPrivee, setReflexionPrivee }) {
+function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, setPhotoPrincipale, onAjouterPhotos, onRetirerPhoto, envoiPhotos = 0, reflexionPrivee, setReflexionPrivee }) {
   const recit = Array.isArray(post.recit) ? post.recit : [];
   const upd = (field, value) => setPost((p) => ({ ...p, [field]: value }));
   const updRecit = (i, k, v) => upd("recit", recit.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
@@ -923,20 +938,33 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
         <div className="map-banner">📍 {post.lieux?.[0]} · {post.coords.lat.toFixed(2)}, {post.coords.lng.toFixed(2)} <span style={{ marginLeft: "auto", fontSize: 10.5, fontStyle: "italic", color: "var(--muted)" }}>carte interactive à venir</span></div>
       )}
 
-      {photos.length > 0 && setPhotoPrincipale && (
+      {setPhotoPrincipale && (
         <div className="section">
-          <div className="section-head">Photo principale — en tête du post</div>
-          <div className="photo-pick">
-            {photos.map((url, i) => {
-              const active = (photoPrincipale || photos[0]) === url;
-              return (
-                <button key={i} type="button" className={"photo-pick-item" + (active ? " on" : "")} onClick={() => setPhotoPrincipale(url)} aria-pressed={active}>
-                  <img src={url} alt={`Photo ${i + 1}`} />
-                  {active && <span className="photo-pick-flag">✓</span>}
-                </button>
-              );
-            })}
+          <div className="section-head">
+            Photos {photos.length > 0 && "— clique celle qui ouvre le post"}
           </div>
+          {onAjouterPhotos && <PhotoPicker onFiles={onAjouterPhotos} busy={envoiPhotos > 0} />}
+          {envoiPhotos > 0 && <p className="photo-envoi">Envoi de {envoiPhotos} photo{envoiPhotos > 1 ? "s" : ""}…</p>}
+          {photos.length === 0 ? (
+            <p className="photo-vide">Aucune photo pour l'instant.</p>
+          ) : (
+            <div className="photo-pick">
+              {photos.map((url, i) => {
+                const active = (photoPrincipale || photos[0]) === url;
+                return (
+                  <div key={i} className={"photo-pick-item" + (active ? " on" : "")}>
+                    <button type="button" className="photo-pick-choix" onClick={() => setPhotoPrincipale(url)} aria-pressed={active} aria-label={`Mettre la photo ${i + 1} en tête`}>
+                      <img src={url} alt={`Photo ${i + 1}`} />
+                    </button>
+                    {active && <span className="photo-pick-flag">✓</span>}
+                    {onRetirerPhoto && (
+                      <button type="button" className="photo-pick-retirer" onClick={() => onRetirerPhoto(url)} aria-label={`Retirer la photo ${i + 1}`}>✕</button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

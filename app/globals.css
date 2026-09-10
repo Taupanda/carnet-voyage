@@ -877,3 +877,14 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .notes-rappel summary { cursor: pointer; font-family: "Space Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); }
 .notes-rappel ul { margin: 9px 0 0; padding-left: 17px; display: flex; flex-direction: column; gap: 5px; }
 .notes-rappel li { color: var(--ink2); line-height: 1.45; }
+
+/* ---- Choix des photos : galerie ou appareil, jamais le gestionnaire de fichiers ---- */
+.photo-choix { display: flex; gap: 8px; }
+.photo-choix.compact { gap: 6px; }
+.photo-btn { padding: 9px 15px; font-size: 13.5px; }
+.photo-btn-compact { padding: 10px; width: 42px; text-align: center; }
+.photo-envoi { font-family: "Space Mono", monospace; font-size: 11px; color: var(--accent); margin: 8px 0 0; }
+.photo-vide { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.photo-pick-choix { display: block; width: 100%; height: 100%; padding: 0; border: none; background: none; cursor: pointer; }
+.photo-pick-retirer { position: absolute; top: 4px; left: 4px; width: 21px; height: 21px; border-radius: 50%; border: none; background: rgba(20,16,12,0.62); color: #fff; font-size: 11px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.photo-pick-retirer:hover { background: #C2453A; }
