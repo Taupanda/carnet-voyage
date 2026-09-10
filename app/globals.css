@@ -837,3 +837,23 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
   .post-header { flex-direction: column; align-items: stretch; gap: 12px; }
   .post-moods { align-self: flex-start; }
 }
+
+/* ---- Modération ---- */
+.mod-avis { font-size: 12.5px; color: var(--ink2); background: var(--accent-soft); border-left: 2px solid var(--accent); padding: 10px 13px; border-radius: 0 8px 8px 0; margin-bottom: 14px; }
+.mod-membre, .mod-contenu { display: flex; gap: 12px; align-items: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; margin-bottom: 8px; }
+.mod-membre.bloque { border-color: #C2453A; background: rgba(194,69,58,0.05); }
+.mod-membre-corps, .mod-contenu-corps { flex: 1; min-width: 0; }
+.mod-membre-nom { font-weight: 700; font-size: 14.5px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.mod-meta { font-family: "Space Mono", monospace; font-size: 10.5px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.mod-meta b { font-family: "Figtree", system-ui, sans-serif; font-size: 12.5px; color: var(--ink); }
+.mod-texte { font-size: 14px; color: var(--ink2); margin: 6px 0 0; line-height: 1.5; overflow-wrap: anywhere; }
+.mod-tag { font-family: "Space Mono", monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.07em; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line2); color: var(--muted); }
+.mod-tag.public { border-color: var(--accent); color: var(--accent); }
+.mod-tag.bloque { border-color: #C2453A; color: #C2453A; }
+.mod-actions { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; align-items: stretch; }
+.mod-btn { padding: 6px 11px; font-size: 12px; white-space: nowrap; }
+@media (max-width: 560px) {
+  .mod-membre, .mod-contenu { flex-wrap: wrap; }
+  .mod-actions { flex-direction: row; width: 100%; }
+  .mod-actions .mod-btn { flex: 1; }
+}

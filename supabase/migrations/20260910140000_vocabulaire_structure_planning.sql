@@ -60,3 +60,23 @@ create table if not exists public.plan_jours (
 alter table public.plan_jours enable row level security;
 -- (aucune policy : accès via service_role uniquement)
 create index if not exists plan_jours_date_idx on public.plan_jours (date);
+
+-- ============ Modération des membres ============
+-- Bloquer quelqu'un doit l'empêcher d'écrire, pas seulement le masquer dans une
+-- liste : le blocage est donc appliqué par la base, pas par l'interface.
+alter table public.profiles add column if not exists bloque boolean not null default false;
+
+-- Policies RESTRICTIVES : elles s'ajoutent aux policies d'écriture existantes
+-- sans avoir à les connaître ni à les modifier. Une policy permissive autorise,
+-- une restrictive impose une condition supplémentaire à toutes les autres.
+drop policy if exists "compte non bloque" on public.comments;
+create policy "compte non bloque" on public.comments as restrictive for insert
+  with check (not exists (select 1 from public.profiles p where p.id = auth.uid() and p.bloque));
+
+drop policy if exists "compte non bloque" on public.messages;
+create policy "compte non bloque" on public.messages as restrictive for insert
+  with check (not exists (select 1 from public.profiles p where p.id = auth.uid() and p.bloque));
+
+drop policy if exists "compte non bloque" on public.recos;
+create policy "compte non bloque" on public.recos as restrictive for insert
+  with check (not exists (select 1 from public.profiles p where p.id = auth.uid() and p.bloque));
