@@ -1026,3 +1026,11 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .anecdote-item + .anecdote-item { margin-top: 10px; padding-top: 10px; border-top: 1px dotted var(--line2); }
 .anecdote-champ { display: flex; gap: 6px; align-items: flex-start; }
 .anecdote-champ textarea { flex: 1; }
+
+/* ---- Menu : quatre sections nommées au lieu d'un damier ---- */
+.atelier-bloc { margin-bottom: 26px; }
+.atelier-bloc-tete { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.atelier-bloc-tete h2 { font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; margin: 0; }
+.atelier-bloc-tete span { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.atelier-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.app-tile.on { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); }

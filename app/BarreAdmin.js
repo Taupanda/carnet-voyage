@@ -6,13 +6,14 @@ import { useMode } from "./ModeProvider";
 import { supabaseBrowser } from "../lib/supabaseClient";
 import { todayLocal } from "../lib/stages";
 
-// Les quatre gestes du quotidien. Tout le reste vit dans le Menu : ici on ne
+// Les gestes du quotidien, plus l'accès au Menu qui indexe tout le reste. Tout le reste vit dans le Menu : ici on ne
 // met que ce qui se fait plusieurs fois par jour, ou debout dans une rue.
 const GESTES = [
   { href: "/notes", label: "Noter", ic: "📝" },
   { href: "/journal", label: "Raconter", ic: "✏️", pastille: true },
   { href: "/planning", label: "Planning", ic: "🗓️" },
   { href: "/convertisseur", label: "Change", ic: "💱" },
+  { href: "/atelier", label: "Menu", ic: "🧰" },
 ];
 
 export default function BarreAdmin() {

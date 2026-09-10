@@ -48,22 +48,22 @@ export default function Nav() {
         <div className="topbar-inner">
           <Link href="/" className="topbar-brand" onClick={() => setOpen(false)}><img src="/logo-terracota.png" alt="Les aventures de Maxou" className="topbar-logo" /></Link>
           <AuthBar />
-          <button className="nav-burger" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}>
-            {open ? "✕" : "☰"}
-          </button>
+          {/* L'auteur a la barre des gestes et le Menu : le déroulant ne lui
+              servirait qu'à refaire le même chemin. Les visiteurs le gardent,
+              c'est leur seule navigation sur téléphone. */}
+          {!adminView && (
+            <button className="nav-burger" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}>
+              {open ? "✕" : "☰"}
+            </button>
+          )}
         </div>
-        {open && (
+        {open && !adminView && (
           <div className="nav-mobile">
             {LINKS.map((l) => (
               <Link key={l.href} href={l.href} className={"nav-mobile-link" + (path === l.href ? " active" : "")} onClick={() => setOpen(false)}>
                 {l.ic} {l.label}
               </Link>
             ))}
-            {adminView && (
-              <Link href="/atelier" className={"nav-mobile-link" + (path === "/atelier" ? " active" : "")} style={path === "/atelier" ? undefined : { color: "var(--accent)" }} onClick={() => setOpen(false)}>
-                🧰 Menu
-              </Link>
-            )}
           </div>
         )}
       </div>
