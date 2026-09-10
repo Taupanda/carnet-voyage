@@ -1021,3 +1021,8 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
      Sans :has(), le pire cas est le dernier bloc partiellement masqué. */
   .shell-main:has(.barre-admin) { padding-bottom: 64px; }
 }
+
+/* Plusieurs anecdotes dans un même bloc : chacune se détache de la suivante. */
+.anecdote-item + .anecdote-item { margin-top: 10px; padding-top: 10px; border-top: 1px dotted var(--line2); }
+.anecdote-champ { display: flex; gap: 6px; align-items: flex-start; }
+.anecdote-champ textarea { flex: 1; }

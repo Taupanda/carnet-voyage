@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "../../lib/server";
-import { STAGES, stageForDate, afficheJour } from "../../lib/stages";
+import { STAGES, stageForDate, afficheJour, decoupeAnecdotes } from "../../lib/stages";
 import PrintButton from "./PrintButton";
 
 export const revalidate = 300;
@@ -83,7 +83,12 @@ export default async function Livre() {
                       ))}
                     </div>
                   )}
-                  {e.anecdote && <div className="book-block"><div className="block-head">L'anecdote</div><p>{e.anecdote}</p></div>}
+                  {decoupeAnecdotes(e.anecdote).length > 0 && (
+                    <div className="book-block">
+                      <div className="block-head">{decoupeAnecdotes(e.anecdote).length > 1 ? "Les anecdotes" : "L'anecdote"}</div>
+                      {decoupeAnecdotes(e.anecdote).map((a, i) => <p key={i} className="anecdote-item">{a}</p>)}
+                    </div>
+                  )}
                   {e.adresse && <div className="book-block"><div className="block-head">Bonne adresse</div><p>{e.adresse}</p></div>}
                   {e.reflexion && <div className="book-block quote"><div className="block-head">Ce que je garde</div><p>{e.reflexion}</p></div>}
                 </div>

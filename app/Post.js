@@ -1,7 +1,7 @@
 import PhotoGridV2 from "./PhotoGridV2";
 import PostSocial from "./PostSocial";
 import PostAdmin from "./PostAdmin";
-import { stageForDate, afficheJour } from "../lib/stages";
+import { stageForDate, afficheJour, decoupeAnecdotes } from "../lib/stages";
 import { meteoInfo } from "../lib/weather";
 
 const NOTES = [
@@ -25,6 +25,7 @@ export default function Post({ e }) {
   const stage = stageForDate(e.date);
   const c = stage?.couleur || "#BC5B2E";
   const recit = Array.isArray(e.recit) ? e.recit : [];
+  const anecdotes = decoupeAnecdotes(e.anecdote);
   const dateLabel = new Date(e.date + "T00:00:00").toLocaleDateString("fr-FR", {
     weekday: "long", day: "numeric", month: "long",
   });
@@ -65,10 +66,10 @@ export default function Post({ e }) {
             </div>
           )}
 
-          {e.anecdote && (
+          {anecdotes.length > 0 && (
             <div className="block framed">
-              <div className="block-head">L'anecdote</div>
-              <p>{e.anecdote}</p>
+              <div className="block-head">{anecdotes.length > 1 ? "Les anecdotes" : "L'anecdote"}</div>
+              {anecdotes.map((a, i) => <p key={i} className="anecdote-item">{a}</p>)}
             </div>
           )}
           {e.adresse && (

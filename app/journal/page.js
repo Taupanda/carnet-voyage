@@ -6,7 +6,7 @@ import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
-import { dayNumberOf, todayLocal, afficheJour } from "../../lib/stages";
+import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 import PhotoPicker from "./PhotoPicker";
 
@@ -896,6 +896,14 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
   const delRecit = (i) => upd("recit", recit.filter((_, j) => j !== i));
   // L'ordre des moments est celui du récit : il doit pouvoir être remis d'aplomb
   // quand l'IA n'a pas suivi le fil de la journée.
+  // Les anecdotes vivent dans une seule chaîne, une par ligne : l'éditeur les
+  // manipule comme une liste et les recolle au moment d'enregistrer.
+  const anecdotes = decoupeAnecdotes(post.anecdote);
+  const majAnecdotes = (liste) => upd("anecdote", colleAnecdotes(liste));
+  const updAnecdote = (i, v) => majAnecdotes(anecdotes.map((a, j) => (j === i ? v : a)));
+  const addAnecdote = () => upd("anecdote", (post.anecdote || "").replace(/\s+$/, "") + (post.anecdote?.trim() ? "\n" : "") + " ");
+  const delAnecdote = (i) => majAnecdotes(anecdotes.filter((_, j) => j !== i));
+
   const moveRecit = (i, delta) => {
     const j = i + delta;
     if (j < 0 || j >= recit.length) return;
@@ -1000,7 +1008,39 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
       </div>
 
 
-      <div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>
+      <div className="section box-anecdote">
+        <div className="section-head">
+          {anecdotes.length > 1 ? `Les anecdotes (${anecdotes.length})` : "L'anecdote"}
+        </div>
+        {anecdotes.length === 0 ? (
+          <textarea
+            className="input"
+            style={{ fontSize: 14, lineHeight: 1.5, resize: "vertical" }}
+            rows={2}
+            value=""
+            placeholder="Une histoire à retenir de la journée…"
+            onChange={(e) => upd("anecdote", e.target.value)}
+          />
+        ) : (
+          anecdotes.map((a, i) => (
+            <div key={i} className="anecdote-champ">
+              <textarea
+                className="input"
+                style={{ fontSize: 14, lineHeight: 1.5, resize: "vertical" }}
+                rows={Math.max(2, Math.ceil(a.length / 45))}
+                value={a}
+                onChange={(e) => updAnecdote(i, e.target.value)}
+              />
+              {anecdotes.length > 1 && (
+                <button className="cmt-del" onClick={() => delAnecdote(i)} aria-label={`Retirer l'anecdote ${i + 1}`}>✕</button>
+              )}
+            </div>
+          ))
+        )}
+        <button className="btn-secondary" style={{ padding: "7px 13px", fontSize: 12.5, alignSelf: "flex-start" }} onClick={addAnecdote}>
+          + Une autre anecdote
+        </button>
+      </div>
       <div className="section box-reflexion"><div className="section-head">Ce que je garde</div>{ta("reflexion", post.reflexion)}</div>
 
       {setReflexionPrivee && (

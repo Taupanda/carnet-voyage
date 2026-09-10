@@ -22,7 +22,8 @@ NE RIEN DIRE DEUX FOIS — chaque fait n'apparaît qu'à UN endroit
 - Avant d'écrire, décide pour chaque élément raconté où il sera noté, et nulle part ailleurs. Un fait déjà présent dans un moment ne revient ni dans l'ouverture, ni dans l'anecdote.
 - L'ouverture SITUE la journée (d'où il part, ce qui l'occupe, où il atterrit). Elle ne résume pas les moments et n'en annonce pas le contenu.
 - Si un élément pourrait aller à deux endroits, garde-le au plus précis : l'anecdote plutôt qu'un moment, la bonne adresse plutôt qu'un moment, un moment plutôt que l'ouverture.
-- Les champs anecdote, adresse et réflexion sont des emplacements RÉSERVÉS : ce qui y va en sort du récit.
+- Les champs anecdotes, adresse et réflexion sont des emplacements RÉSERVÉS : ce qui y va en sort du récit.
+- Une journée peut porter PLUSIEURS anecdotes. Ne les fonds jamais en un seul bloc : une entrée par histoire distincte, et une seule entrée quand il n'y en a qu'une.
 
 STRUCTURE — c'est une page de carnet, pas une liste de tâches
 1. "ouverture" : 2 à 4 phrases de prose continue qui posent la journée et son mouvement d'ensemble — d'où il part, ce qui a occupé la journée, où il atterrit. Jamais de puces ici. C'est ce qui donne au lecteur le fil de la journée avant le détail.
@@ -43,7 +44,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sous cette forme exacte :
  "ouverture": "2 à 4 phrases de prose à la première personne",
  "recit": [{"activite": "le titre du moment en 2-5 mots", "detail": "2 à 4 phrases de prose continue à la première personne"}],
  "rencontres": "paragraphe court à la première personne sur les rencontres, ou null si rien",
- "anecdote": "l'anecdote restituée fidèlement à la première personne, ou null si rien",
+ "anecdotes": ["chaque anecdote restituée fidèlement à la première personne — une entrée par histoire distincte, liste vide si rien"],
  "adresse": "la bonne adresse en une ligne (nom — pourquoi), ou null si rien",
  "reflexion": "sa réflexion personnelle à la première personne, dans ses mots ou au plus près, sans reformulation lyrique, ou null si rien"
 }
@@ -55,7 +56,7 @@ Pour coords, donne les coordonnées approximatives du lieu principal mentionné 
     lieu: "Lieu",
     activites: "Activités",
     rencontres: "Rencontres",
-    anecdote: "Anecdote",
+    anecdote: "Anecdotes",
     adresse: "Bonne adresse",
     reflexion: "Réflexion",
   };
@@ -84,6 +85,15 @@ Pour coords, donne les coordonnées approximatives du lieu principal mentionné 
     // tronque plutôt que de laisser réapparaître l'inventaire indifférencié.
     if (Array.isArray(parsed.recit) && parsed.recit.length > 5) {
       parsed.recit = parsed.recit.slice(0, 5);
+    }
+    // Les anecdotes reviennent en liste mais tiennent dans une colonne texte,
+    // une par ligne : pas de colonne jsonb dédiée, donc pas de migration.
+    if (Array.isArray(parsed.anecdotes)) {
+      parsed.anecdote = parsed.anecdotes
+        .map((a) => String(a || "").replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .join("\n") || null;
+      delete parsed.anecdotes;
     }
     return NextResponse.json(parsed);
   } catch (e) {
