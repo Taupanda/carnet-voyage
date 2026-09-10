@@ -167,7 +167,7 @@ export default function Journal() {
 
   function startManual() {
     setSaisieMode("manuel");
-    setPost({ titre: "", lieux: [], coords: null, ouverture: "", recit: [{ activite: "", detail: "" }], en_passant: "", rencontres: "", anecdote: "", adresse: "", reflexion: "" });
+    setPost({ titre: "", lieux: [], coords: null, ouverture: "", recit: [{ activite: "", detail: "" }], rencontres: "", anecdote: "", adresse: "", reflexion: "" });
     setError(null);
     setPhase("moods");
   }
@@ -222,7 +222,6 @@ export default function Journal() {
         coords: existing.lat ? { lat: existing.lat, lng: existing.lng } : null,
         ouverture: existing.ouverture,
         recit: existing.recit,
-        en_passant: existing.en_passant,
         rencontres: existing.rencontres,
         anecdote: existing.anecdote,
         adresse: existing.adresse,
@@ -407,7 +406,6 @@ export default function Journal() {
       lng: post.coords?.lng ?? null,
       ouverture: post.ouverture,
       recit: post.recit,
-      en_passant: post.en_passant,
       rencontres: post.rencontres,
       anecdote: post.anecdote,
       adresse: post.adresse,
@@ -528,7 +526,7 @@ export default function Journal() {
   }
 
   return (
-    <main style={{ display: "flex", flexDirection: "column", height: "100dvh", maxWidth: 560, margin: "0 auto" }}>
+    <main className={"jr-shell" + (phase === "summary" ? " jr-large" : "")}>
       <header style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderBottom: "1px solid var(--line)", background: "var(--bg2)" }}>
         <Link href="/atelier" className="mono" style={{ fontSize: 13, color: "var(--muted)", textDecoration: "none" }}>← Menu</Link>
         <div style={{ marginLeft: "auto", textAlign: "right" }}>
@@ -805,9 +803,9 @@ export default function Journal() {
       )}
 
       {phase === "summary" && post && (
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="jr-scroll">
           <p style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
-            {saisieMode === "manuel" ? "Remplis ta journée" : "Aperçu — touche un texte pour le modifier"}
+            {saisieMode === "manuel" ? "Remplis ta journée" : "Aperçu — clique un texte pour le modifier"}
           </p>
           <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} photoPrincipale={photoPrincipale} setPhotoPrincipale={setPhotoPrincipale} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
           {error && <p className="error">{error}</p>}
@@ -848,6 +846,15 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
   const updRecit = (i, k, v) => upd("recit", recit.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
   const addRecit = () => upd("recit", [...recit, { activite: "", detail: "" }]);
   const delRecit = (i) => upd("recit", recit.filter((_, j) => j !== i));
+  // L'ordre des moments est celui du récit : il doit pouvoir être remis d'aplomb
+  // quand l'IA n'a pas suivi le fil de la journée.
+  const moveRecit = (i, delta) => {
+    const j = i + delta;
+    if (j < 0 || j >= recit.length) return;
+    const copie = [...recit];
+    [copie[i], copie[j]] = [copie[j], copie[i]];
+    upd("recit", copie);
+  };
 
   const ta = (field, value, extra = {}) => (
     <textarea
@@ -883,7 +890,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
       )}
 
       {photos.length > 0 && setPhotoPrincipale && (
-        <div className="section">
+        <div className="section section-full">
           <div className="section-head">Photo principale — en tête du post</div>
           <div className="photo-pick">
             {photos.map((url, i) => {
@@ -899,18 +906,25 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
         </div>
       )}
 
-      <div className="section">
+      <div className="section section-full">
         <div className="section-head">Ouverture — le fil de la journée</div>
         {ta("ouverture", post.ouverture)}
       </div>
 
-      <div className="section">
+      <div className="section section-full">
         <div className="section-head">Les moments {recit.length > 0 && `(${recit.length}/5)`}</div>
         {recit.map((item, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <input className="input" style={{ fontWeight: 700, flex: 1 }} value={item.activite || ""} onChange={(e) => updRecit(i, "activite", e.target.value)} placeholder="Activité" />
-              {recit.length > 1 && <button className="cmt-del" onClick={() => delRecit(i)} aria-label="Retirer">✕</button>}
+              <span className="moment-rang">{i + 1}</span>
+              <input className="input" style={{ fontWeight: 700, flex: 1 }} value={item.activite || ""} onChange={(e) => updRecit(i, "activite", e.target.value)} placeholder="Titre du moment" />
+              {recit.length > 1 && (
+                <span className="moment-ordre">
+                  <button onClick={() => moveRecit(i, -1)} disabled={i === 0} aria-label={`Monter le moment ${i + 1}`} title="Monter">↑</button>
+                  <button onClick={() => moveRecit(i, 1)} disabled={i === recit.length - 1} aria-label={`Descendre le moment ${i + 1}`} title="Descendre">↓</button>
+                </span>
+              )}
+              {recit.length > 1 && <button className="cmt-del" onClick={() => delRecit(i)} aria-label={`Retirer le moment ${i + 1}`}>✕</button>}
             </div>
             <textarea className="input" style={{ fontSize: 13.5 }} rows={2} value={item.detail || ""} onChange={(e) => updRecit(i, "detail", e.target.value)} placeholder="Détail (facultatif)" />
           </div>
@@ -918,10 +932,6 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
         {recit.length < 5 && <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={addRecit}>+ Ajouter un moment</button>}
       </div>
 
-      <div className="section">
-        <div className="section-head">En passant — trajets et intendance</div>
-        {ta("en_passant", post.en_passant)}
-      </div>
 
       <div className="section"><div className="section-head">Rencontres (texte)</div>{ta("rencontres", post.rencontres)}</div>
       <div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>

@@ -10,7 +10,7 @@ export default async function Livre() {
   const db = supabaseAdmin();
   const { data } = await db
     .from("entries")
-    .select("date, day_number, titre, lieux, photos, photo_principale, ouverture, recit, en_passant, anecdote, adresse, reflexion")
+    .select("date, day_number, titre, lieux, photos, photo_principale, ouverture, recit, anecdote, adresse, reflexion")
     .eq("status", "published")
     .order("date", { ascending: true });
   const posts = data || [];
@@ -83,7 +83,6 @@ export default async function Livre() {
                       ))}
                     </div>
                   )}
-                  {e.en_passant && <p className="post-passant"><span>En passant</span>{e.en_passant}</p>}
                   {e.anecdote && <div className="book-block"><div className="block-head">L'anecdote</div><p>{e.anecdote}</p></div>}
                   {e.adresse && <div className="book-block"><div className="block-head">Bonne adresse</div><p>{e.adresse}</p></div>}
                   {e.reflexion && <div className="book-block quote"><div className="block-head">Ce que je garde</div><p>{e.reflexion}</p></div>}

@@ -12,7 +12,6 @@ export default function Profil() {
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [avatar, setAvatar] = useState(null);
-  const [adresse, setAdresse] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [msgOk, setMsgOk] = useState(false);
@@ -30,7 +29,6 @@ export default function Profil() {
       setPrenom(profile.prenom || "");
       setNom(profile.nom || "");
       setAvatar(profile.avatar_url || null);
-      setAdresse(profile.adresse || "");
     }
   }, [profile]);
 
@@ -79,7 +77,6 @@ export default function Profil() {
       prenom: prenom.trim(),
       nom: nom.trim() || null,
       avatar_url: avatar,
-      adresse: adresse.trim() || null,
     });
     setBusy(false);
     if (error) { setMsg("Échec : " + error.message); setMsgOk(false); return; }
@@ -134,12 +131,9 @@ export default function Profil() {
       <input className="input" value={prenom} onChange={(e) => setPrenom(e.target.value)} style={{ marginBottom: 14 }} />
 
       <label className="lbl">Nom</label>
-      <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} style={{ marginBottom: 14 }} />
+      <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} style={{ marginBottom: 18 }}
+        onKeyDown={(e) => e.key === "Enter" && save()} />
 
-      <label className="lbl">Adresse postale — facultatif</label>
-      <textarea className="input" rows={3} style={{ marginBottom: 18, resize: "vertical", fontSize: 14 }}
-        placeholder="Pour recevoir une carte postale en route"
-        value={adresse} onChange={(e) => setAdresse(e.target.value)} />
 
       {msg && <p className={msgOk ? "info" : "error"} style={{ marginBottom: 14 }}>{msg}</p>}
 

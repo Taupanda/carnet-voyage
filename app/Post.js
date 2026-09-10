@@ -65,10 +65,6 @@ export default function Post({ e }) {
             </div>
           )}
 
-          {e.en_passant && (
-            <p className="post-passant"><span>En passant</span>{e.en_passant}</p>
-          )}
-
           {e.anecdote && (
             <div className="block framed">
               <div className="block-head">L'anecdote</div>
