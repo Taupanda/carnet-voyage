@@ -5,7 +5,7 @@ export async function POST(request) {
   if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const { extracted, date } = await request.json();
+  const { extracted, date, notes } = await request.json();
 
   const system = `Tu transformes des notes brutes de voyage en une page de carnet de bord, en français.
 
@@ -49,6 +49,8 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sous cette forme exacte :
 }
 Pour coords, donne les coordonnées approximatives du lieu principal mentionné (ville). Si aucun lieu identifiable, mets null pour coords.`;
 
+  const calepin = Array.isArray(notes) ? notes.filter((n) => typeof n === "string" && n.trim()) : [];
+
   const FIELD_LABELS = {
     lieu: "Lieu",
     activites: "Activités",
@@ -64,9 +66,15 @@ Pour coords, donne les coordonnées approximatives du lieu principal mentionné 
       [
         {
           role: "user",
-          content: `Notes du jour (${date}) :\n${Object.keys(FIELD_LABELS)
-            .map((f) => `${FIELD_LABELS[f]}: ${extracted[f] || "rien"}`)
-            .join("\n")}`,
+          content:
+            `Notes du jour (${date}) :\n${Object.keys(FIELD_LABELS)
+              .map((f) => `${FIELD_LABELS[f]}: ${extracted[f] || "rien"}`)
+              .join("\n")}` +
+            (calepin.length
+              ? `\n\nCe qu'il avait noté sur le moment dans la journée :\n${calepin
+                  .map((n) => `- ${n}`)
+                  .join("\n")}\n(Ces notes complètent le récit ci-dessus. N'en invente pas le contexte : si l'une n'est pas expliquée plus haut, restitue-la telle quelle, sans la développer.)`
+              : ""),
         },
       ],
       2000 // la prose demande plus de place que les puces télégraphiques

@@ -4,6 +4,7 @@ import AdminGate from "../AdminGate";
 
 const APPS = [
   { href: "/journal", label: "Journal", ic: "✏️", c: "#BC5B2E" },
+  { href: "/notes", label: "Calepin", ic: "📝", c: "#C4703A" },
   { href: "/budget", label: "Budget", ic: "💰", c: "#5C6B4C" },
   { href: "/workout", label: "Workout", ic: "💪", c: "#C99A3B" },
   { href: "/convertisseur", label: "Change", ic: "💱", c: "#3F8CA5" },

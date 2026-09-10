@@ -90,6 +90,7 @@ export default function Journal() {
   const [linkedRencontres, setLinkedRencontres] = useState([]);
   const [quickRenc, setQuickRenc] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [notesJour, setNotesJour] = useState([]); // le calepin de la journée choisie
   const recognitionRef = useRef(null);
   const wantRecRef = useRef(false);
   const baseTextRef = useRef("");     // texte acquis avant la session en cours
@@ -216,6 +217,7 @@ export default function Journal() {
       setReflexionPrivee(!!existing.reflexion_privee);
       setPhotos(existing.photos || []);
       loadLinkedRencontres(d);
+      loadNotes(d);
       setPost({
         titre: existing.titre,
         lieux: existing.lieux,
@@ -230,6 +232,7 @@ export default function Journal() {
       setPhase("summary");
     } else {
       // nouvelle journée : on réinitialise et on demande le mode de saisie
+      loadNotes(d);
       setExtracted(emptyExtracted());
       setMessages([]);
       setPhotos([]);
@@ -249,7 +252,7 @@ export default function Journal() {
     setMessages(newMessages);
     setLoading(true);
     try {
-      const res = await api("/api/interview", { method: "POST", body: JSON.stringify({ history: newMessages, extracted, photoCount: photos.length }) });
+      const res = await api("/api/interview", { method: "POST", body: JSON.stringify({ history: newMessages, extracted, photoCount: photos.length, notes: notesJour.map((n) => n.texte) }) });
       if (!res.ok) throw new Error("api");
       const parsed = await res.json();
       setExtracted((prev) => ({ ...prev, ...parsed.extracted }));
@@ -383,7 +386,7 @@ export default function Journal() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date }) });
+      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date, notes: notesJour.map((n) => n.texte) }) });
       if (!res.ok) throw new Error("api");
       setPost(await res.json());
       setPhase("summary");
@@ -440,12 +443,28 @@ export default function Journal() {
         });
       } catch {}
       setEntries((es) => [saved, ...es.filter((x) => x.date !== date)].sort((a, b) => (a.date < b.date ? 1 : -1)));
+      marquerNotesUtilisees(date);
       setPhase("saved");
     } catch (e) {
       setError("Échec de l'enregistrement : " + e.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadNotes(d) {
+    try {
+      const res = await api(`/api/notes?date=${d}`);
+      setNotesJour(res.ok ? await res.json() : []);
+    } catch { setNotesJour([]); }
+  }
+
+  // Les notes ayant servi à écrire le post sont barrées dans le calepin : ce qui
+  // reste debout est ce qui n'a pas été raconté.
+  async function marquerNotesUtilisees(d) {
+    try {
+      await api("/api/notes", { method: "PATCH", body: JSON.stringify({ date: d, utilisee: true }) });
+    } catch {}
   }
 
   async function deleteEntry() {
@@ -548,6 +567,7 @@ export default function Journal() {
           {error && <p className="error">{error}</p>}
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Link href="/notes" className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13, textDecoration: "none" }}>📝 Calepin</Link>
             <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => setShowRencontres(true)}>🤝 Rencontres</button>
             <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={() => setShowComments(true)}>💬 Commentaires{comments.length > 0 ? ` (${comments.length})` : ""}</button>
             <button className="btn-secondary" style={{ padding: "8px 12px", fontSize: 13 }} onClick={exportData} disabled={exporting}>{exporting ? "…" : "⬇️ Export"}</button>
@@ -560,6 +580,13 @@ export default function Journal() {
             <PushButton role="admin" label="Activer mes rappels" labelDone="Rappels activés ✓" />
           </div>
         </div>
+      )}
+
+      {phase === "chat" && notesJour.length > 0 && (
+        <details className="notes-rappel">
+          <summary>📝 {notesJour.length} note{notesJour.length > 1 ? "s" : ""} de la journée</summary>
+          <ul>{notesJour.map((n) => <li key={n.id}>{n.texte}</li>)}</ul>
+        </details>
       )}
 
       {phase === "choose" && (
@@ -807,6 +834,12 @@ export default function Journal() {
           <p style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
             {saisieMode === "manuel" ? "Remplis ta journée" : "Aperçu — clique un texte pour le modifier"}
           </p>
+          {notesJour.length > 0 && (
+            <details className="notes-rappel" open={saisieMode === "manuel"}>
+              <summary>📝 {notesJour.length} note{notesJour.length > 1 ? "s" : ""} de la journée — rien d'oublié ?</summary>
+              <ul>{notesJour.map((n) => <li key={n.id}>{n.texte}</li>)}</ul>
+            </details>
+          )}
           <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} photoPrincipale={photoPrincipale} setPhotoPrincipale={setPhotoPrincipale} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
           {error && <p className="error">{error}</p>}
           <div style={{ display: "flex", gap: 10 }}>

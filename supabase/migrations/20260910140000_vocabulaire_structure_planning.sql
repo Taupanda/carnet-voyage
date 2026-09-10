@@ -80,3 +80,22 @@ create policy "compte non bloque" on public.messages as restrictive for insert
 drop policy if exists "compte non bloque" on public.recos;
 create policy "compte non bloque" on public.recos as restrictive for insert
   with check (not exists (select 1 from public.profiles p where p.id = auth.uid() and p.bloque));
+
+-- ============ Notes du jour (admin) ============
+-- Le calepin de la journée : ce qu'on jette en trois secondes sur le moment,
+-- avant d'écrire le post le soir. Sans lui, tout repose sur la mémoire de fin
+-- de journée — et c'est ce qui se perd en premier.
+create table if not exists public.notes_jour (
+  id         uuid primary key default gen_random_uuid(),
+  date       date not null,
+  texte      text not null,
+  -- passée à true quand la note a servi à écrire le post : ce qui reste à false
+  -- signale ce qui a été oublié en route.
+  utilisee   boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.notes_jour enable row level security;
+-- (aucune policy : accès via service_role uniquement)
+
+create index if not exists notes_jour_date_idx on public.notes_jour (date, created_at);

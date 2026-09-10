@@ -5,7 +5,19 @@ export async function POST(request) {
   if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const { history, extracted, photoCount } = await request.json();
+  const { history, extracted, photoCount, notes } = await request.json();
+
+  // Le calepin de la journée : ce qu'il a noté sur le moment. C'est la matière
+  // la plus fiable — elle n'a pas subi l'oubli de fin de journée.
+  const calepin = Array.isArray(notes) ? notes.filter((n) => typeof n === "string" && n.trim()) : [];
+  const blocNotes = calepin.length
+    ? `
+
+SES NOTES DE LA JOURNÉE — prises sur le moment, à ne pas perdre :
+${calepin.map((n) => `- ${n}`).join("\n")}
+
+Ces notes sont ton point de départ. Ouvre l'interview en t'appuyant dessus plutôt que par une question générale, et assure-toi qu'AUCUNE n'est oubliée : si l'une n'a pas été abordée en fin d'interview, demande-lui-en des détails avant de conclure. Elles sont des rappels, pas des citations : c'est lui qui raconte, tu ne les recopies pas dans les champs extraits sans qu'il en ait parlé.`
+    : "";
 
   const system = `Tu mènes une interview du soir, chaleureuse et décontractée, en français, pour aider un voyageur (un homme) à raconter sa journée de voyage au Mexique/Amérique centrale. Il parle librement, dans le désordre.
 
@@ -17,7 +29,7 @@ Les champs à couvrir, dans cet ordre de priorité si plusieurs manquent : lieu,
 - Ne redemande jamais un élément déjà noté dans un autre champ, et ne le recopie pas d'un champ à l'autre.
 - Consigne ses PROPRES MOTS dans les champs extraits, sans les reformuler ni les enjoliver : c'est cette matière qui sera mise en forme ensuite.
 - PHOTOS : il a actuellement ${photoCount} photo(s) jointe(s). Si c'est 0 et que le champ "photos" n'est pas encore rempli, demande-lui une fois (au moment opportun, pas en premier) d'ajouter des photos via le bouton appareil photo, et note "demandé" puis "fait" ou "rien" selon sa réponse. S'il y a déjà au moins 1 photo, mets directement "fait" dans photos sans poser la question.
-- État actuel des champs extraits : ${JSON.stringify(extracted)}
+- État actuel des champs extraits : ${JSON.stringify(extracted)}${blocNotes}
 
 Quand TOUS les champs (y compris photos) valent soit une vraie valeur, soit "rien", soit "fait", passe done à true avec une phrase de clôture chaleureuse annonçant qu'il reste juste quelques petites notes rapides.
 
