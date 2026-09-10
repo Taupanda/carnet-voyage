@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { useAuth } from "../AuthProvider";
 import { todayLocal } from "../../lib/stages";
 import { meteoInfo, fetchMeteoJour } from "../../lib/weather";
 import { derniersOutils } from "../../lib/outils";
@@ -50,7 +49,6 @@ export default function Accueil() {
 }
 
 function AccueilBody() {
-  const { profile } = useAuth();
   const jour = todayLocal();
   const [etat, setEtat] = useState(null);
   const [err, setErr] = useState(null);
@@ -62,34 +60,11 @@ function AccueilBody() {
   }
   useEffect(() => { charger(); }, []);
 
-  const dateCourte = new Date(jour + "T00:00:00").toLocaleDateString("fr-FR", {
-    weekday: "long", day: "numeric", month: "long",
-  });
 
   const notes = etat?.notes || [];
 
   return (
     <main className="container ac-page" style={{ maxWidth: 620 }}>
-      <div className="ac-tete">
-        <span className="ac-profil">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" />
-          ) : (
-            <span className="ac-profil-init">{(profile?.prenom || "M")[0].toUpperCase()}</span>
-          )}
-          {/* La cloche se pose sur la photo : discrète, mais toujours au même
-              endroit — et elle ne s'allume que quand quelque chose est arrivé. */}
-          <Link
-            href="/moderation"
-            className={"ac-cloche" + (etat && etat.motsNonLus > 0 ? " du" : "")}
-            aria-label={etat && etat.motsNonLus > 0 ? `${etat.motsNonLus} message(s) non lu(s)` : "Notifications"}
-          >
-            🔔
-          </Link>
-        </span>
-        <span className="ac-jourdate">{dateCourte}</span>
-      </div>
-
       {err && <p className="error" style={{ marginBottom: 12 }}>{err}</p>}
 
       <Meteo lieu={etat?.lieu} />

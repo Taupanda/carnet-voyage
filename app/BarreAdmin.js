@@ -47,7 +47,15 @@ export default function BarreAdmin() {
     <nav className="barre-admin" aria-label="Navigation">
       {ONGLETS.slice(0, 2).map((o) => (
         <Link key={o.href} href={o.href} className={"barre-geste" + (actif(o) ? " on" : "")}>
-          <span className="barre-ic">{o.ic}</span>
+          <span className="barre-ic">
+            {o.ic}
+            {/* La journée pas encore écrite se signale ici plutôt que sur le
+                bouton d'ajout : une pastille collée au cercle le faisait
+                paraître de travers. */}
+            {o.href === "/journal" && journeeManquante && (
+              <span className="barre-pastille" aria-hidden="true" />
+            )}
+          </span>
           <span className="barre-label">{o.label}</span>
         </Link>
       ))}
@@ -60,7 +68,6 @@ export default function BarreAdmin() {
         aria-label={journeeManquante ? "Raconter ma journée — pas encore écrite" : "Raconter ma journée"}
       >
         +
-        {journeeManquante && <span className="barre-fab-point" aria-hidden="true" />}
       </Link>
 
       {ONGLETS.slice(2).map((o) => (

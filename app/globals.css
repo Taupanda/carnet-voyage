@@ -258,6 +258,19 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 /* ============ social ============ */
 .avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line2); flex-shrink: 0; display: block; }
 .avatar-fallback { display: flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; font-weight: 700; font-size: 13px; border: none; }
+/* La cloche se pose en haut à gauche de la photo : discrète tant que rien
+   n'est arrivé, allumée dès qu'un mot, un conseil ou un commentaire attend. */
+.avatar-porte { position: relative; display: flex; flex-shrink: 0; }
+.avatar-cloche { position: absolute; top: -4px; left: -6px; width: 17px; height: 17px; border-radius: 50%; background: var(--paper); border: 1.5px solid var(--paper); box-shadow: 0 0 0 1px var(--line2); display: flex; align-items: center; justify-content: center; font-size: 9px; line-height: 1; text-decoration: none; }
+.avatar-cloche > span { display: block; filter: grayscale(1); opacity: 0.5; }
+.avatar-cloche:hover > span { filter: none; opacity: 1; }
+/* Allumée : la cloche reprend sa couleur et un point rouge se pose dessus.
+   Un fond accent la rendait invisible sur l'avatar par défaut, orange lui aussi. */
+.avatar-cloche.du { box-shadow: 0 0 0 1px var(--accent); }
+.avatar-cloche.du > span { filter: none; opacity: 1; }
+.avatar-cloche.du::after { content: ""; position: absolute; top: -1px; right: -1px; width: 7px; height: 7px; border-radius: 50%; background: #C2453A; border: 1.5px solid var(--paper); }
+.sidebar .avatar-cloche { background: #2A241E; border-color: #2A241E; box-shadow: 0 0 0 1px rgba(255,255,255,0.22); }
+.sidebar .avatar-cloche.du::after { border-color: #2A241E; }
 .menu { position: absolute; right: 0; top: 42px; z-index: 51; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px; min-width: 190px; box-shadow: 0 12px 30px rgba(33,29,23,0.18); }
 .menu-name { font-weight: 700; font-size: 14px; padding: 6px 10px 0; }
 .menu-mail { font-size: 10.5px; color: var(--muted); padding: 0 10px 8px; border-bottom: 1px solid var(--line); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; }
@@ -969,17 +982,18 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 /* ---- Barre de navigation (auteur) : quatre onglets, un bouton d'ajout ---- */
 /* Cinq colonnes égales : le bouton d'ajout tombe au centre exact, quelle que
    soit la largeur des libellés. En flex, il glissait avec eux. */
-.barre-admin { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; background: var(--card); }
+.barre-admin { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; background: var(--card); }
 .barre-geste { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 10px; text-decoration: none; color: var(--muted); font-size: 10px; font-weight: 600; min-width: 0; }
 .barre-geste.on { color: var(--accent); }
 .barre-ic { position: relative; font-size: 17px; line-height: 1.3; }
 .barre-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .barre-pastille { position: absolute; top: -2px; right: -5px; width: 8px; height: 8px; border-radius: 50%; background: #C2453A; border: 1.5px solid var(--card); }
 
-.barre-fab { width: 48px; height: 48px; justify-self: center; margin: 0 0 -12px; text-decoration: none; border-radius: 50%; background: var(--accent); color: #fff; border: 3px solid var(--paper); font-size: 26px; font-weight: 300; line-height: 1; cursor: pointer; box-shadow: 0 5px 14px rgba(188,91,46,0.4); display: flex; align-items: center; justify-content: center; }
-.barre-fab.du { box-shadow: 0 5px 14px rgba(188,91,46,0.45); }
-.barre-fab-point { position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
-.barre-fab { position: relative; }
+/* Le bouton débordait de 12px sous la barre : sur téléphone il tombait dans
+   la zone des gestes système et paraissait décalé vers le bas. Il tient
+   maintenant entièrement dans la barre, centré sur les deux axes. */
+.barre-fab { width: 46px; height: 46px; justify-self: center; align-self: center; margin: 0; text-decoration: none; border-radius: 50%; background: var(--accent); color: #fff; border: none; font-size: 27px; font-weight: 300; line-height: 1; cursor: pointer; box-shadow: 0 4px 12px rgba(188,91,46,0.34); display: flex; align-items: center; justify-content: center; padding-bottom: 3px; }
+.barre-fab.du { box-shadow: 0 4px 14px rgba(188,91,46,0.48); }
 
 
 .voyage-bascule { display: flex; gap: 4px; background: var(--accent-soft); border-radius: 999px; padding: 3px; margin-bottom: 16px; }
@@ -990,8 +1004,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
   .barre-admin { position: sticky; top: 0; z-index: 30; padding: 8px 22px; border-bottom: 1px solid var(--line); background: var(--bg); grid-template-columns: repeat(5, max-content); justify-content: start; }
   .barre-geste { flex: 0 0 auto; flex-direction: row; gap: 8px; padding: 8px 15px; font-size: 13px; }
   .barre-ic { font-size: 15px; }
-  .barre-fab { width: 38px; height: 38px; margin: 0 6px; font-size: 21px; border-width: 0; }
-  .barre-fab-point { width: 8px; height: 8px; }
+  .barre-fab { width: 38px; height: 38px; margin: 0 6px; font-size: 21px; }
   }
 
 @media (max-width: 1023px) {
@@ -1002,13 +1015,6 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 /* ---- Accueil : peu de texte, des gestes ---- */
 .ac-page { padding-top: 14px; padding-bottom: 18px; }
 
-.ac-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.ac-profil { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
-.ac-profil img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
-.ac-profil-init { width: 100%; height: 100%; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; }
-.ac-cloche { position: absolute; top: -4px; left: -6px; width: 21px; height: 21px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 10px; text-decoration: none; opacity: 0.55; }
-.ac-cloche.du { opacity: 1; background: var(--accent); border-color: var(--accent); }
-.ac-jourdate { font-size: 12.5px; color: var(--muted); text-transform: capitalize; }
 
 /* Météo du lieu réel, cliquable pour le détail. */
 .ac-meteo { display: block; border-radius: 15px; overflow: hidden; color: #FFF6EC; text-decoration: none; margin-bottom: 12px;
@@ -1059,25 +1065,25 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .ac-egal { font-size: 15px; color: var(--muted); padding-bottom: 11px; }
 
 /* Accès rapide : icône et libellé, dans la continuité du bloc au-dessus. */
-.ac-bande { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 12px; }
+.ac-bande { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
 .ac-bande-item { display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; min-width: 0; }
-.ac-bande-ic { width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.ac-bande-ic { width: 100%; aspect-ratio: 1; border-radius: 14px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 23px; }
 .ac-bande-item:hover .ac-bande-ic { border-color: var(--accent); }
-.ac-bande-lab { font-size: 8.5px; color: var(--muted); text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-bande-lab { font-size: 10px; color: var(--muted); text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- Outils : grille plate et dense, tenant sur un écran ----
    Les tuiles passent du carré à la ligne : pictogramme et libellé côte à côte.
    Sans sections ni bandeau de couleur, les dix-neuf entrées se lisent d'un bloc. */
-.atelier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(106px, 1fr)); gap: 4px; }
+.atelier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(152px, 1fr)); gap: 8px; }
 .app-tile {
-  display: flex; flex-direction: row; align-items: center; min-height: 38px; justify-content: flex-start;
-  text-align: left; gap: 7px; padding: 7px 8px; min-width: 0;
-  background: var(--card); border: 1px solid var(--line); border-radius: 9px;
+  display: flex; flex-direction: row; align-items: center; min-height: 52px; justify-content: flex-start;
+  text-align: left; gap: 11px; padding: 10px 13px; min-width: 0;
+  background: var(--card); border: 1px solid var(--line); border-radius: 13px;
   transition: border-color .15s;
 }
 .app-tile:hover { transform: none; box-shadow: none; border-color: var(--accent); }
 .app-tile.on { border-color: var(--accent); color: var(--accent); }
-.app-tile-ic { font-size: 14px; flex-shrink: 0; }
+.app-tile-ic { font-size: 21px; flex-shrink: 0; }
 /* Un libellé long passe à la ligne plutôt que d'être coupé : la grille se
    contente d'une rangée un peu plus haute, ce qui coûte moins qu'un mot amputé. */
-.app-tile-label { font-size: 11.5px; font-weight: 600; line-height: 1.15; }
+.app-tile-label { font-size: 14px; font-weight: 600; line-height: 1.2; }
