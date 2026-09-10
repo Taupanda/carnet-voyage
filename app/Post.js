@@ -1,7 +1,7 @@
 import PhotoGridV2 from "./PhotoGridV2";
 import PostSocial from "./PostSocial";
 import PostAdmin from "./PostAdmin";
-import { stageForDate } from "../lib/stages";
+import { stageForDate, afficheJour } from "../lib/stages";
 import { meteoInfo } from "../lib/weather";
 
 const NOTES = [
@@ -40,11 +40,11 @@ export default function Post({ e }) {
       <div className="post-inner">
         <div className="post-main">
           <PostAdmin date={e.date} />
-          <div className="post-jour">Jour {e.day_number}{stage ? ` — ${stage.nom}` : ""}</div>
+          <div className="post-jour">Jour {afficheJour(e.day_number)}{stage ? ` — ${stage.nom}` : ""}</div>
           <h2 className="post-title">{e.titre}</h2>
           <div className="post-date">{dateLabel}</div>
 
-          <PhotoGridV2 photos={e.photos || []} principale={e.photo_principale} caption={`Jour ${e.day_number}`} />
+          <PhotoGridV2 photos={e.photos || []} principale={e.photo_principale} caption={`Jour ${afficheJour(e.day_number)}`} />
 
           {e.lieux?.length > 0 && (
             <div className="chips">

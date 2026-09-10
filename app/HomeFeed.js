@@ -4,7 +4,7 @@ import Link from "next/link";
 import TripMap from "./TripMap";
 import Post from "./Post";
 import PushButton from "./PushButton";
-import { STAGES, stageForDate, stageDays, TRIP_DAYS, todayLocal, fmtDate } from "../lib/stages";
+import { STAGES, stageForDate, stageDays, TRIP_DATES, todayLocal, fmtDate } from "../lib/stages";
 
 export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   const [filter, setFilter] = useState(null);
@@ -42,7 +42,7 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
       {/* progression */}
       <div className="rp-block">
         <div className="rp-prog-head">
-          <span>{started ? `JOUR ${dayNum} / ${TRIP_DAYS}` : joursAvantDepart > 0 ? `J − ${joursAvantDepart} AVANT LE DÉPART` : "LE VOYAGE COMMENCE"}</span>
+          <span>{started ? `JOUR ${dayNum} / ${TRIP_DATES}` : joursAvantDepart > 0 ? `J − ${joursAvantDepart} AVANT LE DÉPART` : "LE VOYAGE COMMENCE"}</span>
         </div>
         <div className="prog" style={{ marginTop: 8 }}>
           {STAGES.map((s) => {

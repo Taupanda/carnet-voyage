@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import { todayLocal } from "../../lib/stages";
 
 async function api(path, opts = {}) {
   const { data } = await supabaseBrowser().auth.getSession();
@@ -17,7 +18,8 @@ async function api(path, opts = {}) {
   });
 }
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
+// Le jour courant suit le fuseau du voyage, pas celui du navigateur ni UTC.
+const todayStr = () => todayLocal();
 const fmtWeek = (d) => new Date(d + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
 
 export default function Resumes() {

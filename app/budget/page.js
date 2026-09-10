@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import { todayLocal } from "../../lib/stages";
 
 const CATS = [
   { id: "hebergement", label: "Hébergement", ic: "🛏️", color: "#BC5B2E" },
@@ -26,7 +27,8 @@ async function api(path, opts = {}) {
   });
 }
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
+// Le jour courant suit le fuseau du voyage, pas celui du navigateur ni UTC.
+const todayStr = () => todayLocal();
 
 // Affichage : toujours deux décimales, au format français (1 234,56).
 function eur(n) {

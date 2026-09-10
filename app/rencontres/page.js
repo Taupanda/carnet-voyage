@@ -19,7 +19,7 @@ export default function Rencontres() {
     <main className="container-wide" style={{ paddingTop: 30, paddingBottom: 70 }}>
       <p className="eyebrow">{rencs.length} rencontre{rencs.length > 1 ? "s" : ""}{pays.length ? ` · ${pays.length} pays` : ""}</p>
       <h1 className="display" style={{ fontSize: "clamp(28px, 5vw, 44px)", margin: "8px 0 6px" }}>
-        Les gens du voyage
+        Mes rencontres du voyage
       </h1>
       <p style={{ color: "var(--ink2)", marginBottom: 28, maxWidth: 480 }}>
         Un voyage en solo n'est jamais vraiment solitaire. Voici celles et ceux qui ont croisé ma route.

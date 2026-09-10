@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "../../lib/server";
-import { STAGES, stageForDate } from "../../lib/stages";
+import { STAGES, stageForDate, afficheJour } from "../../lib/stages";
 import PrintButton from "./PrintButton";
 
 export const revalidate = 300;
@@ -68,7 +68,7 @@ export default async function Livre() {
               <section className="book-page book-text-page">
                 <header className="book-run"><span>{BRAND}</span><span>Jour {e.day_number}</span></header>
                 <div className="book-text-body">
-                  <div className="book-day-num">Jour {e.day_number}{stage ? ` — ${stage.nom}` : ""}</div>
+                  <div className="book-day-num">Jour {afficheJour(e.day_number)}{stage ? ` — ${stage.nom}` : ""}</div>
                   <h2 className="display book-day-title">{e.titre}</h2>
                   <div className="book-day-date">{dateLabel}</div>
                   {e.lieux?.length > 0 && <div className="book-day-lieux">📍 {e.lieux.join(" · ")}</div>}

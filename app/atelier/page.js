@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
-import { useMode } from "../ModeProvider";
 
 const APPS = [
   { href: "/journal", label: "Journal", ic: "✏️", c: "#BC5B2E" },
   { href: "/budget", label: "Budget", ic: "💰", c: "#5C6B4C" },
   { href: "/workout", label: "Workout", ic: "💪", c: "#C99A3B" },
   { href: "/convertisseur", label: "Change", ic: "💱", c: "#3F8CA5" },
-  { href: "/reservations", label: "Réserv.", ic: "🏨", c: "#8B5A8C" },
+  { href: "/planning", label: "Planning", ic: "🗓️", c: "#7A6BA8" },
+  { href: "/reservations", label: "Réservations", ic: "🏨", c: "#8B5A8C" },
   { href: "/coffre", label: "Coffre", ic: "🔐", c: "#6B7280" },
   { href: "/checklist", label: "Check-list", ic: "✅", c: "#5C6B4C" },
   { href: "/vocabulaire", label: "Vocabulaire", ic: "🗣️", c: "#3F8CA5" },
@@ -26,14 +26,13 @@ export default function Atelier() {
 }
 
 function AtelierBody() {
-  const { setMode } = useMode();
   return (
     <main className="container-wide" style={{ paddingTop: 26, paddingBottom: 70 }}>
       <div className="atelier-top">
         <h1 className="display" style={{ fontSize: "clamp(24px, 5vw, 36px)" }}>Menu</h1>
-        <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={() => setMode("user")}>
+        <Link href="/" className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13, textDecoration: "none" }}>
           👁 Voir le site
-        </button>
+        </Link>
       </div>
 
       <div className="atelier-grid">

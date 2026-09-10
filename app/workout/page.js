@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import { todayLocal } from "../../lib/stages";
 
 const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -37,7 +38,8 @@ async function api(path, opts = {}) {
   });
 }
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
+// Même fuseau que le reste de l'app : le jour du voyage, pas UTC.
+const todayStr = () => todayLocal();
 // 0=lundi..6=dimanche
 const weekdayIdx = (d) => (new Date(d + "T00:00:00").getDay() + 6) % 7;
 

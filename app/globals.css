@@ -739,3 +739,47 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .post-passant { font-size: 12.5px; line-height: 1.55; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; margin-top: 16px; }
 .post-passant span { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.11em; margin-right: 9px; }
 .book-lead { font-size: 14.5px; }
+
+/* ---- Choix de la photo de tête, dans la relecture du post ---- */
+.photo-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.photo-pick-item { position: relative; padding: 0; border: none; background: none; cursor: pointer; border-radius: 10px; overflow: hidden; aspect-ratio: 1; outline: 2px solid transparent; outline-offset: 2px; }
+.photo-pick-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-pick-item.on { outline-color: var(--accent); }
+.photo-pick-item:not(.on) img { opacity: 0.62; }
+.photo-pick-flag { position: absolute; right: 5px; bottom: 5px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+
+/* ---- Planning : une ligne par journée ---- */
+.plan-stats { display: flex; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.plan-stats > div { flex: 1; background: var(--card); padding: 11px 8px; text-align: center; }
+.plan-stats b { display: block; font-family: "Fraunces", serif; font-size: 22px; font-weight: 600; line-height: 1; }
+.plan-stats span { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: block; margin-top: 5px; }
+
+.plan-liste { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.plan-jour { display: flex; align-items: flex-start; gap: 10px; background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--etape); border-radius: 10px; padding: 9px 11px; }
+.plan-jour.fixe { border-color: var(--accent); border-left-color: var(--etape); background: var(--accent-soft); }
+.plan-jour.vide { border-style: dashed; }
+.plan-date { flex: 0 0 92px; display: flex; flex-direction: column; gap: 1px; padding-top: 5px; }
+.plan-jsem { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.plan-jsem.we { color: var(--accent); }
+.plan-jnum { font-weight: 700; font-size: 13.5px; }
+.plan-etape { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.plan-activite { font-size: 14px; padding: 7px 10px; }
+.plan-lieu { font-size: 12.5px; padding: 6px 10px; color: var(--ink2); }
+.plan-pin { flex-shrink: 0; background: none; border: 1px solid var(--line2); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 14px; opacity: 0.35; filter: grayscale(1); margin-top: 3px; }
+.plan-pin.on { opacity: 1; filter: none; border-color: var(--accent); background: var(--card); }
+.plan-note { font-size: 12.5px; color: var(--muted); margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+@media (max-width: 480px) { .plan-date { flex-basis: 74px; } }
+
+/* ---- Abonnement au récap hebdomadaire ---- */
+.abo { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.abo-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.abo-titre { font-family: "Fraunces", serif; font-weight: 600; font-size: 16px; margin: 0 0 4px; }
+.abo-desc { font-size: 13px; color: var(--ink2); margin: 0; line-height: 1.5; }
+.abo-etat { flex-shrink: 0; font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line2); color: var(--muted); white-space: nowrap; }
+.abo-etat.on { color: var(--accent); border-color: var(--accent); }
+.abo-msg { font-size: 13px; color: var(--muted); margin: 0; }
+.abo-choix { display: flex; gap: 11px; align-items: flex-start; margin-top: 14px; padding: 12px; border: 1px solid var(--line2); border-radius: 10px; cursor: pointer; }
+.abo-choix input { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+.abo-choix span { font-size: 12.5px; color: var(--ink2); line-height: 1.5; }
+.abo-choix b { display: block; font-size: 13.5px; color: var(--ink); margin-bottom: 2px; }

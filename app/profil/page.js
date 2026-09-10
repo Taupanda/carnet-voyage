@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import Abonnement from "../Abonnement";
 
 export default function Profil() {
   const { user, profile, loading, refresh, signOut } = useAuth();
@@ -11,6 +12,7 @@ export default function Profil() {
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [avatar, setAvatar] = useState(null);
+  const [adresse, setAdresse] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [msgOk, setMsgOk] = useState(false);
@@ -28,6 +30,7 @@ export default function Profil() {
       setPrenom(profile.prenom || "");
       setNom(profile.nom || "");
       setAvatar(profile.avatar_url || null);
+      setAdresse(profile.adresse || "");
     }
   }, [profile]);
 
@@ -76,6 +79,7 @@ export default function Profil() {
       prenom: prenom.trim(),
       nom: nom.trim() || null,
       avatar_url: avatar,
+      adresse: adresse.trim() || null,
     });
     setBusy(false);
     if (error) { setMsg("Échec : " + error.message); setMsgOk(false); return; }
@@ -104,6 +108,7 @@ export default function Profil() {
       {firstTime && (
         <p style={{ color: "var(--text2)", fontSize: 14.5, marginBottom: 22 }}>
           Dis-moi qui tu es — c'est ce que les autres verront à côté de tes commentaires.
+          {user?.user_metadata?.newsletter && " Ton abonnement au récap se règle juste en dessous, une fois ton profil enregistré."}
         </p>
       )}
       {!firstTime && <div style={{ marginBottom: 22 }} />}
@@ -129,14 +134,25 @@ export default function Profil() {
       <input className="input" value={prenom} onChange={(e) => setPrenom(e.target.value)} style={{ marginBottom: 14 }} />
 
       <label className="lbl">Nom</label>
-      <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} style={{ marginBottom: 18 }}
-        onKeyDown={(e) => e.key === "Enter" && save()} />
+      <input className="input" value={nom} onChange={(e) => setNom(e.target.value)} style={{ marginBottom: 14 }} />
+
+      <label className="lbl">Adresse postale — facultatif</label>
+      <textarea className="input" rows={3} style={{ marginBottom: 18, resize: "vertical", fontSize: 14 }}
+        placeholder="Pour recevoir une carte postale en route"
+        value={adresse} onChange={(e) => setAdresse(e.target.value)} />
 
       {msg && <p className={msgOk ? "info" : "error"} style={{ marginBottom: 14 }}>{msg}</p>}
 
       <button className="btn" onClick={save} disabled={busy} style={{ width: "100%" }}>
         {busy ? "…" : firstTime ? "C'est parti" : "Enregistrer"}
       </button>
+
+      {/* ---- Suivre le voyage ---- */}
+      {!firstTime && (
+        <div style={{ marginTop: 34, paddingTop: 22, borderTop: "1px solid var(--line)" }}>
+          <Abonnement />
+        </div>
+      )}
 
       {/* ---- Compte ---- */}
       <div style={{ marginTop: 34, paddingTop: 22, borderTop: "1px solid var(--line)" }}>

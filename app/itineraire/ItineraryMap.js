@@ -22,7 +22,10 @@ export default function ItineraryMap({ phases, activeId }) {
       if (!L || !ref.current || mapRef.current) return;
       const map = L.map(ref.current, { scrollWheelZoom: false, attributionControl: false });
       mapRef.current = map;
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      // CARTO a fermé l'accès anonyme à ses fonds de carte : ses tuiles
+      // reviennent désormais estampillées « API key required ». OpenStreetMap
+      // est libre d'accès et ne demande que l'attribution ci-dessous.
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         subdomains: "abcd", maxZoom: 19,
       }).addTo(map);
 

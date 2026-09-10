@@ -16,13 +16,10 @@ const LINKS = [
 
 export default function Nav() {
   const path = usePathname();
-  const { isAdmin, adminView, mode, setMode } = useMode();
+  const { adminView } = useMode();
   const [open, setOpen] = useState(false);
 
   if (path?.startsWith("/journal")) return null;
-
-  const toggleMode = () => setMode(mode === "editor" ? "user" : "editor");
-  const toggleLabel = mode === "editor" ? "👁 Voir en visiteur" : "✏️ Mode éditeur";
 
   return (
     <>
@@ -42,12 +39,6 @@ export default function Nav() {
               <span className="ic">🧰</span>Menu
             </Link>
           </>
-        )}
-        <div className="side-quote">« Not all those who wander are lost. »</div>
-        {isAdmin && (
-          <div style={{ padding: "0 6px 10px" }}>
-            <button className="mode-toggle" onClick={toggleMode}>{toggleLabel}</button>
-          </div>
         )}
         <div className="side-auth"><AuthBar /></div>
       </aside>
@@ -72,11 +63,6 @@ export default function Nav() {
               <Link href="/atelier" className={"nav-mobile-link" + (path === "/atelier" ? " active" : "")} style={path === "/atelier" ? undefined : { color: "var(--accent)" }} onClick={() => setOpen(false)}>
                 🧰 Menu
               </Link>
-            )}
-            {isAdmin && (
-              <button className="mode-toggle" style={{ marginTop: 6 }} onClick={() => { toggleMode(); setOpen(false); }}>
-                {toggleLabel}
-              </button>
             )}
           </div>
         )}

@@ -6,7 +6,7 @@ import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
-import { dayNumberOf } from "../../lib/stages";
+import { dayNumberOf, todayLocal, afficheJour } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
@@ -15,7 +15,8 @@ const EMOJIS = ["😄", "🥰", "😌", "🤩", "😴", "😭", "🤯", "😤", 
 // Numérotation des jours : source partagée (lib/stages, respecte le MODE TEST).
 
 const emptyExtracted = () => ({ lieu: null, activites: null, rencontres: null, anecdote: null, adresse: null, reflexion: null, photos: null });
-const todayStr = () => new Date().toISOString().slice(0, 10);
+// Le jour courant suit le fuseau du voyage, pas celui du navigateur ni UTC.
+const todayStr = () => todayLocal();
 const dayNumber = (d) => dayNumberOf(d);
 
 // Recolle deux fragments dictés avec exactement une espace entre eux.
@@ -808,7 +809,7 @@ export default function Journal() {
           <p style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
             {saisieMode === "manuel" ? "Remplis ta journée" : "Aperçu — touche un texte pour le modifier"}
           </p>
-          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} manual={saisieMode === "manuel"} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
+          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} photoPrincipale={photoPrincipale} setPhotoPrincipale={setPhotoPrincipale} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
           {error && <p className="error">{error}</p>}
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => saveEntry("draft")} disabled={loading}>Brouillon</button>
@@ -838,7 +839,10 @@ export default function Journal() {
   );
 }
 
-function EditablePost({ post, setPost, photos, notes, dayNum, manual = false, reflexionPrivee, setReflexionPrivee }) {
+// Toutes les sections sont éditables, que le post vienne de l'IA ou d'une saisie
+// manuelle. Auparavant un champ laissé vide par l'IA n'était même pas affiché :
+// impossible d'ajouter après coup une anecdote qu'elle n'avait pas relevée.
+function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, setPhotoPrincipale, reflexionPrivee, setReflexionPrivee }) {
   const recit = Array.isArray(post.recit) ? post.recit : [];
   const upd = (field, value) => setPost((p) => ({ ...p, [field]: value }));
   const updRecit = (i, k, v) => upd("recit", recit.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
@@ -859,7 +863,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, manual = false, re
     <div className="post-card">
       <div className="post-header">
         <div style={{ flex: 1 }}>
-          <div className="post-day">Jour {dayNum >= 0 ? dayNum : "—"}</div>
+          <div className="post-day">Jour {dayNum >= 0 ? afficheJour(dayNum) : "—"}</div>
           <input className="input serif" style={{ fontSize: 17, marginTop: 4 }} value={post.titre || ""} onChange={(e) => upd("titre", e.target.value)} placeholder="Titre de la journée" />
         </div>
         <div className="post-moods">
@@ -870,30 +874,35 @@ function EditablePost({ post, setPost, photos, notes, dayNum, manual = false, re
         </div>
       </div>
 
-      {manual ? (
-        <div className="section">
-          <div className="section-head">Lieux</div>
-          <input className="input" placeholder="Villes / lieux, séparés par des virgules" value={(post.lieux || []).join(", ")} onChange={(e) => upd("lieux", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
-        </div>
-      ) : (
-        post.lieux?.length > 0 && (
-          <div className="chips">{post.lieux.map((l, i) => <span key={i} className="chip">📍 {l}</span>)}</div>
-        )
-      )}
+      <div className="section">
+        <div className="section-head">Lieux</div>
+        <input className="input" placeholder="Villes / lieux, séparés par des virgules" value={(post.lieux || []).join(", ")} onChange={(e) => upd("lieux", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} />
+      </div>
       {post.coords?.lat && (
         <div className="map-banner">📍 {post.lieux?.[0]} · {post.coords.lat.toFixed(2)}, {post.coords.lng.toFixed(2)} <span style={{ marginLeft: "auto", fontSize: 10.5, fontStyle: "italic", color: "var(--muted)" }}>carte interactive à venir</span></div>
       )}
 
-      {photos.length > 0 && (
-        <div className="photos">{photos.map((url, i) => <img key={i} src={url} alt="" />)}</div>
-      )}
-
-      {(manual || post.ouverture) && (
+      {photos.length > 0 && setPhotoPrincipale && (
         <div className="section">
-          <div className="section-head">Ouverture — le fil de la journée</div>
-          {ta("ouverture", post.ouverture)}
+          <div className="section-head">Photo principale — en tête du post</div>
+          <div className="photo-pick">
+            {photos.map((url, i) => {
+              const active = (photoPrincipale || photos[0]) === url;
+              return (
+                <button key={i} type="button" className={"photo-pick-item" + (active ? " on" : "")} onClick={() => setPhotoPrincipale(url)} aria-pressed={active}>
+                  <img src={url} alt={`Photo ${i + 1}`} />
+                  {active && <span className="photo-pick-flag">✓</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
+
+      <div className="section">
+        <div className="section-head">Ouverture — le fil de la journée</div>
+        {ta("ouverture", post.ouverture)}
+      </div>
 
       <div className="section">
         <div className="section-head">Les moments {recit.length > 0 && `(${recit.length}/5)`}</div>
@@ -906,22 +915,20 @@ function EditablePost({ post, setPost, photos, notes, dayNum, manual = false, re
             <textarea className="input" style={{ fontSize: 13.5 }} rows={2} value={item.detail || ""} onChange={(e) => updRecit(i, "detail", e.target.value)} placeholder="Détail (facultatif)" />
           </div>
         ))}
-        {manual && recit.length < 5 && <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={addRecit}>+ Ajouter un moment</button>}
+        {recit.length < 5 && <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={addRecit}>+ Ajouter un moment</button>}
       </div>
 
-      {(manual || post.en_passant) && (
-        <div className="section">
-          <div className="section-head">En passant — trajets et intendance</div>
-          {ta("en_passant", post.en_passant)}
-        </div>
-      )}
+      <div className="section">
+        <div className="section-head">En passant — trajets et intendance</div>
+        {ta("en_passant", post.en_passant)}
+      </div>
 
-      {(manual || post.rencontres) && (<div className="section"><div className="section-head">Rencontres (texte)</div>{ta("rencontres", post.rencontres)}</div>)}
-      {(manual || post.anecdote) && (<div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>)}
-      {(manual || post.adresse) && (<div className="section"><div className="section-head">Bonne adresse</div>{ta("adresse", post.adresse)}</div>)}
-      {(manual || post.reflexion) && (<div className="section box-reflexion"><div className="section-head">Ce que je garde</div>{ta("reflexion", post.reflexion)}</div>)}
+      <div className="section"><div className="section-head">Rencontres (texte)</div>{ta("rencontres", post.rencontres)}</div>
+      <div className="section box-anecdote"><div className="section-head">L'anecdote</div>{ta("anecdote", post.anecdote)}</div>
+      <div className="section"><div className="section-head">Bonne adresse</div>{ta("adresse", post.adresse)}</div>
+      <div className="section box-reflexion"><div className="section-head">Ce que je garde</div>{ta("reflexion", post.reflexion)}</div>
 
-      {(manual || post.reflexion) && setReflexionPrivee && (
+      {setReflexionPrivee && (
         <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
           <input type="checkbox" checked={!!reflexionPrivee} onChange={(e) => setReflexionPrivee(e.target.checked)} style={{ width: 18, height: 18 }} />
           Garder ma réflexion privée (invisible sur le blog)

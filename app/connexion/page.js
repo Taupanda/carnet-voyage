@@ -8,6 +8,7 @@ export default function Connexion() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [mode, setMode] = useState("signin"); // signin | signup | forgot
+  const [newsletter, setNewsletter] = useState(true);
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,7 +62,13 @@ export default function Connexion() {
       const { data, error } = await sb.auth.signUp({
         email,
         password: pwd,
-        options: { emailRedirectTo: `${window.location.origin}/profil` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/profil`,
+          // Le choix est conservé sur le compte et repris à la première visite du
+          // profil, où l'abonnement est réellement activé (il faut l'accord du
+          // navigateur pour les notifications, impossible à obtenir ici).
+          data: { newsletter },
+        },
       });
       setBusy(false);
       if (error) {
@@ -133,6 +140,18 @@ export default function Connexion() {
         <button className="link-btn" onClick={() => { setMode("forgot"); setErr(null); }}>
           Mot de passe oublié ?
         </button>
+      )}
+
+      {mode === "signup" && (
+        <label className="abo-choix">
+          <input id="newsletter-inscription" type="checkbox" checked={newsletter}
+            onChange={(e) => setNewsletter(e.target.checked)} />
+          <span>
+            <b>Recevoir le récap de la semaine</b>
+            Une fois par semaine, ce qu'il s'est passé. Rien d'autre — et tu pourras te
+            désabonner en un clic depuis ton profil.
+          </span>
+        </label>
       )}
 
       {err && <p className="error" style={{ marginTop: 12 }}>{err}</p>}

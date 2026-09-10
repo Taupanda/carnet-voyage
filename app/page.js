@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "../lib/server";
-import { STAGES, stageForDate, TRIP_DAYS, todayLocal, dayNumberOf } from "../lib/stages";
+import { STAGES, stageForDate, TRIP_DATES, todayLocal, dayNumberOf, afficheJour } from "../lib/stages";
 import HomeFeed from "./HomeFeed";
 
 export const revalidate = 120;
@@ -39,7 +39,9 @@ export default async function Home() {
 
   const today = todayLocal();
   const started = today >= STAGES[0].debut;
-  const dayNum = started ? Math.min(TRIP_DAYS, dayNumberOf(today)) : null;
+  // Le premier jour du voyage est le jour 1 : dayNumberOf compte les écarts
+  // depuis le départ et vaut donc 0 ce jour-là.
+  const dayNum = started ? Math.min(TRIP_DATES, afficheJour(dayNumberOf(today))) : null;
 
   const { count: rencCount } = await supabaseAdmin().from("rencontres").select("*", { count: "exact", head: true });
   const stats = {

@@ -3,7 +3,6 @@ import Nav from "./Nav";
 import AuthProvider from "./AuthProvider";
 import ModeProvider from "./ModeProvider";
 import ProfileRedirect from "./ProfileRedirect";
-import AdminLanding from "./AdminLanding";
 import ServiceWorkerRegister from "./ServiceWorkerRegister";
 
 export const metadata = {
@@ -33,7 +32,6 @@ export default function RootLayout({ children }) {
               <Nav />
               <div className="shell-main">{children}</div>
             </div>
-            <AdminLanding />
             <ProfileRedirect />
             <ServiceWorkerRegister />
           </ModeProvider>
