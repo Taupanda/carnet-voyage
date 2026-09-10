@@ -8,45 +8,44 @@ import AdminGate from "../AdminGate";
 // tuiles — on lit quatre listes courtes au lieu de balayer une grille.
 const SECTIONS = [
   {
-    titre: "Le blog",
-    aide: "Ce que voient les visiteurs",
+    titre: "Se poser sur le voyage",
+    aide: "Quand tu prends le temps",
     apps: [
-      { href: "/", label: "Journal", ic: "📖", c: "#BC5B2E" },
       { href: "/itineraire", label: "Itinéraire", ic: "🧭", c: "#3F8CA5" },
-      { href: "/album", label: "Album", ic: "🖼️", c: "#8B5A8C" },
-      { href: "/rencontres", label: "Rencontres", ic: "🤝", c: "#5C6B4C" },
-      { href: "/recos", label: "Conseils", ic: "💡", c: "#C99A3B" },
-      { href: "/livre-d-or", label: "Livre d'or", ic: "💛", c: "#D9A441" },
+      { href: "/planning", label: "Planning", ic: "🗓️", c: "#7A6BA8" },
+      { href: "/reservations", label: "Réservations", ic: "🏨", c: "#8B5A8C" },
     ],
   },
   {
-    titre: "Écrire",
-    aide: "Le carnet, jour après jour",
+    titre: "Le carnet",
+    aide: "Écrire et publier",
     apps: [
       { href: "/journal", label: "Raconter", ic: "✏️", c: "#BC5B2E" },
       { href: "/notes", label: "Calepin", ic: "📝", c: "#C4703A" },
+      { href: "/rencontres", label: "Rencontres", ic: "🤝", c: "#5C6B4C" },
       { href: "/resumes", label: "Résumés", ic: "📮", c: "#C99A3B" },
       { href: "/livre", label: "Le livre", ic: "📕", c: "#8B5A2E" },
     ],
   },
   {
-    titre: "En voyage",
-    aide: "Ce qui sert sur la route",
-    apps: [
-      { href: "/planning", label: "Planning", ic: "🗓️", c: "#7A6BA8" },
-      { href: "/reservations", label: "Réservations", ic: "🏨", c: "#8B5A8C" },
-      { href: "/coffre", label: "Coffre", ic: "🔐", c: "#6B7280" },
-      { href: "/checklist", label: "Check-list", ic: "✅", c: "#5C6B4C" },
-      { href: "/convertisseur", label: "Change", ic: "💱", c: "#3F8CA5" },
-      { href: "/vocabulaire", label: "Vocabulaire", ic: "🗣️", c: "#3F8CA5" },
-    ],
-  },
-  {
-    titre: "Gestion",
-    aide: "De loin en loin",
+    titre: "Mon suivi",
+    aide: "Ce que je trace",
     apps: [
       { href: "/budget", label: "Budget", ic: "💰", c: "#5C6B4C" },
       { href: "/workout", label: "Workout", ic: "💪", c: "#C99A3B" },
+      { href: "/vocabulaire", label: "Vocabulaire", ic: "🗣️", c: "#3F8CA5" },
+      { href: "/coffre", label: "Coffre", ic: "🔐", c: "#6B7280" },
+      { href: "/convertisseur", label: "Change", ic: "💱", c: "#3F8CA5" },
+    ],
+  },
+  {
+    titre: "Le blog et les retours",
+    aide: "Ce que voient et disent les autres",
+    apps: [
+      { href: "/", label: "Journal public", ic: "📖", c: "#BC5B2E" },
+      { href: "/album", label: "Album", ic: "🖼️", c: "#8B5A8C" },
+      { href: "/recos", label: "Conseils", ic: "💡", c: "#C99A3B" },
+      { href: "/livre-d-or", label: "Livre d'or", ic: "💛", c: "#D9A441" },
       { href: "/moderation", label: "Modération", ic: "🛡️", c: "#6B7280" },
     ],
   },

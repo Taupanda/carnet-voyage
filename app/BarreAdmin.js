@@ -8,12 +8,12 @@ import { todayLocal } from "../lib/stages";
 
 // Les gestes du quotidien, plus l'accès au Menu qui indexe tout le reste. Tout le reste vit dans le Menu : ici on ne
 // met que ce qui se fait plusieurs fois par jour, ou debout dans une rue.
+// L'accès rapide vit désormais sur la page d'accueil, où les gestes se font sur
+// place. La barre n'a plus qu'à relier les deux lieux : là où l'on agit, et là
+// où l'on se pose.
 const GESTES = [
+  { href: "/accueil", label: "Accueil", ic: "⌂", sobre: true, pastille: true },
   { href: "/atelier", label: "Menu", ic: "☰", sobre: true },
-  { href: "/notes", label: "Noter", ic: "📝" },
-  { href: "/journal", label: "Raconter", ic: "✏️", pastille: true },
-  { href: "/planning", label: "Planning", ic: "🗓️" },
-  { href: "/convertisseur", label: "Change", ic: "💱" },
 ];
 
 export default function BarreAdmin() {
@@ -43,8 +43,7 @@ export default function BarreAdmin() {
     return () => { annule = true; };
   }, [adminView, pathname]);
 
-  // Le journal occupe déjà tout l'écran et a sa propre navigation interne.
-  if (!adminView || pathname?.startsWith("/journal")) return null;
+  if (!adminView) return null;
 
   return (
     <nav className="barre-admin" aria-label="Actions du jour">

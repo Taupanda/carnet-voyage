@@ -5,6 +5,7 @@ import ModeProvider from "./ModeProvider";
 import ProfileRedirect from "./ProfileRedirect";
 import ServiceWorkerRegister from "./ServiceWorkerRegister";
 import BarreAdmin from "./BarreAdmin";
+import ArriveeAdmin from "./ArriveeAdmin";
 
 export const metadata = {
   title: "Les aventures de Maxou — Mexique & Amérique centrale",
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
                 {children}
               </div>
             </div>
+            <ArriveeAdmin />
             <ProfileRedirect />
             <ServiceWorkerRegister />
           </ModeProvider>
