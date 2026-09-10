@@ -133,11 +133,15 @@ function PlanningBody() {
         <p className="empty">Le voyage est terminé — plus rien à planifier.</p>
       ) : (
         <div className="plan-liste">
+          <div className="plan-entete">
+            <span>Jour</span>
+            <span>Étape prévue</span>
+            <span>Ce qui est prévu</span>
+            <span />
+          </div>
           {jours.map((d, i) => {
             const ligne = plans[d] || {};
             const etape = stageForDate(d);
-            const etapePrecedente = i > 0 ? stageForDate(jours[i - 1]) : null;
-            const nouvelleEtape = etape && etape.n !== etapePrecedente?.n;
             const passe = d < aujourdhui;
             const cestAujourdhui = d === aujourdhui;
             const dt = new Date(d + "T00:00:00");
@@ -147,11 +151,6 @@ function PlanningBody() {
             const vide = !ligne.activite?.trim();
             return (
               <div key={d}>
-                {nouvelleEtape && (
-                  <div className="plan-etape-sep" style={{ "--etape": etape.couleur }}>
-                    <span>{String(etape.n).padStart(2, "0")}</span> {etape.nom}
-                  </div>
-                )}
                 <div
                   id={`jour-${d}`}
                   className={
@@ -163,34 +162,28 @@ function PlanningBody() {
                   <div className="plan-date">
                     <span className={"plan-jsem" + (weekend ? " we" : "")}>{jourSem}</span>
                     <span className="plan-jnum">{jourNum}</span>
-                    <span className="plan-jindex">J{TOUS_LES_JOURS.indexOf(d) + 1}</span>
                   </div>
 
-                  <div className="plan-corps">
-                    <input
-                      className="input plan-activite"
-                      placeholder={cestAujourdhui ? "Aujourd'hui — quoi ?" : "À caler…"}
+                  <div className="plan-prevu" title={etape ? `Étape ${etape.n} — ${etape.nom}` : "Hors étapes"}>
+                    <span className="plan-puce">{etape?.n ?? ""}</span>
+                    <span className="plan-prevu-nom">{etape ? etape.nom : "—"}</span>
+                  </div>
+
+                  <input
+                    className="input plan-activite"
+                    placeholder={cestAujourdhui ? "Aujourd'hui — quoi ?" : "À caler…"}
                     defaultValue={ligne.activite || ""}
                     onBlur={(e) => {
                       if ((e.target.value || "") !== (ligne.activite || "")) enregistrer(d, { activite: e.target.value });
                     }}
                   />
-                  <input
-                    className="input plan-lieu"
-                    placeholder="Lieu"
-                    defaultValue={ligne.lieu || ""}
-                    onBlur={(e) => {
-                      if ((e.target.value || "") !== (ligne.lieu || "")) enregistrer(d, { lieu: e.target.value });
-                    }}
-                  />
-                </div>
 
                   <button
                     className={"plan-pin" + (ligne.fixe ? " on" : "")}
-                  onClick={() => enregistrer(d, { fixe: !ligne.fixe })}
-                  aria-pressed={!!ligne.fixe}
-                  title={ligne.fixe ? "Fixé — cliquer pour libérer" : "Marquer comme fixe"}
-                  disabled={enCours === d}
+                    onClick={() => enregistrer(d, { fixe: !ligne.fixe })}
+                    aria-pressed={!!ligne.fixe}
+                    title={ligne.fixe ? "Fixé — cliquer pour libérer" : "Marquer comme fixe"}
+                    disabled={enCours === d}
                   >
                     📌
                   </button>
@@ -202,8 +195,8 @@ function PlanningBody() {
       )}
 
       <p className="plan-note">
-        Les 12 étapes du voyage servent de trame : elles séparent les journées et donnent sa
-        couleur à chaque ligne. Ce planning ne note que tes ajustements réels.
+        La colonne « étape prévue » vient de l'itinéraire de départ, inscrit dans le code.
+        La colonne de droite est la tienne : ce que tu comptes vraiment faire ce jour-là.
       </p>
     </main>
   );

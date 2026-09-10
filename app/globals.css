@@ -752,22 +752,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .plan-stats b { display: block; font-family: "Fraunces", serif; font-size: 22px; font-weight: 600; line-height: 1; }
 .plan-stats span { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: block; margin-top: 5px; }
 
-.plan-liste { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
-.plan-jour { display: flex; align-items: flex-start; gap: 10px; background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--etape); border-radius: 10px; padding: 9px 11px; }
-.plan-jour.fixe { border-color: var(--accent); border-left-color: var(--etape); background: var(--accent-soft); }
-.plan-jour.vide { border-style: dashed; }
-.plan-date { flex: 0 0 92px; display: flex; flex-direction: column; gap: 1px; padding-top: 5px; }
-.plan-jsem { font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.plan-jsem.we { color: var(--accent); }
-.plan-jnum { font-weight: 700; font-size: 13.5px; }
-.plan-etape { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.plan-corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-.plan-activite { font-size: 14px; padding: 7px 10px; }
-.plan-lieu { font-size: 12.5px; padding: 6px 10px; color: var(--ink2); }
-.plan-pin { flex-shrink: 0; background: none; border: 1px solid var(--line2); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 14px; opacity: 0.35; filter: grayscale(1); margin-top: 3px; }
-.plan-pin.on { opacity: 1; filter: none; border-color: var(--accent); background: var(--card); }
 .plan-note { font-size: 12.5px; color: var(--muted); margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
-@media (max-width: 480px) { .plan-date { flex-basis: 74px; } }
 
 /* ---- Abonnement au récap hebdomadaire ---- */
 .abo { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
@@ -824,12 +809,6 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 }
 
 /* ---- Planning intégral : 101 lignes, densité maîtrisée ---- */
-.plan-etape-sep { display: flex; align-items: center; gap: 8px; font-family: "Space Mono", monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--etape); margin: 18px 0 6px; padding-bottom: 5px; border-bottom: 1px solid var(--line); }
-.plan-etape-sep span { background: var(--etape); color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: 700; letter-spacing: 0; }
-.plan-jindex { font-family: "Space Mono", monospace; font-size: 9.5px; color: var(--muted); }
-.plan-jour.passe { opacity: 0.5; }
-.plan-jour.auj { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.plan-jour.auj .plan-jnum { color: var(--accent); }
 
 @media (max-width: 560px) {
   /* Le titre et les quatre ressentis ne tiennent pas côte à côte sur un
@@ -888,3 +867,96 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .photo-pick-choix { display: block; width: 100%; height: 100%; padding: 0; border: none; background: none; cursor: pointer; }
 .photo-pick-retirer { position: absolute; top: 4px; left: 4px; width: 21px; height: 21px; border-radius: 50%; border: none; background: rgba(20,16,12,0.62); color: #fff; font-size: 11px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .photo-pick-retirer:hover { background: #C2453A; }
+
+/* ---- Planning : une ligne = une journée ----
+   Quatre colonnes fixes, alignées de haut en bas : la date, l'étape prévue à
+   l'origine, ce qui est réellement calé, et l'épingle. La grille est portée par
+   le conteneur pour que les colonnes restent d'aplomb sur les 101 lignes. */
+.plan-liste { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
+
+.plan-entete,
+.plan-jour {
+  display: grid;
+  grid-template-columns: 96px 152px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+}
+
+.plan-entete {
+  font-family: "Space Mono", monospace;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  padding: 0 8px 6px;
+  border-bottom: 1px solid var(--line2);
+  margin-bottom: 4px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 2;
+}
+
+.plan-jour {
+  background: var(--card);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--etape);
+  border-radius: 7px;
+  padding: 3px 8px 3px 6px;
+  min-height: 34px;
+}
+.plan-jour.vide { background: none; }
+.plan-jour.passe { opacity: 0.42; }
+.plan-jour.fixe { background: var(--accent-soft); }
+.plan-jour.auj { border-color: var(--accent); }
+.plan-jour.auj .plan-jnum { color: var(--accent); font-weight: 700; }
+
+.plan-date { display: flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.plan-jsem { font-family: "Space Mono", monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; }
+.plan-jsem.we { color: var(--accent); }
+.plan-jnum { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+
+.plan-prevu { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.plan-puce {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--etape); color: #fff; flex-shrink: 0;
+  font-family: "Space Mono", monospace; font-size: 9px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.plan-prevu-nom { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Le champ ne se distingue qu'au survol et au focus : sur 101 lignes, 101
+   bordures d'input rendraient la page illisible. */
+.plan-activite {
+  font-size: 13px;
+  padding: 5px 8px;
+  border-color: transparent;
+  background: none;
+  border-radius: 6px;
+}
+.plan-activite:hover { border-color: var(--line2); }
+.plan-activite:focus { border-color: var(--accent); background: var(--card); outline: none; }
+.plan-activite::placeholder { color: var(--muted); opacity: 0.55; }
+
+.plan-pin {
+  width: 28px; height: 28px; padding: 0;
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; opacity: 0.22; filter: grayscale(1);
+  border-radius: 6px;
+}
+.plan-pin:hover { opacity: 0.6; }
+.plan-pin.on { opacity: 1; filter: none; }
+
+@media (max-width: 620px) {
+  /* Toujours une seule ligne : le nom de l'étape cède la place, son numéro et
+     sa couleur restent dans la pastille (nom complet au appui long). */
+  .plan-entete,
+  .plan-jour { grid-template-columns: 84px 18px minmax(0, 1fr) 26px; gap: 7px; }
+  .plan-entete span:nth-child(2) { font-size: 0; }
+  .plan-prevu-nom { display: none; }
+  .plan-puce { width: 18px; height: 18px; }
+  .plan-jsem { font-size: 9px; }
+  .plan-jnum { font-size: 11.5px; }
+  .plan-activite { font-size: 12.5px; padding: 5px 6px; }
+  .plan-pin { width: 26px; }
+}
