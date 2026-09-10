@@ -967,33 +967,32 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 }
 
 /* ---- Barre de navigation (auteur) : quatre onglets, un bouton d'ajout ---- */
-.barre-admin { display: flex; align-items: flex-end; gap: 2px; background: var(--card); }
+/* Cinq colonnes égales : le bouton d'ajout tombe au centre exact, quelle que
+   soit la largeur des libellés. En flex, il glissait avec eux. */
+.barre-admin { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; background: var(--card); }
 .barre-geste { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 10px; text-decoration: none; color: var(--muted); font-size: 10px; font-weight: 600; min-width: 0; }
 .barre-geste.on { color: var(--accent); }
 .barre-ic { position: relative; font-size: 17px; line-height: 1.3; }
 .barre-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .barre-pastille { position: absolute; top: -2px; right: -5px; width: 8px; height: 8px; border-radius: 50%; background: #C2453A; border: 1.5px solid var(--card); }
 
-.barre-fab { width: 48px; height: 48px; flex-shrink: 0; margin: 0 4px -12px; border-radius: 50%; background: var(--accent); color: #fff; border: 3px solid var(--paper); font-size: 26px; font-weight: 300; line-height: 1; cursor: pointer; box-shadow: 0 5px 14px rgba(188,91,46,0.4); display: flex; align-items: center; justify-content: center; }
-.barre-fab.on { transform: rotate(45deg); }
+.barre-fab { width: 48px; height: 48px; justify-self: center; margin: 0 0 -12px; text-decoration: none; border-radius: 50%; background: var(--accent); color: #fff; border: 3px solid var(--paper); font-size: 26px; font-weight: 300; line-height: 1; cursor: pointer; box-shadow: 0 5px 14px rgba(188,91,46,0.4); display: flex; align-items: center; justify-content: center; }
+.barre-fab.du { box-shadow: 0 5px 14px rgba(188,91,46,0.45); }
+.barre-fab-point { position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+.barre-fab { position: relative; }
 
-.ajout-voile { position: fixed; inset: 0; z-index: 70; background: rgba(20,16,12,0.32); border: none; padding: 0; }
-.ajout-panneau { position: fixed; z-index: 71; left: 50%; transform: translateX(-50%); bottom: 84px; display: flex; flex-direction: column; gap: 5px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 7px; box-shadow: 0 14px 34px rgba(33,29,23,0.2); min-width: 210px; }
-.ajout-choix { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 10px; text-decoration: none; color: var(--ink); font-size: 14px; font-weight: 600; }
-.ajout-choix:hover { background: var(--accent-soft); color: var(--accent); }
-.ajout-choix span { font-size: 17px; }
 
 .voyage-bascule { display: flex; gap: 4px; background: var(--accent-soft); border-radius: 999px; padding: 3px; margin-bottom: 16px; }
 .voyage-onglet { flex: 1; text-align: center; padding: 8px 4px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; }
 .voyage-onglet.on { background: var(--accent); color: #fff; }
 
 @media (min-width: 1024px) {
-  .barre-admin { position: sticky; top: 0; z-index: 30; padding: 8px 22px; border-bottom: 1px solid var(--line); background: var(--bg); justify-content: flex-start; }
+  .barre-admin { position: sticky; top: 0; z-index: 30; padding: 8px 22px; border-bottom: 1px solid var(--line); background: var(--bg); grid-template-columns: repeat(5, max-content); justify-content: start; }
   .barre-geste { flex: 0 0 auto; flex-direction: row; gap: 8px; padding: 8px 15px; font-size: 13px; }
   .barre-ic { font-size: 15px; }
   .barre-fab { width: 38px; height: 38px; margin: 0 6px; font-size: 21px; border-width: 0; }
-  .ajout-panneau { bottom: auto; top: 62px; left: auto; right: 22px; transform: none; }
-}
+  .barre-fab-point { width: 8px; height: 8px; }
+  }
 
 @media (max-width: 1023px) {
   .barre-admin { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 5px 6px calc(5px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); box-shadow: 0 -3px 16px rgba(33,29,23,0.07); }
@@ -1001,47 +1000,43 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 }
 
 /* ---- Accueil : peu de texte, des gestes ---- */
-.ac-tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.ac-marque { width: 38px; height: 38px; border-radius: 50%; background: var(--accent-soft); border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 17px; }
-.ac-cloche { position: relative; font-size: 19px; line-height: 1; padding: 4px; text-decoration: none; }
-.ac-cloche i { position: absolute; top: 1px; right: 1px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); border: 1.5px solid var(--paper); }
+.ac-page { padding-top: 14px; padding-bottom: 18px; }
 
-.ac-salut { font-size: 25px; font-weight: 800; letter-spacing: -0.025em; margin: 0 0 3px; }
-.ac-lieu { font-size: 13px; color: var(--ink2); margin: 0 0 14px; }
-.ac-lieu span { color: var(--muted); }
+.ac-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.ac-profil { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+.ac-profil img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.ac-profil-init { width: 100%; height: 100%; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; }
+.ac-cloche { position: absolute; top: -4px; left: -6px; width: 21px; height: 21px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 10px; text-decoration: none; opacity: 0.55; }
+.ac-cloche.du { opacity: 1; background: var(--accent); border-color: var(--accent); }
+.ac-jourdate { font-size: 12.5px; color: var(--muted); text-transform: capitalize; }
 
-/* Météo du lieu où l'on se trouve, pas d'un point fixe. */
-.ac-meteo { border-radius: 15px; overflow: hidden; color: #FFF6EC; margin-bottom: 12px;
+/* Météo du lieu réel, cliquable pour le détail. */
+.ac-meteo { display: block; border-radius: 15px; overflow: hidden; color: #FFF6EC; text-decoration: none; margin-bottom: 12px;
   background: linear-gradient(180deg, rgba(20,16,12,0.30) 0%, rgba(20,16,12,0.80) 100%),
               radial-gradient(130% 100% at 25% 0%, #8EC5E8 0%, #4E86B0 34%, #7A4A3C 72%, #2A1D18 100%); }
-.ac-meteo-vide { min-height: 92px; opacity: 0.45; }
-.ac-meteo-haut { display: flex; align-items: center; gap: 11px; padding: 14px 15px 11px; }
-.ac-meteo-ic { font-size: 29px; line-height: 1; }
-.ac-meteo-t { font-size: 27px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; display: block; }
-.ac-meteo-l { font-size: 12px; opacity: 0.9; }
-.ac-heures { display: flex; gap: 2px; background: rgba(20,16,12,0.42); padding: 8px 7px; }
+.ac-meteo-vide { min-height: 88px; opacity: 0.4; }
+.ac-meteo-haut { display: flex; align-items: center; gap: 11px; padding: 13px 14px 10px; }
+.ac-meteo-ic { font-size: 28px; line-height: 1; }
+.ac-meteo-t { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; display: block; }
+.ac-meteo-l { font-size: 11.5px; opacity: 0.9; }
+.ac-meteo-plus { margin-left: auto; font-size: 10px; opacity: 0.72; white-space: nowrap; }
+.ac-heures { display: flex; gap: 2px; background: rgba(20,16,12,0.42); padding: 7px 6px; }
 .ac-heure { flex: 1; text-align: center; display: flex; flex-direction: column; gap: 2px; }
 .ac-heure b { font-size: 9px; font-weight: 500; opacity: 0.78; font-variant-numeric: tabular-nums; }
 .ac-heure span { font-size: 13px; }
 .ac-heure u { font-size: 10.5px; text-decoration: none; font-variant-numeric: tabular-nums; }
 
-.ac-raconter { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--line2); border-radius: 14px; padding: 13px 15px; margin-bottom: 12px; text-decoration: none; color: var(--ink); }
-.ac-raconter.du { border-left-color: var(--accent); background: var(--accent-soft); }
-.ac-raconter-ic { font-size: 20px; flex-shrink: 0; }
-.ac-raconter-corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.ac-raconter-corps b { font-size: 16px; font-weight: 700; letter-spacing: -0.015em; }
-.ac-raconter-corps span { font-size: 12.5px; color: var(--ink2); }
-.ac-raconter-fleche { color: var(--muted); font-size: 17px; flex-shrink: 0; }
-.ac-raconter.du .ac-raconter-fleche { color: var(--accent); }
-
-.ac-bloc { background: var(--card); border: 1px solid var(--line); border-radius: 13px; padding: 12px 13px; margin-bottom: 10px; }
-.ac-bloc-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
-.ac-bloc-tete h2 { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.11em; color: var(--accent); margin: 0; font-weight: 700; }
+/* Les trois captures forment un seul objet, séparé par des filets plutôt que
+   par des marges : trois cartes flottantes hachaient la page. */
+.ac-capture { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.ac-part { padding: 11px 13px; }
+.ac-part + .ac-part { border-top: 1px solid var(--line); }
+.ac-bloc-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.ac-bloc-tete h2 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.11em; color: var(--accent); margin: 0; font-weight: 700; }
 .ac-lien, .ac-taux { font-size: 10.5px; color: var(--muted); text-decoration: none; }
 .ac-lien:hover { color: var(--accent); }
-.ac-apercu { font-size: 12px; color: var(--muted); margin: 8px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-apercu { font-size: 11.5px; color: var(--muted); margin: 7px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* La note s'écrit ou se dicte : les deux entrées sont sur la même ligne. */
 .ac-note { display: flex; gap: 7px; align-items: center; }
 .ac-note .input { flex: 1; min-width: 0; }
 .ac-micro { width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; border: 1.5px solid var(--line2); background: var(--paper); font-size: 17px; cursor: pointer; }
@@ -1051,19 +1046,38 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 @media (prefers-reduced-motion: reduce) { .ac-micro.on { animation: none; } }
 
 .ac-depense { display: flex; align-items: center; gap: 8px; }
-.ac-montant { font-weight: 700; font-size: 20px; flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
+.ac-montant { font-weight: 700; font-size: 19px; flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
 .ac-devise { font-size: 16px; color: var(--muted); font-weight: 600; }
-.ac-cats { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
-.ac-cat { font-size: 11.5px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line2); background: none; color: var(--ink2); cursor: pointer; white-space: nowrap; }
+.ac-cats { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.ac-cat { font-size: 11px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line2); background: none; color: var(--ink2); cursor: pointer; white-space: nowrap; }
 .ac-cat.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 
 .ac-change { display: flex; align-items: flex-end; gap: 9px; }
 .ac-change label { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.ac-change label span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
-.ac-change input { font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+.ac-change label span { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.ac-change input { font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
 .ac-egal { font-size: 15px; color: var(--muted); padding-bottom: 11px; }
 
-/* Derniers outils ouverts : des icônes, sans libellé, sans hiérarchie. */
-.ac-bande { display: flex; gap: 7px; margin-top: 14px; overflow-x: auto; padding-bottom: 2px; }
-.ac-bande-ic { width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 19px; text-decoration: none; }
-.ac-bande-ic:hover { border-color: var(--accent); }
+/* Accès rapide : icône et libellé, dans la continuité du bloc au-dessus. */
+.ac-bande { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 12px; }
+.ac-bande-item { display: flex; flex-direction: column; align-items: center; gap: 3px; text-decoration: none; min-width: 0; }
+.ac-bande-ic { width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.ac-bande-item:hover .ac-bande-ic { border-color: var(--accent); }
+.ac-bande-lab { font-size: 8.5px; color: var(--muted); text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Outils : grille plate et dense, tenant sur un écran ----
+   Les tuiles passent du carré à la ligne : pictogramme et libellé côte à côte.
+   Sans sections ni bandeau de couleur, les dix-neuf entrées se lisent d'un bloc. */
+.atelier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(106px, 1fr)); gap: 4px; }
+.app-tile {
+  display: flex; flex-direction: row; align-items: center; min-height: 38px; justify-content: flex-start;
+  text-align: left; gap: 7px; padding: 7px 8px; min-width: 0;
+  background: var(--card); border: 1px solid var(--line); border-radius: 9px;
+  transition: border-color .15s;
+}
+.app-tile:hover { transform: none; box-shadow: none; border-color: var(--accent); }
+.app-tile.on { border-color: var(--accent); color: var(--accent); }
+.app-tile-ic { font-size: 14px; flex-shrink: 0; }
+/* Un libellé long passe à la ligne plutôt que d'être coupé : la grille se
+   contente d'une rangée un peu plus haute, ce qui coûte moins qu'un mot amputé. */
+.app-tile-label { font-size: 11.5px; font-weight: 600; line-height: 1.15; }

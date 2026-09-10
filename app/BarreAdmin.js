@@ -11,23 +11,15 @@ import { todayLocal } from "../lib/stages";
 // carnet, ni un geste du jour.
 const ONGLETS = [
   { href: "/accueil", label: "Accueil", ic: "⌂" },
+  { href: "/journal", label: "Journal", ic: "📖" },
   { href: "/itineraire", label: "Voyage", ic: "🧭", aussi: ["/planning"] },
-  { href: "/journal", label: "Journal", ic: "📖", pastille: true },
   { href: "/atelier", label: "Outils", ic: "⚙" },
-];
-
-// Ce qu'on ajoute quand on sort le téléphone sans savoir encore quoi en faire.
-const AJOUTS = [
-  { href: "/accueil", label: "Une note", ic: "📝" },
-  { href: "/accueil", label: "Une dépense", ic: "💰" },
-  { href: "/journal", label: "Une photo", ic: "📷" },
 ];
 
 export default function BarreAdmin() {
   const { adminView } = useMode();
   const pathname = usePathname();
   const [journeeManquante, setJourneeManquante] = useState(false);
-  const [ouvert, setOuvert] = useState(false);
 
   useEffect(() => {
     if (!adminView) return;
@@ -47,55 +39,36 @@ export default function BarreAdmin() {
     return () => { annule = true; };
   }, [adminView, pathname]);
 
-  // Le panneau d'ajout se referme dès qu'on change d'écran.
-  useEffect(() => { setOuvert(false); }, [pathname]);
-
   if (!adminView) return null;
 
   const actif = (o) => pathname === o.href || (o.aussi || []).includes(pathname);
 
   return (
-    <>
-      {ouvert && (
-        <>
-          <button className="ajout-voile" onClick={() => setOuvert(false)} aria-label="Fermer" />
-          <div className="ajout-panneau" role="menu">
-            {AJOUTS.map((a) => (
-              <Link key={a.label} href={a.href} className="ajout-choix" role="menuitem">
-                <span>{a.ic}</span> {a.label}
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
+    <nav className="barre-admin" aria-label="Navigation">
+      {ONGLETS.slice(0, 2).map((o) => (
+        <Link key={o.href} href={o.href} className={"barre-geste" + (actif(o) ? " on" : "")}>
+          <span className="barre-ic">{o.ic}</span>
+          <span className="barre-label">{o.label}</span>
+        </Link>
+      ))}
 
-      <nav className="barre-admin" aria-label="Navigation">
-        {ONGLETS.slice(0, 2).map((o) => (
-          <Link key={o.href} href={o.href} className={"barre-geste" + (actif(o) ? " on" : "")}>
-            <span className="barre-ic">{o.ic}</span>
-            <span className="barre-label">{o.label}</span>
-          </Link>
-        ))}
+      {/* Ajouter un post, c'est raconter sa journée : un seul geste pour les
+          deux, plutôt qu'un bouton et une carte qui font la même chose. */}
+      <Link
+        href="/journal"
+        className={"barre-fab" + (journeeManquante ? " du" : "")}
+        aria-label={journeeManquante ? "Raconter ma journée — pas encore écrite" : "Raconter ma journée"}
+      >
+        +
+        {journeeManquante && <span className="barre-fab-point" aria-hidden="true" />}
+      </Link>
 
-        <button
-          className={"barre-fab" + (ouvert ? " on" : "")}
-          onClick={() => setOuvert((v) => !v)}
-          aria-expanded={ouvert}
-          aria-label="Ajouter"
-        >
-          +
-        </button>
-
-        {ONGLETS.slice(2).map((o) => (
-          <Link key={o.href} href={o.href} className={"barre-geste" + (actif(o) ? " on" : "")}>
-            <span className="barre-ic">
-              {o.ic}
-              {o.pastille && journeeManquante && <span className="barre-pastille" aria-hidden="true" />}
-            </span>
-            <span className="barre-label">{o.label}</span>
-          </Link>
-        ))}
-      </nav>
-    </>
+      {ONGLETS.slice(2).map((o) => (
+        <Link key={o.href} href={o.href} className={"barre-geste" + (actif(o) ? " on" : "")}>
+          <span className="barre-ic">{o.ic}</span>
+          <span className="barre-label">{o.label}</span>
+        </Link>
+      ))}
+    </nav>
   );
 }

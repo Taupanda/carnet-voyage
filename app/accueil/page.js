@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
+import { useAuth } from "../AuthProvider";
 import { todayLocal } from "../../lib/stages";
 import { meteoInfo, fetchMeteoJour } from "../../lib/weather";
 import { derniersOutils } from "../../lib/outils";
@@ -49,6 +50,7 @@ export default function Accueil() {
 }
 
 function AccueilBody() {
+  const { profile } = useAuth();
   const jour = todayLocal();
   const [etat, setEtat] = useState(null);
   const [err, setErr] = useState(null);
@@ -64,22 +66,29 @@ function AccueilBody() {
     weekday: "long", day: "numeric", month: "long",
   });
 
-  const aRaconter = etat && etat.postDuJour === null;
   const notes = etat?.notes || [];
 
   return (
-    <main className="container" style={{ paddingTop: 16, paddingBottom: 20, maxWidth: 620 }}>
+    <main className="container ac-page" style={{ maxWidth: 620 }}>
       <div className="ac-tete">
-        <span className="ac-marque">🌋</span>
-        <Link href="/moderation" className="ac-cloche" aria-label="Ce qui est arrivé">
-          🔔{etat && etat.motsNonLus > 0 && <i />}
-        </Link>
+        <span className="ac-profil">
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" />
+          ) : (
+            <span className="ac-profil-init">{(profile?.prenom || "M")[0].toUpperCase()}</span>
+          )}
+          {/* La cloche se pose sur la photo : discrète, mais toujours au même
+              endroit — et elle ne s'allume que quand quelque chose est arrivé. */}
+          <Link
+            href="/moderation"
+            className={"ac-cloche" + (etat && etat.motsNonLus > 0 ? " du" : "")}
+            aria-label={etat && etat.motsNonLus > 0 ? `${etat.motsNonLus} message(s) non lu(s)` : "Notifications"}
+          >
+            🔔
+          </Link>
+        </span>
+        <span className="ac-jourdate">{dateCourte}</span>
       </div>
-
-      <h1 className="ac-salut">Bonjour Maxou</h1>
-      <p className="ac-lieu">
-        📍 {etat?.lieu?.nom || "…"} · <span>{dateCourte}</span>
-      </p>
 
       {err && <p className="error" style={{ marginBottom: 12 }}>{err}</p>}
 
@@ -104,9 +113,11 @@ function AccueilBody() {
         <span className="ac-raconter-fleche">→</span>
       </Link>
 
-      <NoteRapide jour={jour} notes={notes} onFait={charger} />
-      <DepenseRapide jour={jour} onFait={charger} />
-      <Convertisseur />
+      <div className="ac-capture">
+        <NoteRapide jour={jour} notes={notes} onFait={charger} />
+        <DepenseRapide jour={jour} onFait={charger} />
+        <Convertisseur />
+      </div>
 
       <BandeOutils />
 
@@ -169,7 +180,7 @@ function NoteRapide({ jour, notes, onFait }) {
   }
 
   return (
-    <section className="ac-bloc">
+    <section className="ac-part">
       <div className="ac-bloc-tete">
         <h2>Noter</h2>
         <Link href="/notes" className="ac-lien">le calepin →</Link>
@@ -231,7 +242,7 @@ function DepenseRapide({ jour, onFait }) {
   }
 
   return (
-    <section className="ac-bloc">
+    <section className="ac-part">
       <div className="ac-bloc-tete">
         <h2>Dépense</h2>
         <Link href="/budget" className="ac-lien">le budget →</Link>
@@ -308,7 +319,7 @@ function Convertisseur() {
   };
 
   return (
-    <section className="ac-bloc">
+    <section className="ac-part">
       <div className="ac-bloc-tete">
         <h2>Convertir</h2>
         <span className="ac-taux">1 € = {rate.toFixed(2)} MXN{live ? "" : " (dernier connu)"}</span>
@@ -328,22 +339,38 @@ function Convertisseur() {
   );
 }
 
-/* ---------- Météo du lieu où l'on est ---------- */
+/* ---------- Météo ---------- */
 function Meteo({ lieu }) {
   const [m, setM] = useState(null);
+  const [pos, setPos] = useState(null);
+
+  // La position du dernier post publié peut être à des centaines de kilomètres
+  // de là où l'on se trouve : on demande d'abord la vraie position à l'appareil,
+  // et le dernier post ne sert que de repli.
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {},
+      { maximumAge: 30 * 60 * 1000, timeout: 6000 }
+    );
+  }, []);
+
+  const ici = pos || lieu;
 
   useEffect(() => {
-    if (!lieu) return;
+    if (!ici) return;
     let annule = false;
-    fetchMeteoJour(lieu.lat, lieu.lng).then((d) => { if (!annule) setM(d); });
+    fetchMeteoJour(ici.lat, ici.lng).then((d) => { if (!annule) setM(d); });
     return () => { annule = true; };
-  }, [lieu?.lat, lieu?.lng]);
+  }, [ici?.lat, ici?.lng]);
 
-  if (!m) return <div className="ac-meteo ac-meteo-vide" />;
+  if (!m || !ici) return <div className="ac-meteo ac-meteo-vide" />;
   const info = meteoInfo(m.code);
+  const detail = `https://weather.com/fr-FR/temps/aujour/l/${ici.lat.toFixed(3)},${ici.lng.toFixed(3)}`;
 
   return (
-    <div className="ac-meteo">
+    <a className="ac-meteo" href={detail} target="_blank" rel="noopener noreferrer">
       <div className="ac-meteo-haut">
         <span className="ac-meteo-ic">{info.emoji}</span>
         <span>
@@ -353,6 +380,7 @@ function Meteo({ lieu }) {
             {m.tmin != null && ` · ${m.tmin}° la nuit`}
           </span>
         </span>
+        <span className="ac-meteo-plus">détail ↗</span>
       </div>
       {m.heures.length > 0 && (
         <div className="ac-heures">
@@ -365,7 +393,7 @@ function Meteo({ lieu }) {
           ))}
         </div>
       )}
-    </div>
+    </a>
   );
 }
 
@@ -380,8 +408,9 @@ function BandeOutils() {
   return (
     <nav className="ac-bande" aria-label="Derniers outils ouverts">
       {outils.map((o) => (
-        <Link key={o.href} href={o.href} className="ac-bande-ic" title={o.label} aria-label={o.label}>
-          {o.ic}
+        <Link key={o.href} href={o.href} className="ac-bande-item">
+          <span className="ac-bande-ic">{o.ic}</span>
+          <span className="ac-bande-lab">{o.label}</span>
         </Link>
       ))}
     </nav>
