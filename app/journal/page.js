@@ -8,6 +8,7 @@ import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
 import { creerDictee } from "../../lib/dictee";
 import { creerGardeEcran } from "../../lib/veille";
+import { distanceKm, arrondiKm } from "../../lib/geo";
 import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 import PhotoPicker, { AstucePartage } from "./PhotoPicker";
@@ -57,6 +58,7 @@ export default function Journal() {
   const [noteSociale, setNoteSociale] = useState(3);
   const [noteAventure, setNoteAventure] = useState(3);
   const [hebergement, setHebergement] = useState("");
+  const [km, setKm] = useState("");
   const [photoPrincipale, setPhotoPrincipale] = useState(null);
   const [reflexionPrivee, setReflexionPrivee] = useState(false);
   const [post, setPost] = useState(null);
@@ -175,6 +177,7 @@ export default function Journal() {
     setNoteSociale(3);
     setNoteAventure(3);
     setHebergement("");
+    setKm("");
     setPhotoPrincipale(null);
     setReflexionPrivee(false);
     setLinkedRencontres([]);
@@ -237,6 +240,7 @@ export default function Journal() {
       setNoteSociale(existing.note_sociale ?? 3);
       setNoteAventure(existing.note_aventure ?? 3);
       setHebergement(existing.hebergement || "");
+      setKm(existing.km == null ? "" : String(existing.km));
       setPhotoPrincipale(existing.photo_principale || null);
       setReflexionPrivee(!!existing.reflexion_privee);
       setPhotos(avecPartage(existing.photos || []));
@@ -261,7 +265,7 @@ export default function Journal() {
       setMessages([]);
       setPhotos(avecPartage([]));
       setNoteHumeur(3); setNoteEnergie(3); setNoteSociale(3); setNoteAventure(3);
-      setHebergement(""); setPhotoPrincipale(null); setReflexionPrivee(false);
+      setHebergement(""); setKm(""); setPhotoPrincipale(null); setReflexionPrivee(false);
       setLinkedRencontres([]); setPost(null);
       setPhase("choose");
     }
@@ -465,13 +469,36 @@ export default function Journal() {
       // le calepin.
       const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date, notes: notesJour.map((n) => n.texte), history: messages }) });
       if (!res.ok) throw new Error("api");
-      setPost(await res.json());
+      const genere = await res.json();
+      setPost(genere);
+      // Laissé vide, le kilométrage est estimé à vol d'oiseau depuis la dernière
+      // journée géolocalisée. C'est un ordre de grandeur proposé, pas une
+      // mesure : il reste modifiable, et rien n'est publié sans être relu.
+      setKm((actuel) => (actuel.trim() ? actuel : String(estimationKm(genere?.coords) ?? "")));
       setPhase("summary");
     } catch (e) {
       setError("Impossible de générer le post, réessaie.");
     } finally {
       setLoading(false);
     }
+  }
+
+  // « 12,5 » comme « 12.5 », et rien plutôt qu'un NaN silencieux.
+  function kmNombre(saisie) {
+    const t = (saisie || "").trim().replace(",", ".");
+    if (!t) return null;
+    const n = Number(t);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+
+  // Dernière journée géolocalisée avant celle-ci : le point de départ du trajet.
+  function estimationKm(coordsDuJour) {
+    if (!coordsDuJour) return null;
+    const veille = entries
+      .filter((e) => e.date < date && e.lat != null && e.lng != null)
+      .sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+    if (!veille) return null;
+    return arrondiKm(distanceKm({ lat: veille.lat, lng: veille.lng }, coordsDuJour));
   }
 
   async function saveEntry(status) {
@@ -496,6 +523,7 @@ export default function Journal() {
       note_sociale: noteSociale,
       note_aventure: noteAventure,
       hebergement: hebergement.trim() || null,
+      km: kmNombre(km),
       photo_principale: photoPrincipale || photos[0] || null,
       photos,
       raw_extracted: extracted,
@@ -841,6 +869,26 @@ export default function Journal() {
           <div>
             <label className="lbl">🛏️ Où as-tu dormi ?</label>
             <input className="input" value={hebergement} onChange={(e) => setHebergement(e.target.value)} placeholder="Nom de l'hôtel, hostel, Airbnb…" />
+          </div>
+
+          <div>
+            <label className="lbl">🛣️ Kilomètres parcourus</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                className="input"
+                type="text"
+                inputMode="decimal"
+                value={km}
+                onChange={(e) => setKm(e.target.value.replace(/[^0-9.,]/g, ""))}
+                placeholder="laisse vide pour une estimation"
+                style={{ maxWidth: 160 }}
+              />
+              <span style={{ color: "var(--muted)", fontSize: 14 }}>km</span>
+            </div>
+            <p style={{ fontSize: 11.5, color: "var(--muted)", margin: "6px 0 0", lineHeight: 1.45 }}>
+              Vide, il sera estimé à vol d'oiseau depuis la dernière journée
+              géolocalisée — une route réelle est toujours plus longue.
+            </p>
           </div>
 
           <div>

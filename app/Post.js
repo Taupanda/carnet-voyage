@@ -3,6 +3,7 @@ import PostSocial from "./PostSocial";
 import PostAdmin from "./PostAdmin";
 import { stageForDate, afficheJour, decoupeAnecdotes } from "../lib/stages";
 import { meteoInfo } from "../lib/weather";
+import { formateKm } from "../lib/geo";
 
 const NOTES = [
   { key: "note_humeur", label: "Humeur", ic: "😊" },
@@ -23,6 +24,7 @@ function Dots({ v }) {
 
 export default function Post({ e }) {
   const stage = stageForDate(e.date);
+  const km = formateKm(e.km);
   const c = stage?.couleur || "#BC5B2E";
   const recit = Array.isArray(e.recit) ? e.recit : [];
   const anecdotes = decoupeAnecdotes(e.anecdote);
@@ -140,6 +142,12 @@ export default function Post({ e }) {
                   <div className="meteo-label">{meteo.label} · min {e.meteo.tmin}°C</div>
                 </div>
               </div>
+            </div>
+          )}
+          {km && (
+            <div>
+              <div className="aside-head">Distance du jour</div>
+              <div className="heberg"><span>🛣️</span><span>{km}</span></div>
             </div>
           )}
           {e.hebergement && (
