@@ -61,6 +61,14 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 
 /* ============ SHELL : sidebar desktop + topbar mobile ============ */
 .shell { display: block; min-height: 100vh; }
+/* Hauteur de la barre de navigation de l'auteur. Elle est IMPOSÉE à la barre
+   plus bas, pas mesurée après coup : la même valeur sert à la barre et à tout
+   ce qui doit lui laisser la place, donc les deux ne peuvent pas diverger.
+   0 quand il n'y a pas de barre — un visiteur n'en a pas. */
+:root { --barre-h: 0px; }
+@media (min-width: 1024px) { :root { --barre-h: 55px; } }
+@media (max-width: 1023px) { :root { --barre-h: calc(63px + env(safe-area-inset-bottom, 0px)); } }
+
 .shell-main { min-width: 0; }
 @media (min-width: 1024px) {
   .shell { display: flex; }
@@ -786,7 +794,11 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .abo-choix b { display: block; font-size: 13.5px; color: var(--ink); margin-bottom: 2px; }
 
 /* ---- Journal : colonne de téléphone sur mobile, vraie page sur ordinateur ---- */
-.jr-shell { display: flex; flex-direction: column; height: 100dvh; max-width: 560px; margin: 0 auto; }
+/* 100dvh moins la barre, et non 100dvh tout court : la barre est fixée en bas
+   sur téléphone, donc un écran pleine hauteur passait dessous, et le rembourrage
+   que .shell-main ajoute pour elle s'empilait par-dessus — d'où un défilement
+   fantôme et un bas de formulaire masqué. */
+.jr-shell { display: flex; flex-direction: column; height: calc(100dvh - var(--barre-h)); max-width: 560px; margin: 0 auto; }
 .jr-scroll { flex: 1; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; }
 
 .moment-rang { font-family: var(--police); font-size: 11px; color: var(--muted); width: 16px; flex-shrink: 0; text-align: center; }
@@ -804,7 +816,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
      mobile : la page défile normalement au lieu d'être enfermée dans la hauteur
      du viewport, et le formulaire se sépare en une fiche (champs factuels,
      courts) et une colonne de récit, qui seule a besoin de largeur. */
-  .jr-shell.jr-large { height: auto; min-height: 100dvh; max-width: 1120px; }
+  .jr-shell.jr-large { height: auto; min-height: calc(100dvh - var(--barre-h)); max-width: 1120px; }
   .jr-shell.jr-large .jr-scroll { overflow: visible; padding: 26px 28px 40px; }
 
   .jr-large .post-card {
@@ -1003,15 +1015,15 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .voyage-onglet.on { background: var(--accent); color: #fff; }
 
 @media (min-width: 1024px) {
-  .barre-admin { position: sticky; top: 0; z-index: 30; padding: 8px 22px; border-bottom: 1px solid var(--line); background: var(--bg); grid-template-columns: repeat(5, max-content); justify-content: start; }
+  .barre-admin { position: sticky; top: 0; z-index: 30; height: var(--barre-h); box-sizing: border-box; padding: 8px 22px; border-bottom: 1px solid var(--line); background: var(--bg); grid-template-columns: repeat(5, max-content); justify-content: start; }
   .barre-geste { flex: 0 0 auto; flex-direction: row; gap: 8px; padding: 8px 15px; font-size: 13px; }
   .barre-ic { font-size: 15px; }
   .barre-fab { width: 38px; height: 38px; margin: 0 6px; font-size: 21px; }
   }
 
 @media (max-width: 1023px) {
-  .barre-admin { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 5px 6px calc(5px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); box-shadow: 0 -3px 16px rgba(33,29,23,0.07); }
-  .shell-main:has(.barre-admin) { padding-bottom: 70px; }
+  .barre-admin { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; height: var(--barre-h); box-sizing: border-box; padding: 5px 6px calc(5px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); box-shadow: 0 -3px 16px rgba(33,29,23,0.07); }
+  .shell-main:has(.barre-admin) { padding-bottom: var(--barre-h); }
 }
 
 /* ---- Accueil : peu de texte, des gestes ---- */
