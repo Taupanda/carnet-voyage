@@ -91,6 +91,8 @@ function NoteRapide({ jour, notes, onFait }) {
   const [dispo, setDispo] = useState(false);
   const champ = useRef(null);
   const recRef = useRef(null);
+  const dicteeRef = useRef(null);
+  const dernierDicteRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -122,13 +124,19 @@ function NoteRapide({ jour, notes, onFait }) {
     rec.continuous = false;
     rec.interimResults = true;
     // Ce qui était déjà écrit dans le champ n'est pas effacé par la dictée.
-    const dictee = creerDictee(texte);
+    // Passe par la ref, pas par une variable capturée : une correction au
+    // clavier en cours de dictée remplace l'objet, et le résultat suivant doit
+    // repartir du nouveau, pas de celui d'il y a trois secondes.
+    dicteeRef.current = creerDictee(texte);
     rec.onresult = (ev) => {
       const resultats = [];
       for (let i = 0; i < ev.results.length; i++) {
         resultats.push({ transcript: ev.results[i][0]?.transcript || "", isFinal: ev.results[i].isFinal });
       }
-      setTexte(dictee.surResultat(resultats));
+      const reconstruit = dicteeRef.current?.surResultat(resultats);
+      if (typeof reconstruit !== "string") return;
+      dernierDicteRef.current = reconstruit;
+      setTexte(reconstruit);
     };
     rec.onerror = () => { setEcoute(false); setErr("Micro indisponible."); };
     rec.onend = () => { setEcoute(false); champ.current?.focus(); };
@@ -158,7 +166,16 @@ function NoteRapide({ jour, notes, onFait }) {
           className="input"
           placeholder={ecoute ? "Je t'écoute…" : "Écrire ou dicter…"}
           value={texte}
-          onChange={(e) => setTexte(e.target.value)}
+          onChange={(e) => {
+            // Même règle que le journal : ce qui est tapé à la main prime, et la
+            // dictée repart de ce texte plutôt que de le remplacer.
+            const v = e.target.value;
+            setTexte(v);
+            if (v !== dernierDicteRef.current) {
+              dernierDicteRef.current = null;
+              dicteeRef.current = creerDictee(v);
+            }
+          }}
           onKeyDown={(e) => e.key === "Enter" && enregistrer(texte)}
           disabled={busy}
         />

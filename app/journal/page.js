@@ -69,8 +69,8 @@ export default function Journal() {
   const [notesJour, setNotesJour] = useState([]); // le calepin de la journée choisie
   const [envoiPhotos, setEnvoiPhotos] = useState(0); // photos en cours d'envoi
   const recognitionRef = useRef(null);
-  const wantRecRef = useRef(false);
   const dicteeRef = useRef(null);     // l'état de la dictée (lib/dictee.js)
+  const dernierDicteRef = useRef(null); // dernière valeur écrite PAR la dictée
   const recActiveRef = useRef(false); // une session tourne-t-elle déjà ?
   const purgeRef = useRef(false);     // la session en cours part à la poubelle
   // Photos arrivées par la galerie : elles n'appartiennent encore à aucune
@@ -111,20 +111,11 @@ export default function Journal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, entriesLoaded]);
 
-  // Dictée : après un retour d'arrière-plan / déverrouillage, on ré-acquiert le
-  // wake lock et on relance la reconnaissance si l'utilisateur voulait dicter.
+  // En quittant le journal, on coupe le micro : une session laissée en vie
+  // continuerait d'écrire dans un champ que plus personne ne regarde.
   useEffect(() => {
-    function onVis() {
-      if (document.visibilityState === "visible" && wantRecRef.current) {
-        requestWakeLock();
-        demarrerDictee(); // sans effet si une session tourne déjà
-      }
-    }
-    document.addEventListener("visibilitychange", onVis);
     return () => {
-      document.removeEventListener("visibilitychange", onVis);
-      wantRecRef.current = false;
-      try { recognitionRef.current?.stop(); } catch {}
+      try { recognitionRef.current?.abort(); } catch {}
       releaseWakeLock();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -335,7 +326,14 @@ export default function Journal() {
     setPhotoPrincipale((pp) => (pp === url ? null : pp));
   }
 
-  // ---- Dictée vocale robuste ----
+  // ---- Dictée vocale ----
+  //
+  // Un appui = une prise de parole, puis le micro s'arrête. Il se relançait
+  // tout seul à chaque silence, et la session repartie écrasait le champ au
+  // résultat suivant : impossible d'écrire au clavier — ni de se servir du
+  // micro du clavier — sans se faire effacer. Une session qui ne survit pas au
+  // silence ne peut plus voler la main, et elle supprime du même coup le rejeu
+  // au redémarrage, principale source des répétitions.
   async function requestWakeLock() {
     try { if ("wakeLock" in navigator) wakeLockRef.current = await navigator.wakeLock.request("screen"); } catch {}
   }
@@ -359,15 +357,13 @@ export default function Journal() {
         resultats.push({ transcript: ev.results[i][0]?.transcript || "", isFinal: ev.results[i].isFinal });
       }
       const reconstruit = dicteeRef.current?.surResultat(resultats);
-      if (typeof reconstruit === "string") setInput(reconstruit);
+      if (typeof reconstruit === "string") {
+        dernierDicteRef.current = reconstruit;
+        setInput(reconstruit);
+      }
     };
     rec.onerror = (e) => {
-      // micro refusé : on arrête. Autres erreurs (no-speech, aborted, network) :
-      // onend relancera tant que l'utilisateur veut dicter.
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        wantRecRef.current = false;
-        setRecording(false);
-        releaseWakeLock();
         setError("Micro refusé — autorise le micro pour ce site dans les réglages du navigateur.");
       }
     };
@@ -378,29 +374,30 @@ export default function Journal() {
         purgeRef.current = false;
         dicteeRef.current?.purger();
       } else {
-        // session close : ce qu'elle a reconnu rejoint le texte acquis
         dicteeRef.current?.surFin();
       }
-      if (wantRecRef.current) {
-        // Chrome coupe après quelques secondes de silence. On repart sur un
-        // objet NEUF : relancer le même rejoue sa liste de résultats, et
-        // c'est précisément ce qui répétait les mots déjà dictés.
-        demarrerDictee();
-      } else {
-        setRecording(false);
-        releaseWakeLock();
-      }
+      setRecording(false);
+      releaseWakeLock();
     };
     return rec;
   }
 
+  // Le champ appartient à celui qui écrit. Quand la valeur ne vient pas de la
+  // dictée, c'est une saisie humaine — clavier, ou micro du clavier : la dictée
+  // repart de CE texte au lieu de le remplacer par le sien au coup suivant.
+  function saisieManuelle(valeur) {
+    setInput(valeur);
+    if (valeur === dernierDicteRef.current) return;
+    dernierDicteRef.current = null;
+    dicteeRef.current = creerDictee(valeur);
+  }
+
   // Table rase entre deux tours de conversation. `abort()` plutôt que `stop()` :
   // stop() laisse encore filer un dernier onresult, qui reremplirait le champ
-  // avec la phrase qu'on vient justement d'envoyer. abort() jette tout et ne
-  // déclenche que onend, qui relancera une session neuve si le micro est resté
-  // allumé — il peut donc enchaîner sa réponse sans retoucher au bouton.
+  // avec la phrase qu'on vient justement d'envoyer.
   function repartirDeZero() {
     dicteeRef.current?.purger();
+    dernierDicteRef.current = null;
     if (recActiveRef.current) {
       purgeRef.current = true;
       try { recognitionRef.current?.abort(); } catch {}
@@ -422,7 +419,6 @@ export default function Journal() {
   }
   async function toggleRecording() {
     if (recording) {
-      wantRecRef.current = false;
       try { recognitionRef.current?.stop(); } catch {}
       setRecording(false);
       releaseWakeLock();
@@ -434,8 +430,9 @@ export default function Journal() {
       return;
     }
     setError(null);
+    // On repart toujours du contenu réel du champ, pas d'un état mémorisé.
     dicteeRef.current = creerDictee(input || "");
-    wantRecRef.current = true;
+    dernierDicteRef.current = null;
     await requestWakeLock();
     demarrerDictee();
     setRecording(true);
@@ -807,9 +804,9 @@ export default function Journal() {
               className="input"
               style={{ flex: 1 }}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => saisieManuelle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={recording ? "Je t'écoute…" : "Raconte…"}
+              placeholder={recording ? "Je t'écoute…" : "Raconte… (ou 🎙️, ou le micro de ton clavier)"}
             />
             <button className="btn" style={{ padding: "10px 16px" }} onClick={handleSend} disabled={loading}>➤</button>
           </div>

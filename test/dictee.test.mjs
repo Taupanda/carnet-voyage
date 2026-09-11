@@ -148,3 +148,18 @@ test("le coût ne grandit pas avec la longueur de la dictée", () => {
   // attraper un retour au comportement quadratique sans être fragile.
   assert.ok(fin < Math.max(debut, 1) * 8, `coût par événement multiplié par ${(fin / Math.max(debut, 0.001)).toFixed(1)} sur une longue dictée`);
 });
+
+test("une correction au clavier n'est pas écrasée par la suite de la dictée", () => {
+  // Le micro se relançait à chaque silence et le résultat suivant remplaçait le
+  // champ : impossible de corriger un mot à la main, ni d'utiliser le micro du
+  // clavier. Une reprise repart désormais du texte réellement présent.
+  const d1 = creerDictee();
+  moteur(d1).definitif("on a mangé des chapulines");
+  d1.surFin();
+
+  // L'auteur corrige à la main, puis redicte.
+  const corrige = "on a mangé des chapulines au marché";
+  const d2 = creerDictee(corrige);
+  assert.equal(moteur(d2).definitif("avec Ana et Diego"),
+    "on a mangé des chapulines au marché avec Ana et Diego");
+});
