@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { todayLocal } from "../../lib/stages";
+import { appelApi } from "../../lib/jeton";
 
 const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -25,18 +26,9 @@ const PRESETS = [
   { nom: "Superman", series: "3", reps: "15" },
 ];
 
-async function api(path, opts = {}) {
-  const { data } = await supabaseBrowser().auth.getSession();
-  const token = data.session?.access_token;
-  return fetch(path, {
-    ...opts,
-    headers: {
-      ...(opts.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.body ? { "Content-Type": "application/json" } : {}),
-    },
-  });
-}
+// Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
+// et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
+const api = appelApi;
 
 // Même fuseau que le reste de l'app : le jour du voyage, pas UTC.
 const todayStr = () => todayLocal();

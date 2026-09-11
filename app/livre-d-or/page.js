@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { Avatar, attachProfiles } from "../Social";
+import { jetonCourant } from "../../lib/jeton";
 
 const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase();
 
@@ -32,8 +33,7 @@ export default function LivreDor() {
     const { data } = await sb.from("messages").select("*").eq("public", true).order("created_at", { ascending: false });
     setPublics(await attachProfiles(sb, data || []));
     if (isAdmin) {
-      const { data: sess } = await sb.auth.getSession();
-      const token = sess.session?.access_token;
+      const token = await jetonCourant();
       const res = await fetch("/api/inbox", { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       if (res.ok) { const all = await res.json(); setPrivs(all.filter((m) => !m.public)); }
     }
@@ -52,8 +52,7 @@ export default function LivreDor() {
 
   async function markRead(id) {
     const sb = supabaseBrowser();
-    const { data: sess } = await sb.auth.getSession();
-    const token = sess.session?.access_token;
+    const token = await jetonCourant();
     await fetch("/api/inbox", { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ id }) });
     setPrivs((ms) => ms.map((m) => (m.id === id ? { ...m, lu: true } : m)));
   }
@@ -61,8 +60,7 @@ export default function LivreDor() {
   async function delMsg(id) {
     if (!confirm("Supprimer ce message ?")) return;
     const sb = supabaseBrowser();
-    const { data: sess } = await sb.auth.getSession();
-    const token = sess.session?.access_token;
+    const token = await jetonCourant();
     await fetch("/api/moderate", { method: "DELETE", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ table: "messages", id }) });
     setPublics((ms) => ms.filter((m) => m.id !== id));
     setPrivs((ms) => ms.filter((m) => m.id !== id));

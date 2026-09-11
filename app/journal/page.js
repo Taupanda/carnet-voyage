@@ -10,6 +10,7 @@ import { creerDictee } from "../../lib/dictee";
 import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 import PhotoPicker, { AstucePartage } from "./PhotoPicker";
+import { appelApi } from "../../lib/jeton";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
@@ -21,18 +22,22 @@ const emptyExtracted = () => ({ lieu: null, activites: null, rencontres: null, a
 const todayStr = () => todayLocal();
 const dayNumber = (d) => dayNumberOf(d);
 
-async function api(path, opts = {}) {
-  const { data } = await supabaseBrowser().auth.getSession();
-  const token = data.session?.access_token;
-  return fetch(path, {
-    ...opts,
-    headers: {
-      ...(opts.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.body && !(opts.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
-    },
-  });
+// Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
+// et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
+// Pourquoi un appel a échoué, en une phrase lisible à l'écran.
+async function motifEchec(res) {
+  if (res.status === 401) return "session expirée, reconnecte-toi";
+  if (res.status === 504 || res.status === 408) return "le serveur a mis trop de temps";
+  const detail = await res.json().catch(() => null);
+  return detail?.error || `erreur ${res.status}`;
 }
+
+function motifLisible(e) {
+  if (e?.name === "AbortError") return "délai dépassé (45 s)";
+  return e?.message || "cause inconnue";
+}
+
+const api = appelApi;
 
 export default function Journal() {
   const { user, loading: authLoading } = useAuth();
@@ -275,7 +280,7 @@ export default function Journal() {
     setLoading(true);
     try {
       const res = await api("/api/interview", { method: "POST", body: JSON.stringify({ history: newMessages, extracted, photoCount: photos.length, notes: notesJour.map((n) => n.texte) }) });
-      if (!res.ok) throw new Error("api");
+      if (!res.ok) throw new Error(await motifEchec(res));
       const parsed = await res.json();
       setExtracted((prev) => ({ ...prev, ...parsed.extracted }));
       setMessages((m) => [...m, { role: "assistant", content: parsed.reply }]);
@@ -284,7 +289,12 @@ export default function Journal() {
         setTimeout(() => setPhase("moods"), 600);
       }
     } catch (e) {
-      setError("Petit souci de connexion — réessaie d'envoyer ton message.");
+      // Le message exact, pas un « souci de connexion » générique : sans lui,
+      // une panne côté serveur ressemblait à un simple problème de réseau et
+      // il n'y avait rien à rapporter pour la diagnostiquer.
+      setError(`L'assistant n'a pas répondu — ${motifLisible(e)}. Ton message est gardé, réessaie.`);
+      setMessages((m) => m.slice(0, -1));
+      setInput(userMsg);
     } finally {
       setLoading(false);
     }

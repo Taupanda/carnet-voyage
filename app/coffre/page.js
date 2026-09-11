@@ -4,6 +4,7 @@ import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { compressImage } from "../../lib/compressImage";
+import { appelApi, jetonCourant } from "../../lib/jeton";
 
 const CATS = [
   { id: "passeport", label: "Identité", ic: "🛂" },
@@ -14,22 +15,12 @@ const CATS = [
 ];
 const catOf = (id) => CATS.find((c) => c.id === id) || CATS[4];
 
-async function api(path, opts = {}) {
-  const { data } = await supabaseBrowser().auth.getSession();
-  const token = data.session?.access_token;
-  return fetch(path, {
-    ...opts,
-    headers: {
-      ...(opts.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.body ? { "Content-Type": "application/json" } : {}),
-    },
-  });
-}
+// Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
+// et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
+const api = appelApi;
 
 async function uploadDoc(file) {
-  const { data } = await supabaseBrowser().auth.getSession();
-  const token = data.session?.access_token;
+  const token = await jetonCourant();
   const c = await compressImage(file);
   const fd = new FormData();
   fd.append("file", c, c.name || file.name);

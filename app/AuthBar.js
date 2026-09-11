@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 import { useMode } from "./ModeProvider";
 import { supabaseBrowser } from "../lib/supabaseClient";
+import { jetonCourant } from "../lib/jeton";
 
 export default function AuthBar() {
   const { user, profile, loading, signOut } = useAuth();
@@ -20,8 +21,7 @@ export default function AuthBar() {
     let annule = false;
     (async () => {
       try {
-        const { data } = await supabaseBrowser().auth.getSession();
-        const token = data.session?.access_token;
+        const token = await jetonCourant();
         if (!token) return;
         const res = await fetch("/api/notifs", { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) return;

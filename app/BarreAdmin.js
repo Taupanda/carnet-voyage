@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useMode } from "./ModeProvider";
 import { supabaseBrowser } from "../lib/supabaseClient";
 import { todayLocal } from "../lib/stages";
+import { jetonCourant } from "../lib/jeton";
 
 // Quatre destinations et un bouton d'ajout. Elles absorbent les dix-neuf
 // entrées du Menu : Outils recueille tout ce qui n'est ni le voyage, ni le
@@ -26,8 +27,7 @@ export default function BarreAdmin() {
     let annule = false;
     (async () => {
       try {
-        const { data } = await supabaseBrowser().auth.getSession();
-        const token = data.session?.access_token;
+        const token = await jetonCourant();
         if (!token) return;
         const jour = todayLocal();
         const res = await fetch(`/api/entries?date=${jour}`, { headers: { Authorization: `Bearer ${token}` } });

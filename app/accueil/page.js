@@ -7,6 +7,7 @@ import { todayLocal } from "../../lib/stages";
 import { meteoInfo, fetchMeteoJour } from "../../lib/weather";
 import { derniersOutils } from "../../lib/outils";
 import { creerDictee } from "../../lib/dictee";
+import { appelApi } from "../../lib/jeton";
 
 const CATS = [
   { id: "repas", label: "Repas", ic: "🍽️" },
@@ -19,18 +20,9 @@ const CATS = [
 
 const FALLBACK_RATE = 19.5; // 1 € ≈ X MXN, repli hors-ligne
 
-async function api(path, opts = {}) {
-  const { data } = await supabaseBrowser().auth.getSession();
-  const token = data.session?.access_token;
-  return fetch(path, {
-    ...opts,
-    headers: {
-      ...(opts.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.body ? { "Content-Type": "application/json" } : {}),
-    },
-  });
-}
+// Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
+// et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
+const api = appelApi;
 
 async function motifEchec(res) {
   if (res.status === 401) return "session admin non reconnue, reconnecte-toi";

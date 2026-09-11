@@ -4,19 +4,11 @@ import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { STAGES, stageForDate, todayLocal, TRIP_START, TRIP_END, TRIP_DATES } from "../../lib/stages";
+import { appelApi } from "../../lib/jeton";
 
-async function api(path, opts = {}) {
-  const { data } = await supabaseBrowser().auth.getSession();
-  const token = data.session?.access_token;
-  return fetch(path, {
-    ...opts,
-    headers: {
-      ...(opts.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.body ? { "Content-Type": "application/json" } : {}),
-    },
-  });
-}
+// Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
+// et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
+const api = appelApi;
 
 async function motifEchec(res) {
   if (res.status === 401) return "session admin non reconnue, reconnecte-toi";

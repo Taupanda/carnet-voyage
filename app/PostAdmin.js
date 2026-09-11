@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMode } from "./ModeProvider";
 import { supabaseBrowser } from "../lib/supabaseClient";
+import { jetonCourant } from "../lib/jeton";
 
 // Contrôles admin affichés sur chaque post, uniquement en mode éditeur.
 export default function PostAdmin({ date }) {
@@ -12,8 +13,7 @@ export default function PostAdmin({ date }) {
 
   async function del() {
     if (!confirm("Supprimer définitivement ce post ?")) return;
-    const { data } = await supabaseBrowser().auth.getSession();
-    const token = data.session?.access_token;
+    const token = await jetonCourant();
     const res = await fetch("/api/entries", {
       method: "DELETE",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },

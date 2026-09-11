@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabaseBrowser } from "../lib/supabaseClient";
+import { memoriserJeton } from "../lib/jeton";
 
 const Ctx = createContext({
   user: null,
@@ -34,6 +35,9 @@ export default function AuthProvider({ children }) {
     sb.auth.getSession()
       .then(({ data }) => {
         const u = data.session?.user || null;
+        // Déposé ici une fois pour toutes : les requêtes n'ont plus à le
+        // redemander, et ne peuvent donc plus rester coincées à le faire.
+        memoriserJeton(data.session?.access_token);
         setUser(u);
         setLoading(false);
         clearTimeout(failsafe);
@@ -47,9 +51,13 @@ export default function AuthProvider({ children }) {
        qui fige toutes les requêtes suivantes. On diffère donc via setTimeout. */
     const { data: sub } = sb.auth.onAuthStateChange((event, session) => {
       const u = session?.user || null;
+      // La session arrive en argument : la lire ne coûte aucun appel, donc
+      // aucun verrou — la règle critique ci-dessus reste respectée.
+      memoriserJeton(session?.access_token);
       setUser(u);
       setLoading(false);
       if (event === "SIGNED_OUT") {
+        memoriserJeton(null);
         setProfile(null);
         return;
       }

@@ -4,19 +4,11 @@ import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { todayLocal } from "../../lib/stages";
+import { appelApi } from "../../lib/jeton";
 
-async function api(path, opts = {}) {
-  const { data } = await supabaseBrowser().auth.getSession();
-  const token = data.session?.access_token;
-  return fetch(path, {
-    ...opts,
-    headers: {
-      ...(opts.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.body ? { "Content-Type": "application/json" } : {}),
-    },
-  });
-}
+// Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
+// et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
+const api = appelApi;
 
 // Le jour courant suit le fuseau du voyage, pas celui du navigateur ni UTC.
 const todayStr = () => todayLocal();

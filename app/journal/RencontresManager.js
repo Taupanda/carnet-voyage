@@ -2,19 +2,11 @@
 import { useState, useEffect } from "react";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import PhotoPicker from "./PhotoPicker";
+import { appelApi, jetonCourant } from "../../lib/jeton";
 
-async function api(path, opts = {}) {
-  const { data } = await supabaseBrowser().auth.getSession();
-  const token = data.session?.access_token;
-  return fetch(path, {
-    ...opts,
-    headers: {
-      ...(opts.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.body ? { "Content-Type": "application/json" } : {}),
-    },
-  });
-}
+// Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
+// et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
+const api = appelApi;
 
 const EMPTY = { prenom: "", nom: "", pays: "", lieu_rencontre: "", activites: "", anecdote: "", reseaux: "", photo_url: null };
 
@@ -36,8 +28,7 @@ export default function RencontresManager({ onClose }) {
     setBusy(true);
     setErr(null);
     try {
-      const { data: sess } = await supabaseBrowser().auth.getSession();
-      const token = sess.session?.access_token;
+      const token = await jetonCourant();
       const form = new FormData();
       form.append("file", file);
       form.append("date", "rencontres");

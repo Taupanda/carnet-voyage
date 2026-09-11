@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "../lib/supabaseClient";
+import { jetonCourant } from "../lib/jeton";
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -52,8 +53,7 @@ export default function PushButton({ role = "reader", label, labelDone }) {
       });
       let authHeaders = {};
       if (role === "admin") {
-        const { data } = await supabaseBrowser().auth.getSession();
-        const token = data.session?.access_token;
+        const token = await jetonCourant();
         if (token) authHeaders = { Authorization: `Bearer ${token}` };
       }
       const res = await fetch("/api/push", {

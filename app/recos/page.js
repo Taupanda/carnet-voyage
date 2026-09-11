@@ -5,6 +5,7 @@ import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { STAGES, todayLocal } from "../../lib/stages";
 import { Avatar, attachProfiles } from "../Social";
+import { jetonCourant } from "../../lib/jeton";
 
 const CATS = [
   { id: "visite", label: "Visites & expériences", emoji: "🏛️" },
@@ -60,8 +61,7 @@ export default function Recos() {
     if (user?.id === r.user_id) {
       await supabaseBrowser().from("recos").delete().eq("id", r.id);
     } else if (isAdmin) {
-      const { data } = await supabaseBrowser().auth.getSession();
-      const token = data.session?.access_token;
+      const token = await jetonCourant();
       await fetch("/api/moderate", { method: "DELETE", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ table: "recos", id: r.id }) });
     }
     load();
