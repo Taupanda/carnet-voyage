@@ -119,3 +119,32 @@ test("segments vides et bruit ignorés", () => {
   assert.equal(recoller("seul", ""), "seul");
   assert.equal(recoller("", "seul"), "seul");
 });
+
+test("le coût ne grandit pas avec la longueur de la dictée", () => {
+  // La régression qui a rendu la saisie erratique : chaque mot re-découpait
+  // tout le texte déjà accumulé. Invisible sur trois phrases, invivable sur un
+  // vrai récit de journée. On compare donc le coût au début et à la fin.
+  const phrase = "aujourd'hui on est partis tôt de l'hôtel pour rejoindre le marché de Coyoacán".split(" ");
+  const d = creerDictee();
+  const resultats = [];
+  const chrono = (n) => {
+    const t0 = process.hrtime.bigint();
+    for (let f = 0; f < n; f++) {
+      for (let i = 1; i <= phrase.length; i++) {
+        if (resultats.length && !resultats[resultats.length - 1].isFinal) resultats.pop();
+        resultats.push({ transcript: phrase.slice(0, i).join(" ") + " " + f, isFinal: false });
+        d.surResultat(resultats);
+      }
+      resultats.pop();
+      resultats.push({ transcript: phrase.join(" ") + " " + f, isFinal: true });
+      d.surResultat(resultats);
+    }
+    return Number(process.hrtime.bigint() - t0) / 1e6;
+  };
+  const debut = chrono(5);          // les cinq premiers énoncés
+  chrono(40);                       // on allonge beaucoup
+  const fin = chrono(5);            // cinq de plus, mais sur un texte long
+  // Avant le plafond, le rapport dépassait 20. Une marge large suffit à
+  // attraper un retour au comportement quadratique sans être fragile.
+  assert.ok(fin < Math.max(debut, 1) * 8, `coût par événement multiplié par ${(fin / Math.max(debut, 0.001)).toFixed(1)} sur une longue dictée`);
+});

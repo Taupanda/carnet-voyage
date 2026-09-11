@@ -358,7 +358,8 @@ export default function Journal() {
       for (let i = 0; i < ev.results.length; i++) {
         resultats.push({ transcript: ev.results[i][0]?.transcript || "", isFinal: ev.results[i].isFinal });
       }
-      setInput(dicteeRef.current?.surResultat(resultats) ?? "");
+      const reconstruit = dicteeRef.current?.surResultat(resultats);
+      if (typeof reconstruit === "string") setInput(reconstruit);
     };
     rec.onerror = (e) => {
       // micro refusé : on arrête. Autres erreurs (no-speech, aborted, network) :
