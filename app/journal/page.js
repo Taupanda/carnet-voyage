@@ -99,6 +99,12 @@ export default function Journal() {
   const sessionTextRef = useRef("");  // finaux de la session en cours
   const recActiveRef = useRef(false); // une session tourne-t-elle déjà ?
   const purgeRef = useRef(false);     // la session en cours part à la poubelle
+  // Photos arrivées par la galerie : elles n'appartiennent encore à aucune
+  // journée. Elles vivent dans une ref, pas dans `photos`, parce qu'openDate()
+  // réinitialise `photos` et les effacerait au moment même où l'on choisit le
+  // jour auquel les rattacher.
+  const partageRef = useRef([]);
+  const [partageRecu, setPartageRecu] = useState(0);
   const wakeLockRef = useRef(null);
   const scrollRef = useRef(null);
 
@@ -176,7 +182,7 @@ export default function Journal() {
           fichiers.push(new File([blob], nom, { type: blob.type || "image/jpeg" }));
           await cache.delete(cle);
         }
-        if (!annule && fichiers.length) await envoyerPhotos(fichiers);
+        if (!annule && fichiers.length) await envoyerPhotos(fichiers, { partage: true });
         else if (!annule) setError("Les photos partagées n'ont pas pu être récupérées — réessaie depuis la galerie.");
       } catch (e) {
         if (!annule) setError("Les photos partagées n'ont pas pu être récupérées — réessaie depuis la galerie.");
@@ -242,6 +248,13 @@ export default function Journal() {
     setLoading(false);
   }
 
+  // Une journée ouverte repart de ce qu'elle contient en base — sauf pour les
+  // photos de la galerie, qui n'attendaient justement qu'un jour où atterrir.
+  function avecPartage(base) {
+    const enAttente = partageRef.current.filter((u) => !base.includes(u));
+    return enAttente.length ? [...base, ...enAttente] : base;
+  }
+
   function openDate(d) {
     setDate(d);
     setError(null);
@@ -255,7 +268,7 @@ export default function Journal() {
       setHebergement(existing.hebergement || "");
       setPhotoPrincipale(existing.photo_principale || null);
       setReflexionPrivee(!!existing.reflexion_privee);
-      setPhotos(existing.photos || []);
+      setPhotos(avecPartage(existing.photos || []));
       loadLinkedRencontres(d);
       loadNotes(d);
       setPost({
@@ -275,7 +288,7 @@ export default function Journal() {
       loadNotes(d);
       setExtracted(emptyExtracted());
       setMessages([]);
-      setPhotos([]);
+      setPhotos(avecPartage([]));
       setNoteHumeur(3); setNoteEnergie(3); setNoteSociale(3); setNoteAventure(3);
       setHebergement(""); setPhotoPrincipale(null); setReflexionPrivee(false);
       setLinkedRencontres([]); setPost(null);
@@ -318,7 +331,7 @@ export default function Journal() {
     envoyerPhotos(files);
   }
 
-  async function envoyerPhotos(files) {
+  async function envoyerPhotos(files, { partage = false } = {}) {
     if (!files.length) return;
     setEnvoiPhotos((n) => n + files.length);
     for (const f of files) {
@@ -330,7 +343,11 @@ export default function Journal() {
         const res = await api("/api/upload", { method: "POST", body: fd });
         if (!res.ok) throw new Error("upload");
         const { url } = await res.json();
-        setPhotos((p) => [...p, url]);
+        if (partage) {
+          partageRef.current = [...partageRef.current, url];
+          setPartageRecu((n) => n + 1);
+        }
+        setPhotos((p) => (p.includes(url) ? p : [...p, url]));
       } catch (err) {
         setError("Échec de l'envoi d'une photo — réessaie.");
       } finally {
@@ -525,6 +542,9 @@ export default function Journal() {
       } catch {}
       setEntries((es) => [saved, ...es.filter((x) => x.date !== date)].sort((a, b) => (a.date < b.date ? 1 : -1)));
       marquerNotesUtilisees(date);
+      // rattachées pour de bon : elles ne doivent pas suivre vers un autre jour
+      partageRef.current = [];
+      setPartageRecu(0);
       setPhase("saved");
     } catch (e) {
       setError("Échec de l'enregistrement : " + e.message);
@@ -642,6 +662,13 @@ export default function Journal() {
 
       {phase === "date" && !showInbox && !showComments && !showRencontres && (
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+          {(envoiPhotos > 0 || partageRecu > 0) && (
+            <p className="partage-banniere">
+              {envoiPhotos > 0
+                ? `Réception de ${envoiPhotos} photo${envoiPhotos > 1 ? "s" : ""} depuis la galerie…`
+                : `${partageRecu} photo${partageRecu > 1 ? "s" : ""} reçue${partageRecu > 1 ? "s" : ""} de la galerie — choisis la journée à laquelle les rattacher.`}
+            </p>
+          )}
           <h2 className="serif" style={{ fontSize: 19 }}>Quelle journée veux-tu raconter ?</h2>
           <p style={{ fontSize: 13, color: "var(--muted)" }}>Un point doré = une note existe déjà (tape pour la modifier).</p>
           <MiniCalendar date={date} onSelect={openDate} entryDates={entries.map((e) => e.date)} entries={entries} />

@@ -893,6 +893,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .photo-btn { padding: 9px 15px; font-size: 13.5px; }
 .photo-btn-compact { padding: 10px; width: 42px; text-align: center; }
 .photo-astuce { font-size: 11.5px; color: var(--muted); line-height: 1.45; margin: 7px 0 0; }
+.partage-banniere { font-size: 13px; line-height: 1.45; margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .photo-astuce b { font-weight: 600; color: var(--ink2); }
 .photo-envoi { font-family: var(--police); font-size: 11px; color: var(--accent); margin: 8px 0 0; }
 .photo-vide { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
