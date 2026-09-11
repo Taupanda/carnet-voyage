@@ -7,6 +7,7 @@ import { supabaseBrowser } from "../../lib/supabaseClient";
 import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
 import { creerDictee } from "../../lib/dictee";
+import { creerGardeEcran } from "../../lib/veille";
 import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 import PhotoPicker, { AstucePartage } from "./PhotoPicker";
@@ -344,13 +345,19 @@ export default function Journal() {
   // micro du clavier — sans se faire effacer. Une session qui ne survit pas au
   // silence ne peut plus voler la main, et elle supprime du même coup le rejeu
   // au redémarrage, principale source des répétitions.
-  async function requestWakeLock() {
-    try { if ("wakeLock" in navigator) wakeLockRef.current = await navigator.wakeLock.request("screen"); } catch {}
+  // Le garde est créé à la demande : il pose un écouteur de visibilité, qu'il
+  // faut pouvoir retirer aussi sûrement qu'on l'a mis.
+  function garde() {
+    if (!wakeLockRef.current) {
+      wakeLockRef.current = creerGardeEcran({
+        surEchec: (raison) =>
+          setError(`L'écran risque de s'éteindre pendant la dictée (${raison}). Touche l'écran de temps en temps, ou augmente le délai de veille du téléphone.`),
+      });
+    }
+    return wakeLockRef.current;
   }
-  function releaseWakeLock() {
-    try { wakeLockRef.current?.release?.(); } catch {}
-    wakeLockRef.current = null;
-  }
+  async function requestWakeLock() { await garde().allumer(); }
+  function releaseWakeLock() { wakeLockRef.current?.eteindre(); }
   // Contre les répétitions, un seul principe : ne jamais CUMULER un delta, mais
   // RECONSTRUIRE le texte de la session à chaque événement. Si le navigateur
   // rejoue des résultats déjà vus — ce qu'il fait au redémarrage — on retombe

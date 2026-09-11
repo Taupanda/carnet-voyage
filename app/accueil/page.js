@@ -7,6 +7,7 @@ import { todayLocal } from "../../lib/stages";
 import { meteoInfo, fetchMeteoJour } from "../../lib/weather";
 import { derniersOutils } from "../../lib/outils";
 import { creerDictee } from "../../lib/dictee";
+import { creerGardeEcran } from "../../lib/veille";
 import { appelApi } from "../../lib/jeton";
 
 const CATS = [
@@ -84,6 +85,7 @@ function NoteRapide({ jour, notes, onFait }) {
   const champ = useRef(null);
   const recRef = useRef(null);
   const dicteeRef = useRef(null);
+  const gardeRef = useRef(null);
   const dernierDicteRef = useRef(null);
 
   useEffect(() => {
@@ -130,9 +132,17 @@ function NoteRapide({ jour, notes, onFait }) {
       dernierDicteRef.current = reconstruit;
       setTexte(reconstruit);
     };
-    rec.onerror = () => { setEcoute(false); setErr("Micro indisponible."); };
-    rec.onend = () => { setEcoute(false); champ.current?.focus(); };
-    try { rec.start(); setEcoute(true); setErr(null); } catch {}
+    rec.onerror = () => { setEcoute(false); gardeRef.current?.eteindre(); setErr("Micro indisponible."); };
+    rec.onend = () => { setEcoute(false); gardeRef.current?.eteindre(); champ.current?.focus(); };
+    try {
+      rec.start();
+      setEcoute(true);
+      setErr(null);
+      // L'écran ne doit pas s'éteindre pendant qu'on parle : la reconnaissance
+      // s'arrête avec lui, en plein milieu d'une phrase.
+      if (!gardeRef.current) gardeRef.current = creerGardeEcran({});
+      gardeRef.current.allumer();
+    } catch {}
   }
 
   return (
