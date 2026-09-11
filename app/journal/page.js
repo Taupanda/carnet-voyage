@@ -150,6 +150,44 @@ export default function Journal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---- Photos partagées depuis la galerie (share_target) ----
+  // Le bouton de l'app dépend du sélecteur qu'Android veut bien ouvrir. Partir
+  // de la galerie contourne la question : on y choisit ses photos avec le
+  // multi-sélection du téléphone, « Partager », et elles arrivent ici. Le
+  // service worker les a mises de côté ; c'est cette page qui les téléverse,
+  // parce qu'elle seule porte la session de l'auteur.
+  // Après le deep-link ?date= : openDate() remet `photos` à la valeur du jour
+  // ouvert, et écraserait les photos importées si on les téléversait avant.
+  useEffect(() => {
+    if (!isAdmin || !entriesLoaded) return;
+    const combien = Number(new URLSearchParams(window.location.search).get("partage"));
+    if (!Number.isFinite(combien) || combien <= 0) return;
+    let annule = false;
+    (async () => {
+      try {
+        const cache = await caches.open("carnet-partage");
+        const cles = await cache.keys();
+        const fichiers = [];
+        for (const cle of cles) {
+          const res = await cache.match(cle);
+          if (!res) continue;
+          const blob = await res.blob();
+          const nom = decodeURIComponent(res.headers.get("x-nom") || "") || "photo.jpg";
+          fichiers.push(new File([blob], nom, { type: blob.type || "image/jpeg" }));
+          await cache.delete(cle);
+        }
+        if (!annule && fichiers.length) await envoyerPhotos(fichiers);
+        else if (!annule) setError("Les photos partagées n'ont pas pu être récupérées — réessaie depuis la galerie.");
+      } catch (e) {
+        if (!annule) setError("Les photos partagées n'ont pas pu être récupérées — réessaie depuis la galerie.");
+      }
+      // sans ça, un rechargement de la page réimporterait le même partage
+      window.history.replaceState({}, "", "/journal");
+    })();
+    return () => { annule = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, entriesLoaded]);
+
   function startInterview() {
     setSaisieMode("ia");
     setMessages([{ role: "assistant", content: "Alors, cette journée ? Raconte-moi comme tu veux, dans l'ordre que tu veux — je remets tout en forme après." }]);
@@ -274,9 +312,13 @@ export default function Journal() {
     }
   }
 
-  async function handlePhotos(e) {
+  function handlePhotos(e) {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
+    envoyerPhotos(files);
+  }
+
+  async function envoyerPhotos(files) {
     if (!files.length) return;
     setEnvoiPhotos((n) => n + files.length);
     for (const f of files) {

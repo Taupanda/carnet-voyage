@@ -1,19 +1,23 @@
 "use client";
 import { useRef } from "react";
 
-// Un seul bouton, qui ouvre le sélecteur de photos du téléphone.
+// Un bouton qui ouvre la galerie, et pas le gestionnaire de fichiers.
 //
-// Il y en avait deux — « Galerie » et « Photo » — parce qu'un `<input>` unique
-// tombait parfois sur le gestionnaire de fichiers au lieu des images. Le vrai
-// coupable n'était pas le nombre de boutons mais la liste d'extensions ajoutée
-// à `accept` : dès qu'`image/*` est mélangé à des .heic/.jpg/.png explicites,
-// Chrome sur Android renonce au sélecteur de photos du système et ouvre
-// « Fichiers ». Avec `image/*` seul, il ouvre l'écran de sélection de photos,
-// où l'on voit ses vignettes — c'est le seul chemin utile ici.
+// Deux réglages décident de l'écran qu'Android ouvre, et il faut les deux :
+//   - `accept` ne doit contenir QUE des types image. Une liste d'extensions
+//     ajoutée à `image/*` (.heic, .jpg…) suffit à faire renoncer Chrome au
+//     sélecteur de photos du système.
+//   - `multiple` doit être absent. Sur Android, la sélection multiple n'est
+//     proposée que par l'interface Documents : la demander, c'est demander
+//     « Fichiers ». C'est ce qui restait ici, et ce qui ouvrait la mauvaise
+//     fenêtre malgré un `accept` propre.
 //
-// Le bouton appareil photo (`capture`) a disparu avec : les photos existent
-// déjà dans la pellicule, personne n'en prend au moment d'écrire le post. Le
-// sélecteur du système propose de toute façon l'appareil photo si besoin.
+// Une photo à la fois, donc. Pour en envoyer plusieurs d'un coup, le chemin est
+// inverse : on part de la galerie, on sélectionne, on partage vers l'app —
+// `share_target` dans le manifeste, ramassé par le service worker.
+//
+// Le bouton appareil photo (`capture`) a disparu : les photos existent déjà
+// dans la pellicule, personne n'en prend au moment d'écrire le post.
 export default function PhotoPicker({ onFiles, busy = false, compact = false }) {
   const champRef = useRef(null);
 
@@ -24,11 +28,11 @@ export default function PhotoPicker({ onFiles, busy = false, compact = false }) 
         className={compact ? "btn-secondary photo-btn-compact" : "btn-secondary photo-btn"}
         onClick={() => champRef.current?.click()}
         disabled={busy}
-        aria-label="Ajouter des photos"
+        aria-label="Ajouter une photo depuis la galerie"
       >
-        🖼️{!compact && <span> Ajouter des photos</span>}
+        🖼️{!compact && <span> Ajouter une photo</span>}
       </button>
-      <input ref={champRef} type="file" accept="image/*" multiple hidden onChange={onFiles} />
+      <input ref={champRef} type="file" accept="image/*" hidden onChange={onFiles} />
     </div>
   );
 }
