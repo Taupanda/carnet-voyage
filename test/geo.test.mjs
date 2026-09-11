@@ -48,3 +48,51 @@ test("l'arrondi reste lisible", () => {
   assert.equal(nu(formateKm("8.25")), "8,3 km");
   assert.equal(formateKm(null), null);
 });
+
+import { MODES, modeInfo, normaliseTrajets, totauxKm } from "../lib/geo.js";
+
+test("les trajets illisibles sont écartés, pas devinés", () => {
+  assert.deepEqual(normaliseTrajets(null), []);
+  assert.deepEqual(normaliseTrajets("bus"), []);
+  assert.deepEqual(normaliseTrajets([{ mode: "bus" }]), [], "sans km, pas de trajet");
+  assert.deepEqual(normaliseTrajets([{ mode: "bus", km: 0 }]), [], "zéro n'est pas un trajet");
+  assert.deepEqual(normaliseTrajets([{ mode: "bus", km: -5 }]), []);
+  assert.deepEqual(normaliseTrajets([{ mode: "fusée", km: 20 }]), [{ mode: "autre", km: 20 }],
+    "un mode inconnu retombe sur « autre » au lieu de disparaître");
+  assert.deepEqual(normaliseTrajets([{ mode: "train", km: "120" }]), [{ mode: "train", km: 120 }]);
+});
+
+test("les totaux additionnent la marche et les trajets", () => {
+  const t = totauxKm({ km_marche: 8.5, trajets: [{ mode: "taxi", km: 12 }, { mode: "bus", km: 340 }] });
+  assert.equal(t.marche, 8.5);
+  assert.equal(t.transport, 352);
+  assert.equal(t.total, 360.5);
+  assert.equal(t.ancien, false);
+});
+
+test("une journée sans trajet compte quand même les pas", () => {
+  const t = totauxKm({ km_marche: 14, trajets: [] });
+  assert.equal(t.total, 14);
+  assert.equal(t.transport, 0);
+});
+
+test("les posts d'avant la distinction gardent leur distance", () => {
+  const t = totauxKm({ km: 420, km_marche: null, trajets: [] });
+  assert.equal(t.total, 420);
+  assert.equal(t.ancien, true, "signalé comme un total non détaillé");
+});
+
+test("une journée sans aucune donnée ne vaut pas zéro kilomètre affiché", () => {
+  const t = totauxKm({});
+  assert.equal(t.total, 0);
+  assert.equal(t.ancien, false);
+  assert.equal(formateKm(null), null, "et rien ne s'affiche");
+});
+
+test("chaque mode demandé existe et porte un libellé", () => {
+  for (const id of ["bus", "avion", "train", "bateau", "taxi"]) {
+    assert.ok(MODES.some((m) => m.id === id), `mode ${id} manquant`);
+  }
+  assert.equal(modeInfo("avion").label, "Avion");
+  assert.equal(modeInfo("inconnu").id, "autre");
+});

@@ -899,6 +899,25 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .mod-menage h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.11em; color: var(--accent); margin: 0 0 6px; font-weight: 700; }
 .mod-menage p { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 0 0 10px; }
 .mod-menage-ok { color: var(--ink2) !important; font-weight: 600; }
+
+/* ---- Distance du jour : marche et trajets ---- */
+.km-ligne { display: flex; align-items: center; gap: 8px; }
+.km-champ { max-width: 110px; font-variant-numeric: tabular-nums; }
+.km-unite { color: var(--muted); font-size: 14px; }
+.km-vide { font-size: 12.5px; color: var(--muted); margin: 4px 0 0; }
+.km-trajet { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.km-mode { flex: 1; min-width: 0; max-width: 190px; }
+.km-retirer { background: none; border: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 6px; line-height: 1; }
+.km-retirer:hover { color: #C2453A; }
+.km-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.km-ajout { padding: 7px 13px; font-size: 12.5px; }
+/* Les distances sur le post : une ligne par mode, alignées sur les chiffres. */
+.km-detail { display: flex; flex-direction: column; gap: 5px; }
+.km-detail-ligne { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; }
+.km-detail-ligne span:first-child { width: 18px; flex-shrink: 0; }
+.km-detail-ligne b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.km-detail-ligne i { font-style: normal; color: var(--muted); font-size: 12px; }
+.km-total { margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
 .photo-astuce b { font-weight: 600; color: var(--ink2); }
 .photo-envoi { font-family: var(--police); font-size: 11px; color: var(--accent); margin: 8px 0 0; }
 .photo-vide { font-size: 13px; color: var(--muted); margin: 10px 0 0; }

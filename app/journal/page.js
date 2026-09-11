@@ -8,7 +8,8 @@ import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
 import { creerDictee } from "../../lib/dictee";
 import { creerGardeEcran } from "../../lib/veille";
-import { distanceKm, arrondiKm } from "../../lib/geo";
+import { distanceKm, arrondiKm, normaliseTrajets } from "../../lib/geo";
+import DistanceJour from "./DistanceJour";
 import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 import PhotoPicker, { AstucePartage } from "./PhotoPicker";
@@ -58,7 +59,9 @@ export default function Journal() {
   const [noteSociale, setNoteSociale] = useState(3);
   const [noteAventure, setNoteAventure] = useState(3);
   const [hebergement, setHebergement] = useState("");
-  const [km, setKm] = useState("");
+  const [kmMarche, setKmMarche] = useState("");
+  const [trajets, setTrajets] = useState([]);
+  const [estimation, setEstimation] = useState(0);
   const [photoPrincipale, setPhotoPrincipale] = useState(null);
   const [reflexionPrivee, setReflexionPrivee] = useState(false);
   const [post, setPost] = useState(null);
@@ -177,7 +180,7 @@ export default function Journal() {
     setNoteSociale(3);
     setNoteAventure(3);
     setHebergement("");
-    setKm("");
+    setKmMarche(""); setTrajets([]); setEstimation(0);
     setPhotoPrincipale(null);
     setReflexionPrivee(false);
     setLinkedRencontres([]);
@@ -240,7 +243,11 @@ export default function Journal() {
       setNoteSociale(existing.note_sociale ?? 3);
       setNoteAventure(existing.note_aventure ?? 3);
       setHebergement(existing.hebergement || "");
-      setKm(existing.km == null ? "" : String(existing.km));
+      setKmMarche(existing.km_marche == null ? "" : String(existing.km_marche));
+      setTrajets(normaliseTrajets(existing.trajets).map((t) => ({ mode: t.mode, km: String(t.km) })));
+      // Le post existe déjà : ses coordonnées permettent de proposer
+      // l'estimation tout de suite, sans attendre une régénération.
+      setEstimation(estimationKm(existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null) ?? 0);
       setPhotoPrincipale(existing.photo_principale || null);
       setReflexionPrivee(!!existing.reflexion_privee);
       setPhotos(avecPartage(existing.photos || []));
@@ -265,7 +272,7 @@ export default function Journal() {
       setMessages([]);
       setPhotos(avecPartage([]));
       setNoteHumeur(3); setNoteEnergie(3); setNoteSociale(3); setNoteAventure(3);
-      setHebergement(""); setKm(""); setPhotoPrincipale(null); setReflexionPrivee(false);
+      setHebergement(""); setKmMarche(""); setTrajets([]); setPhotoPrincipale(null); setReflexionPrivee(false);
       setLinkedRencontres([]); setPost(null);
       setPhase("choose");
     }
@@ -471,10 +478,9 @@ export default function Journal() {
       if (!res.ok) throw new Error("api");
       const genere = await res.json();
       setPost(genere);
-      // Laissé vide, le kilométrage est estimé à vol d'oiseau depuis la dernière
-      // journée géolocalisée. C'est un ordre de grandeur proposé, pas une
-      // mesure : il reste modifiable, et rien n'est publié sans être relu.
-      setKm((actuel) => (actuel.trim() ? actuel : String(estimationKm(genere?.coords) ?? "")));
+      // L'estimation n'est plus posée d'office : elle ne connaît que la distance
+      // entre deux points, pas le mode de transport. Elle devient un bouton.
+      setEstimation(estimationKm(genere?.coords) ?? 0);
       setPhase("summary");
     } catch (e) {
       setError("Impossible de générer le post, réessaie.");
@@ -485,7 +491,7 @@ export default function Journal() {
 
   // « 12,5 » comme « 12.5 », et rien plutôt qu'un NaN silencieux.
   function kmNombre(saisie) {
-    const t = (saisie || "").trim().replace(",", ".");
+    const t = String(saisie ?? "").trim().replace(",", ".");
     if (!t) return null;
     const n = Number(t);
     return Number.isFinite(n) && n >= 0 ? n : null;
@@ -523,7 +529,11 @@ export default function Journal() {
       note_sociale: noteSociale,
       note_aventure: noteAventure,
       hebergement: hebergement.trim() || null,
-      km: kmNombre(km),
+      km_marche: kmNombre(kmMarche),
+      // Les trajets vides ou mal saisis ne partent pas en base.
+      trajets: trajets
+        .map((t) => ({ mode: t.mode, km: kmNombre(t.km) }))
+        .filter((t) => t.km != null && t.km > 0),
       photo_principale: photoPrincipale || photos[0] || null,
       photos,
       raw_extracted: extracted,
@@ -871,25 +881,11 @@ export default function Journal() {
             <input className="input" value={hebergement} onChange={(e) => setHebergement(e.target.value)} placeholder="Nom de l'hôtel, hostel, Airbnb…" />
           </div>
 
-          <div>
-            <label className="lbl">🛣️ Kilomètres parcourus</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <input
-                className="input"
-                type="text"
-                inputMode="decimal"
-                value={km}
-                onChange={(e) => setKm(e.target.value.replace(/[^0-9.,]/g, ""))}
-                placeholder="laisse vide pour une estimation"
-                style={{ maxWidth: 160 }}
-              />
-              <span style={{ color: "var(--muted)", fontSize: 14 }}>km</span>
-            </div>
-            <p style={{ fontSize: 11.5, color: "var(--muted)", margin: "6px 0 0", lineHeight: 1.45 }}>
-              Vide, il sera estimé à vol d'oiseau depuis la dernière journée
-              géolocalisée — une route réelle est toujours plus longue.
-            </p>
-          </div>
+          <DistanceJour
+            marche={kmMarche} setMarche={setKmMarche}
+            trajets={trajets} setTrajets={setTrajets}
+            estimation={estimation}
+          />
 
           <div>
             <label className="lbl">🤝 Rencontres du jour</label>
@@ -981,7 +977,7 @@ export default function Journal() {
               <ul>{notesJour.map((n) => <li key={n.id}>{n.texte}</li>)}</ul>
             </details>
           )}
-          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} photoPrincipale={photoPrincipale} setPhotoPrincipale={setPhotoPrincipale} onAjouterPhotos={handlePhotos} onRetirerPhoto={retirerPhoto} envoiPhotos={envoiPhotos} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
+          <EditablePost post={post} setPost={setPost} photos={photos} notes={{ h: noteHumeur, e: noteEnergie, s: noteSociale, a: noteAventure }} dayNum={dNum} distance={{ marche: kmMarche, setMarche: setKmMarche, trajets, setTrajets, estimation }} photoPrincipale={photoPrincipale} setPhotoPrincipale={setPhotoPrincipale} onAjouterPhotos={handlePhotos} onRetirerPhoto={retirerPhoto} envoiPhotos={envoiPhotos} reflexionPrivee={reflexionPrivee} setReflexionPrivee={setReflexionPrivee} />
           {error && <p className="error">{error}</p>}
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => saveEntry("draft")} disabled={loading}>Brouillon</button>
@@ -1014,7 +1010,7 @@ export default function Journal() {
 // Toutes les sections sont éditables, que le post vienne de l'IA ou d'une saisie
 // manuelle. Auparavant un champ laissé vide par l'IA n'était même pas affiché :
 // impossible d'ajouter après coup une anecdote qu'elle n'avait pas relevée.
-function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, setPhotoPrincipale, onAjouterPhotos, onRetirerPhoto, envoiPhotos = 0, reflexionPrivee, setReflexionPrivee }) {
+function EditablePost({ post, setPost, photos, notes, dayNum, distance, photoPrincipale, setPhotoPrincipale, onAjouterPhotos, onRetirerPhoto, envoiPhotos = 0, reflexionPrivee, setReflexionPrivee }) {
   const recit = Array.isArray(post.recit) ? post.recit : [];
   const upd = (field, value) => setPost((p) => ({ ...p, [field]: value }));
   const updRecit = (i, k, v) => upd("recit", recit.map((it, j) => (j === i ? { ...it, [k]: v } : it)));
@@ -1070,6 +1066,20 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
       </div>
       {post.coords?.lat && (
         <div className="map-banner">📍 {post.lieux?.[0]} · {post.coords.lat.toFixed(2)}, {post.coords.lng.toFixed(2)} <span style={{ marginLeft: "auto", fontSize: 10.5, fontStyle: "italic", color: "var(--muted)" }}>carte interactive à venir</span></div>
+      )}
+
+      {/* Ici aussi, et pas seulement à la saisie du soir : rouvrir une journée
+          déjà publiée pour corriger ses kilomètres ne doit pas obliger à
+          repasser par l'écran des ressentis. */}
+      {distance && (
+        <div className="section">
+          <div className="section-head">Distance de la journée</div>
+          <DistanceJour
+            marche={distance.marche} setMarche={distance.setMarche}
+            trajets={distance.trajets} setTrajets={distance.setTrajets}
+            estimation={distance.estimation}
+          />
+        </div>
       )}
 
       {setPhotoPrincipale && (

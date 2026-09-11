@@ -3,7 +3,7 @@ import PostSocial from "./PostSocial";
 import PostAdmin from "./PostAdmin";
 import { stageForDate, afficheJour, decoupeAnecdotes } from "../lib/stages";
 import { meteoInfo } from "../lib/weather";
-import { formateKm } from "../lib/geo";
+import { formateKm, totauxKm, modeInfo } from "../lib/geo";
 
 const NOTES = [
   { key: "note_humeur", label: "Humeur", ic: "😊" },
@@ -24,7 +24,7 @@ function Dots({ v }) {
 
 export default function Post({ e }) {
   const stage = stageForDate(e.date);
-  const km = formateKm(e.km);
+  const dist = totauxKm(e);
   const c = stage?.couleur || "#BC5B2E";
   const recit = Array.isArray(e.recit) ? e.recit : [];
   const anecdotes = decoupeAnecdotes(e.anecdote);
@@ -144,10 +144,31 @@ export default function Post({ e }) {
               </div>
             </div>
           )}
-          {km && (
+          {dist.total > 0 && (
             <div>
               <div className="aside-head">Distance du jour</div>
-              <div className="heberg"><span>🛣️</span><span>{km}</span></div>
+              {dist.ancien ? (
+                // Journée d'avant la distinction : on affiche le total tel quel
+                // plutôt que de lui inventer une répartition.
+                <div className="heberg"><span>🛣️</span><span>{formateKm(dist.total)}</span></div>
+              ) : (
+                <div className="km-detail">
+                  {dist.marche > 0 && (
+                    <div className="km-detail-ligne">
+                      <span>🚶</span><b>{formateKm(dist.marche)}</b><i>à pied</i>
+                    </div>
+                  )}
+                  {dist.trajets.map((t, i) => (
+                    <div key={i} className="km-detail-ligne">
+                      <span>{modeInfo(t.mode).ic}</span><b>{formateKm(t.km)}</b>
+                      <i>{modeInfo(t.mode).label.toLowerCase()}</i>
+                    </div>
+                  ))}
+                  {dist.marche > 0 && dist.trajets.length > 0 && (
+                    <div className="km-total">Total {formateKm(dist.total)}</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           {e.hebergement && (
