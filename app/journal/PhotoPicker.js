@@ -1,23 +1,21 @@
 "use client";
 import { useRef } from "react";
 
-// Un bouton qui ouvre la galerie, et pas le gestionnaire de fichiers.
+// Le bouton ouvre le sélecteur qu'Android veut bien ouvrir, et sur certains
+// téléphones — Samsung One UI notamment — la Galerie n'y figure pas du tout :
+// le menu « Sélectionner une action » ne propose qu'Appareil photo, Mes
+// fichiers et Fichiers. Chrome passe par ACTION_GET_CONTENT, pas par le
+// sélecteur de photos du système, et aucun attribut HTML ne change cela.
+// `accept` limité aux images et `multiple` retiré ont été essayés : même menu.
+// `multiple` est donc rétabli — l'enlever ne rapportait rien et coûtait la
+// sélection multiple dans « Mes fichiers ».
 //
-// Deux réglages décident de l'écran qu'Android ouvre, et il faut les deux :
-//   - `accept` ne doit contenir QUE des types image. Une liste d'extensions
-//     ajoutée à `image/*` (.heic, .jpg…) suffit à faire renoncer Chrome au
-//     sélecteur de photos du système.
-//   - `multiple` doit être absent. Sur Android, la sélection multiple n'est
-//     proposée que par l'interface Documents : la demander, c'est demander
-//     « Fichiers ». C'est ce qui restait ici, et ce qui ouvrait la mauvaise
-//     fenêtre malgré un `accept` propre.
+// Le vrai chemin vers la galerie est l'inverse : on part de la Galerie, on
+// sélectionne, on partage vers l'app (`share_target` du manifeste, ramassé par
+// le service worker). C'est ce que rappelle la ligne sous le bouton.
 //
-// Une photo à la fois, donc. Pour en envoyer plusieurs d'un coup, le chemin est
-// inverse : on part de la galerie, on sélectionne, on partage vers l'app —
-// `share_target` dans le manifeste, ramassé par le service worker.
-//
-// Le bouton appareil photo (`capture`) a disparu : les photos existent déjà
-// dans la pellicule, personne n'en prend au moment d'écrire le post.
+// Le bouton appareil photo (`capture`) reste supprimé : les photos existent
+// déjà dans la pellicule, personne n'en prend au moment d'écrire le post.
 export default function PhotoPicker({ onFiles, busy = false, compact = false }) {
   const champRef = useRef(null);
 
@@ -28,11 +26,21 @@ export default function PhotoPicker({ onFiles, busy = false, compact = false }) 
         className={compact ? "btn-secondary photo-btn-compact" : "btn-secondary photo-btn"}
         onClick={() => champRef.current?.click()}
         disabled={busy}
-        aria-label="Ajouter une photo depuis la galerie"
+        aria-label="Ajouter des photos"
       >
-        🖼️{!compact && <span> Ajouter une photo</span>}
+        🖼️{!compact && <span> Ajouter des photos</span>}
       </button>
-      <input ref={champRef} type="file" accept="image/*" hidden onChange={onFiles} />
+      <input ref={champRef} type="file" accept="image/*" multiple hidden onChange={onFiles} />
     </div>
+  );
+}
+
+// Le chemin qui marche quand le sélecteur d'Android n'offre pas la galerie.
+export function AstucePartage() {
+  return (
+    <p className="photo-astuce">
+      Plusieurs photos d'un coup : ouvre ta <b>Galerie</b>, sélectionne-les,
+      puis <b>Partager</b> → <b>Les aventures de Maxou</b>.
+    </p>
   );
 }

@@ -8,7 +8,7 @@ import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
 import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
-import PhotoPicker from "./PhotoPicker";
+import PhotoPicker, { AstucePartage } from "./PhotoPicker";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
@@ -889,6 +889,7 @@ export default function Journal() {
           <div>
             <label className="lbl">Photos de la journée</label>
             <PhotoPicker onFiles={handlePhotos} busy={envoiPhotos > 0} />
+            <AstucePartage />
             {envoiPhotos > 0 && <p className="photo-envoi">Envoi de {envoiPhotos} photo{envoiPhotos > 1 ? "s" : ""}…</p>}
           </div>
 
@@ -1023,6 +1024,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, photoPrincipale, s
             Photos {photos.length > 0 && "— clique celle qui ouvre le post"}
           </div>
           {onAjouterPhotos && <PhotoPicker onFiles={onAjouterPhotos} busy={envoiPhotos > 0} />}
+          {onAjouterPhotos && <AstucePartage />}
           {envoiPhotos > 0 && <p className="photo-envoi">Envoi de {envoiPhotos} photo{envoiPhotos > 1 ? "s" : ""}…</p>}
           {photos.length === 0 ? (
             <p className="photo-vide">Aucune photo pour l'instant.</p>
