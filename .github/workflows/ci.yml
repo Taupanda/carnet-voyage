@@ -15,6 +15,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # La reconstruction du texte dicté a régressé trois fois : elle a
+      # maintenant ses tests, et ils tournent avant le build.
+      - run: npm test
       - run: npm run build
         # Valeurs factices : suffisent pour que le build/prérendu passe.
         # Les vraies clés vivent dans Vercel, pas ici.

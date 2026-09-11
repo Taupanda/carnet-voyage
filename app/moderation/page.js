@@ -241,6 +241,76 @@ function ModerationBody() {
           </div>
         ))
       )}
+
+      <MenagePhotos />
     </main>
+  );
+}
+
+/* ---------- Photos orphelines ----------
+   Un post abandonné avant d'être enregistré laisse ses photos dans le stockage,
+   rattachées à rien. On recense d'abord, on supprime seulement après. */
+function MenagePhotos() {
+  const [etat, setEtat] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [fait, setFait] = useState(null);
+
+  const mo = (o) => (o / 1048576).toFixed(1).replace(".", ",");
+
+  async function recenser() {
+    setBusy(true); setErr(null); setFait(null);
+    try {
+      const res = await api("/api/photos-orphelines");
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `erreur ${res.status}`);
+      setEtat(await res.json());
+    } catch (e) { setErr("Recensement impossible : " + e.message); }
+    setBusy(false);
+  }
+
+  async function supprimer() {
+    if (!confirm(`Supprimer définitivement ${etat.orphelines.length} photo(s) ?`)) return;
+    setBusy(true); setErr(null);
+    try {
+      const res = await api("/api/photos-orphelines", { method: "POST", body: JSON.stringify({ confirmer: true }) });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `erreur ${res.status}`);
+      const r = await res.json();
+      setFait(`${r.supprimees} photo(s) supprimée(s), ${mo(r.octets)} Mo libérés.`);
+      setEtat(null);
+    } catch (e) { setErr("Suppression impossible : " + e.message); }
+    setBusy(false);
+  }
+
+  return (
+    <section className="mod-menage">
+      <h2>Photos orphelines</h2>
+      <p>
+        Les photos envoyées puis jamais rattachées à une journée restent dans le
+        stockage. Celles de moins de 24 h sont laissées de côté : un post en
+        cours d'écriture n'est pas encore enregistré.
+      </p>
+      {err && <p className="error" style={{ marginBottom: 10 }}>{err}</p>}
+      {fait && <p className="mod-menage-ok">{fait}</p>}
+      {etat && (
+        <p className="mod-menage-ok">
+          {etat.total} photo(s) dans le stockage, {etat.utilisees} rattachée(s).
+          {" "}
+          {etat.orphelines.length === 0
+            ? "Aucune orpheline à supprimer."
+            : `${etat.orphelines.length} orpheline(s), ${mo(etat.octets)} Mo.`}
+          {etat.recentesEpargnees > 0 && ` ${etat.recentesEpargnees} récente(s) épargnée(s).`}
+        </p>
+      )}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button className="btn-secondary" onClick={recenser} disabled={busy}>
+          {busy ? "…" : "Recenser"}
+        </button>
+        {etat && etat.orphelines.length > 0 && (
+          <button className="btn" onClick={supprimer} disabled={busy}>
+            Supprimer les {etat.orphelines.length} orphelines
+          </button>
+        )}
+      </div>
+    </section>
   );
 }

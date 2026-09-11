@@ -6,6 +6,7 @@ import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
+import { creerDictee } from "../../lib/dictee";
 import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 import PhotoPicker, { AstucePartage } from "./PhotoPicker";
@@ -19,32 +20,6 @@ const emptyExtracted = () => ({ lieu: null, activites: null, rencontres: null, a
 // Le jour courant suit le fuseau du voyage, pas celui du navigateur ni UTC.
 const todayStr = () => todayLocal();
 const dayNumber = (d) => dayNumberOf(d);
-
-// Recolle deux fragments dictés avec exactement une espace entre eux.
-const joindre = (a, b) =>
-  [(a || "").trim(), (b || "").trim()].filter(Boolean).join(" ").replace(/\s{2,}/g, " ");
-
-// Comparaison souple : casse et ponctuation varient d'un instantané à l'autre.
-const cleTexte = (s) => (s || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
-const nbMots = (s) => cleTexte(s).split(" ").filter(Boolean).length;
-
-// Ajoute un segment à l'accumulé — sauf quand il ne fait que redire ce qui
-// précède. Certains moteurs (WebKit surtout) renvoient des INSTANTANÉS
-// cumulatifs plutôt que des segments distincts : « alors », puis « alors
-// aujourd'hui », puis « alors aujourd'hui c'était »… Les concaténer produit la
-// bouillie répétitive ; il faut ne garder que le plus complet.
-function fusionner(acc, seg) {
-  const a = cleTexte(acc);
-  const b = cleTexte(seg);
-  if (!a) return (seg || "").trim();
-  if (!b) return acc;
-  if (a === b) return acc;                       // instantané identique
-  if (b.startsWith(a)) return (seg || "").trim(); // instantané plus complet
-  // Segment déjà présent en fin d'accumulé. Exigence de 3 mots minimum : sur un
-  // mot court, une vraie répétition dictée ("oui oui") serait avalée à tort.
-  if (a.endsWith(b) && nbMots(seg) >= 3) return acc;
-  return acc + " " + (seg || "").trim();
-}
 
 async function api(path, opts = {}) {
   const { data } = await supabaseBrowser().auth.getSession();
@@ -95,8 +70,7 @@ export default function Journal() {
   const [envoiPhotos, setEnvoiPhotos] = useState(0); // photos en cours d'envoi
   const recognitionRef = useRef(null);
   const wantRecRef = useRef(false);
-  const baseTextRef = useRef("");     // texte acquis avant la session en cours
-  const sessionTextRef = useRef("");  // finaux de la session en cours
+  const dicteeRef = useRef(null);     // l'état de la dictée (lib/dictee.js)
   const recActiveRef = useRef(false); // une session tourne-t-elle déjà ?
   const purgeRef = useRef(false);     // la session en cours part à la poubelle
   // Photos arrivées par la galerie : elles n'appartiennent encore à aucune
@@ -380,18 +354,11 @@ export default function Journal() {
     rec.continuous = true;
     rec.interimResults = true;
     rec.onresult = (ev) => {
-      let final = "", interim = "";
+      const resultats = [];
       for (let i = 0; i < ev.results.length; i++) {
-        const t = ev.results[i][0]?.transcript || "";
-        if (!t.trim()) continue;
-        // Les définitifs se cumulent (via fusionner, qui écarte les redites).
-        // Le provisoire, lui, n'est jamais cumulé : seul le dernier compte —
-        // les précédents sont des versions tronquées de la même phrase.
-        if (ev.results[i].isFinal) final = fusionner(final, t);
-        else interim = t.trim();
+        resultats.push({ transcript: ev.results[i][0]?.transcript || "", isFinal: ev.results[i].isFinal });
       }
-      sessionTextRef.current = final;
-      setInput(joindre(baseTextRef.current, fusionner(final, interim)));
+      setInput(dicteeRef.current?.surResultat(resultats) ?? "");
     };
     rec.onerror = (e) => {
       // micro refusé : on arrête. Autres erreurs (no-speech, aborted, network) :
@@ -408,11 +375,10 @@ export default function Journal() {
       if (purgeRef.current) {
         // message envoyé : la session mourante n'a rien à reverser.
         purgeRef.current = false;
-        sessionTextRef.current = "";
+        dicteeRef.current?.purger();
       } else {
         // session close : ce qu'elle a reconnu rejoint le texte acquis
-        baseTextRef.current = fusionner(baseTextRef.current, sessionTextRef.current);
-        sessionTextRef.current = "";
+        dicteeRef.current?.surFin();
       }
       if (wantRecRef.current) {
         // Chrome coupe après quelques secondes de silence. On repart sur un
@@ -433,8 +399,7 @@ export default function Journal() {
   // déclenche que onend, qui relancera une session neuve si le micro est resté
   // allumé — il peut donc enchaîner sa réponse sans retoucher au bouton.
   function repartirDeZero() {
-    baseTextRef.current = "";
-    sessionTextRef.current = "";
+    dicteeRef.current?.purger();
     if (recActiveRef.current) {
       purgeRef.current = true;
       try { recognitionRef.current?.abort(); } catch {}
@@ -468,8 +433,7 @@ export default function Journal() {
       return;
     }
     setError(null);
-    baseTextRef.current = input || "";
-    sessionTextRef.current = "";
+    dicteeRef.current = creerDictee(input || "");
     wantRecRef.current = true;
     await requestWakeLock();
     demarrerDictee();

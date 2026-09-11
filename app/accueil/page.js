@@ -6,6 +6,7 @@ import { supabaseBrowser } from "../../lib/supabaseClient";
 import { todayLocal } from "../../lib/stages";
 import { meteoInfo, fetchMeteoJour } from "../../lib/weather";
 import { derniersOutils } from "../../lib/outils";
+import { creerDictee } from "../../lib/dictee";
 
 const CATS = [
   { id: "repas", label: "Repas", ic: "🍽️" },
@@ -108,9 +109,9 @@ function NoteRapide({ jour, notes, onFait }) {
     onFait();
   }
 
-  // Dictée d'une note : une phrase, puis on s'arrête. La reconstruction du texte
-  // à chaque événement — plutôt que le cumul — évite les répétitions des moteurs
-  // qui renvoient des instantanés cumulatifs.
+  // Dictée d'une note : une phrase, puis on s'arrête. Même moteur de
+  // reconstruction que le journal (lib/dictee.js), pour que les répétitions
+  // soient traitées au même endroit — et testées une seule fois.
   function dicter() {
     if (ecoute) { try { recRef.current?.stop(); } catch {} return; }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -120,15 +121,14 @@ function NoteRapide({ jour, notes, onFait }) {
     rec.lang = "fr-FR";
     rec.continuous = false;
     rec.interimResults = true;
+    // Ce qui était déjà écrit dans le champ n'est pas effacé par la dictée.
+    const dictee = creerDictee(texte);
     rec.onresult = (ev) => {
-      let dernier = "";
+      const resultats = [];
       for (let i = 0; i < ev.results.length; i++) {
-        const t = ev.results[i][0]?.transcript || "";
-        if (!t.trim()) continue;
-        if (ev.results[i].isFinal) dernier = t.trim();
-        else if (!dernier) dernier = t.trim();
+        resultats.push({ transcript: ev.results[i][0]?.transcript || "", isFinal: ev.results[i].isFinal });
       }
-      if (dernier) setTexte(dernier);
+      setTexte(dictee.surResultat(resultats));
     };
     rec.onerror = () => { setEcoute(false); setErr("Micro indisponible."); };
     rec.onend = () => { setEcoute(false); champ.current?.focus(); };
