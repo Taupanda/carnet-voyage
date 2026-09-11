@@ -59,18 +59,28 @@ function ResumesBody() {
     else setErr(((await res.json()).error) || "Échec.");
   }
 
-  async function sendRecap() {
+  // Les canaux sont choisis à chaque envoi : les abonnés ne sont pas les mêmes
+  // d'un canal à l'autre, et renvoyer sur les deux « pour être sûr » enverrait
+  // deux fois à ceux qui ont choisi l'un des deux.
+  async function sendRecap(canaux) {
     if (!current?.id) return;
-    if (!confirm("Envoyer ce récap en notification à tous les abonnés ?")) return;
+    const quoi = canaux.length === 2 ? "en notification ET par e-mail"
+      : canaux[0] === "email" ? "par e-mail" : "en notification";
+    if (!confirm(`Envoyer ce récap ${quoi} aux abonnés concernés ?`)) return;
     setBusy(true);
     setErr(null);
-    const res = await api("/api/weekly-recap", { method: "POST", body: JSON.stringify({ action: "send", id: current.id }) });
+    const res = await api("/api/weekly-recap", { method: "POST", body: JSON.stringify({ action: "send", id: current.id, canaux }) });
     setBusy(false);
     if (res.ok) {
       const r = await res.json();
       setCurrent((c) => (c ? { ...c, status: "published" } : c));
       load();
-      alert(`Récap envoyé à ${r.sent} abonné(s).`);
+      // Le détail par canal, y compris ce qui n'est pas parti et pourquoi : un
+      // « envoyé ! » qui cache un canal muet ne rend service à personne.
+      const bilan = [];
+      if (r.push) bilan.push(r.push.raison ? `Notifications : ${r.push.raison}` : `Notifications : ${r.push.envoyes} envoyée(s)${r.push.echecs ? `, ${r.push.echecs} échec(s)` : ""}`);
+      if (r.email) bilan.push(r.email.raison ? `E-mails : ${r.email.raison}` : `E-mails : ${r.email.envoyes} envoyé(s)${r.email.echecs ? `, ${r.email.echecs} échec(s)` : ""}`);
+      alert(bilan.join("\n") || "Rien à envoyer.");
     } else {
       setErr(((await res.json()).error) || "Échec de l'envoi.");
     }
@@ -112,7 +122,9 @@ function ResumesBody() {
           <textarea className="input" rows={8} value={current.contenu || ""} onChange={(e) => setCurrent({ ...current, contenu: e.target.value })} style={{ lineHeight: 1.6 }} />
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
             <button className="btn-secondary" onClick={() => save("draft")} disabled={busy}>Enregistrer le brouillon</button>
-            <button className="btn" onClick={sendRecap} disabled={busy || !current.id}>📨 Envoyer aux abonnés</button>
+            <button className="btn-secondary" onClick={() => sendRecap(["push"])} disabled={busy || !current.id}>🔔 Notifier</button>
+            <button className="btn-secondary" onClick={() => sendRecap(["email"])} disabled={busy || !current.id}>✉️ Par e-mail</button>
+            <button className="btn" onClick={() => sendRecap(["push", "email"])} disabled={busy || !current.id}>📨 Les deux</button>
             <button className="btn-danger" onClick={() => del(current.id)} style={{ marginLeft: "auto" }}>Supprimer</button>
           </div>
           <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>L'envoi publie aussi le récap (accessible via le lien de la notification).</p>

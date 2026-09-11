@@ -10,13 +10,17 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-// Suivre le voyage = recevoir le récap de la semaine. Un seul interrupteur, qui
-// fait réellement les deux choses nécessaires : demander l'autorisation au
-// navigateur, et enregistrer l'abonnement. Avant, le bouton de notifications et
-// l'idée de « suivre » n'étaient reliés nulle part et rien ne disait ce qu'on
-// recevait en s'abonnant.
+// Deux canaux, deux interrupteurs, et chacun dit exactement ce qu'il fait.
+//
+// Un seul bouton mélangeait les deux : cocher « newsletter » à l'inscription
+// n'envoyait aucun e-mail — il n'y en avait pas — et n'influait même pas sur les
+// notifications, qui partaient à tous les navigateurs abonnés. La notification
+// appartient à l'APPAREIL (il faut l'accord de ce navigateur-ci), l'e-mail
+// appartient au COMPTE : les confondre est ce qui rendait le réglage incompréhensible.
 export default function Abonnement() {
   const { user, profile, refresh } = useAuth();
+  const [parEmail, setParEmail] = useState(false);
+  const [busyEmail, setBusyEmail] = useState(false);
   const [actif, setActif] = useState(false);
   const [supporte, setSupporte] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -35,16 +39,32 @@ export default function Abonnement() {
       .catch(() => setSupporte(false));
   }, []);
 
-  // La case du profil et l'abonnement réel du navigateur peuvent diverger : on
-  // affiche l'état du navigateur, seul état qui décide vraiment de la réception.
-  useEffect(() => {
-    if (profile?.newsletter && !actif) setMsg(null);
-  }, [profile, actif]);
+  useEffect(() => { setParEmail(!!profile?.recap_email); }, [profile]);
 
-  async function noteLePreference(valeur) {
+  // Le choix fait à l'inscription n'était rangé que dans les métadonnées du
+  // compte : il n'allumait rien. On l'applique à la première visite, une seule
+  // fois — ensuite c'est l'interrupteur qui commande.
+  useEffect(() => {
+    if (!user || !profile) return;
+    if (profile.recap_email === false && user.user_metadata?.newsletter && !profile.recap_vu) {
+      basculeEmail(true, { silencieux: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile]);
+
+  async function basculeEmail(valeur, { silencieux = false } = {}) {
     if (!user) return;
-    await supabaseBrowser().from("profiles").upsert({ id: user.id, newsletter: valeur });
+    setBusyEmail(true);
+    // recap_vu : la préférence a été décidée ici, il ne faut plus la reprendre
+    // des métadonnées d'inscription à chaque chargement.
+    await supabaseBrowser().from("profiles").upsert({ id: user.id, recap_email: valeur, recap_vu: true });
+    setParEmail(valeur);
     await refresh();
+    setBusyEmail(false);
+    if (!silencieux) {
+      setErreur(false);
+      setMsg(valeur ? "Tu recevras le récap par e-mail." : "Plus d'e-mail. Les notifications, elles, ne changent pas.");
+    }
   }
 
   async function activer() {
@@ -72,9 +92,8 @@ export default function Abonnement() {
         body: JSON.stringify({ subscription: sub.toJSON(), role: "reader" }),
       });
       if (!res.ok) throw new Error("enregistrement refusé");
-      await noteLePreference(true);
       setActif(true);
-      setMsg("C'est bon — tu recevras le récap chaque semaine.");
+      setMsg("Cet appareil recevra la notification du récap.");
     } catch (e) {
       setErreur(true);
       setMsg("Échec : " + e.message);
@@ -97,9 +116,8 @@ export default function Abonnement() {
         });
         await sub.unsubscribe();
       }
-      await noteLePreference(false);
       setActif(false);
-      setMsg("Désabonné. Tu peux revenir quand tu veux.");
+      setMsg("Plus de notification sur cet appareil.");
     } catch (e) {
       setErreur(true);
       setMsg("Échec : " + e.message);
@@ -109,17 +127,23 @@ export default function Abonnement() {
 
   return (
     <div className="abo">
-      <div className="abo-head">
-        <div>
-          <p className="abo-titre">Suivre le voyage</p>
-          <p className="abo-desc">
-            Un récap de la semaine, une fois par semaine. Rien d'autre : pas de notification
-            à chaque publication, pas d'e-mail.
+      <p className="abo-titre">Ce que tu reçois</p>
+      <p className="abo-desc">
+        Un récap de la semaine, une fois par semaine. Rien d'autre : pas de
+        message à chaque publication. Les deux canaux sont indépendants, tu peux
+        n'en prendre aucun, l'un, ou les deux.
+      </p>
+
+      <div className="abo-canal">
+        <div className="abo-canal-txt">
+          <p className="abo-canal-titre">🔔 Notification sur cet appareil</p>
+          <p className="abo-canal-desc">
+            Une alerte du téléphone ou du navigateur. Ce réglage ne vaut que pour
+            <b> cet appareil-ci</b> : sur un autre téléphone, il faudra le refaire.
           </p>
         </div>
-        <span className={"abo-etat" + (actif ? " on" : "")}>{actif ? "Abonné" : "Non abonné"}</span>
+        <span className={"abo-etat" + (actif ? " on" : "")}>{actif ? "Activée" : "Non"}</span>
       </div>
-
       {!supporte ? (
         <p className="abo-msg">
           Ce navigateur ne gère pas les notifications. Sur iPhone, ajoute d'abord le site
@@ -132,9 +156,28 @@ export default function Abonnement() {
           onClick={actif ? desactiver : activer}
           disabled={busy}
         >
-          {busy ? "…" : actif ? "Me désabonner" : "Recevoir le récap de la semaine"}
+          {busy ? "…" : actif ? "Couper les notifications ici" : "Activer sur cet appareil"}
         </button>
       )}
+
+      <div className="abo-canal" style={{ marginTop: 18 }}>
+        <div className="abo-canal-txt">
+          <p className="abo-canal-titre">✉️ Récap par e-mail</p>
+          <p className="abo-canal-desc">
+            Le récap de la semaine dans ta boîte{user?.email ? <> — à <b>{user.email}</b></> : null}.
+            Ce réglage suit <b>ton compte</b>, sur tous tes appareils.
+          </p>
+        </div>
+        <span className={"abo-etat" + (parEmail ? " on" : "")}>{parEmail ? "Abonné" : "Non"}</span>
+      </div>
+      <button
+        className={parEmail ? "btn-secondary" : "btn"}
+        style={{ width: "100%" }}
+        onClick={() => basculeEmail(!parEmail)}
+        disabled={busyEmail || !user}
+      >
+        {busyEmail ? "…" : parEmail ? "Ne plus recevoir d'e-mail" : "Recevoir le récap par e-mail"}
+      </button>
 
       {msg && <p className={erreur ? "error" : "info"} style={{ marginTop: 12 }}>{msg}</p>}
     </div>

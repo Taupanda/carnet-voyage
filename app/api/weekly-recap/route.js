@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { supabaseAdmin, checkAdmin, callClaude, extractJson } from "../../../lib/server";
+import { destinatairesRecap, recapEnHtml, envoyerRecap, envoiEmailDispo } from "../../../lib/courriel";
+
+// Les adresses vivent dans auth.users, pas dans profiles : il faut la liste des
+// comptes. Paginée, sinon seuls les cinquante premiers sortent.
+async function adressesDesComptes(db, ids) {
+  const voulus = new Set(ids || []);
+  const out = {};
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await db.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) break;
+    for (const u of data?.users || []) if (voulus.has(u.id) && u.email) out[u.id] = u.email;
+    if ((data?.users || []).length < 200) break;
+  }
+  return out;
+}
 
 // Lundi (AAAA-MM-JJ) de la semaine contenant `dateStr`.
 function mondayOf(dateStr) {
@@ -32,37 +47,75 @@ export async function POST(request) {
   const body = await request.json();
   const db = supabaseAdmin();
 
-  // --- Envoyer le récap en push aux abonnés (le publie aussi) ---
+  // --- Envoyer le récap : notification, e-mail, ou les deux (le publie aussi) ---
   if (body.action === "send") {
     const { data: recap } = await db.from("weekly_recaps").select("*").eq("id", body.id).single();
     if (!recap) return NextResponse.json({ error: "résumé introuvable" }, { status: 404 });
-    if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-      return NextResponse.json({ error: "VAPID non configuré" }, { status: 500 });
-    }
+
+    // Les canaux sont demandés explicitement : envoyer sur les deux par défaut
+    // enverrait deux fois à ceux qui ont choisi l'un des deux.
+    const canaux = Array.isArray(body.canaux) && body.canaux.length ? body.canaux : ["push"];
+    const veutPush = canaux.includes("push");
+    const veutEmail = canaux.includes("email");
+
+    const base = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+    const resultat = { push: null, email: null };
+
     await db.from("weekly_recaps").update({ status: "published", updated_at: new Date().toISOString() }).eq("id", recap.id);
 
-    webpush.setVapidDetails("mailto:carnet@voyage.app", process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
-    const { data: subs } = await db.from("push_subs").select("*");
-    const txt = (recap.contenu || "").replace(/\s+/g, " ").trim();
-    const payload = JSON.stringify({
-      title: recap.titre || "Le récap de la semaine",
-      body: txt.slice(0, 120) + (txt.length > 120 ? "…" : ""),
-      url: "/semaines",
-      tag: `recap-${recap.id}`,
-    });
-    const results = await Promise.allSettled(
-      (subs || []).map((s) =>
-        webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload)
-      )
-    );
-    for (let i = 0; i < results.length; i++) {
-      const r = results[i];
-      if (r.status === "rejected" && [404, 410].includes(r.reason?.statusCode)) {
-        await db.from("push_subs").delete().eq("endpoint", subs[i].endpoint);
+    // --- Notifications ---
+    if (veutPush) {
+      if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+        resultat.push = { envoyes: 0, echecs: 0, raison: "VAPID non configuré" };
+      } else {
+        webpush.setVapidDetails("mailto:carnet@voyage.app", process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+        const { data: subs } = await db.from("push_subs").select("*");
+        // Un compte bloqué ne doit plus rien recevoir. Les abonnements sans
+        // compte (visiteur non connecté) restent servis.
+        const { data: bloques } = await db.from("profiles").select("id").eq("bloque", true);
+        const exclus = new Set((bloques || []).map((p) => p.id));
+        const cibles = (subs || []).filter((s) => !s.user_id || !exclus.has(s.user_id));
+
+        const txt = (recap.contenu || "").replace(/\s+/g, " ").trim();
+        const payload = JSON.stringify({
+          title: recap.titre || "Le récap de la semaine",
+          body: txt.slice(0, 120) + (txt.length > 120 ? "…" : ""),
+          url: "/semaines",
+          tag: `recap-${recap.id}`,
+        });
+        const results = await Promise.allSettled(
+          cibles.map((s) =>
+            webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload)
+          )
+        );
+        for (let i = 0; i < results.length; i++) {
+          const r = results[i];
+          if (r.status === "rejected" && [404, 410].includes(r.reason?.statusCode)) {
+            await db.from("push_subs").delete().eq("endpoint", cibles[i].endpoint);
+          }
+        }
+        const envoyes = results.filter((r) => r.status === "fulfilled").length;
+        resultat.push = { envoyes, echecs: results.length - envoyes };
       }
     }
-    const sent = results.filter((r) => r.status === "fulfilled").length;
-    return NextResponse.json({ ok: true, sent });
+
+    // --- E-mails ---
+    if (veutEmail) {
+      if (!envoiEmailDispo()) {
+        resultat.email = { envoyes: 0, echecs: 0, raison: "envoi d'e-mail non configuré (RESEND_API_KEY, EMAIL_FROM)" };
+      } else {
+        const { data: profils } = await db.from("profiles").select("id, prenom, recap_email, bloque");
+        const adresses = await adressesDesComptes(db, (profils || []).map((p) => p.id));
+        const destinataires = destinatairesRecap(profils, adresses);
+        const html = recapEnHtml(recap, { lien: `${base}/semaines`, lienDesabo: `${base}/profil` });
+        resultat.email = await envoyerRecap(destinataires, {
+          sujet: recap.titre || "Le récap de la semaine",
+          html,
+        });
+      }
+    }
+
+    return NextResponse.json({ ok: true, ...resultat });
   }
 
   // --- Générer un brouillon depuis les posts de la semaine ---

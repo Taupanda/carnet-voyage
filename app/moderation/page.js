@@ -91,6 +91,7 @@ function ModerationBody() {
   ];
 
   const bloques = (data?.membres || []).filter((m) => m.bloque).length;
+  const abonnesMail = (data?.membres || []).filter((m) => m.recap_email && !m.bloque).length;
 
   return (
     <main className="container" style={{ paddingTop: 24, paddingBottom: 70, maxWidth: 820 }}>
@@ -99,6 +100,8 @@ function ModerationBody() {
       <p style={{ color: "var(--ink2)", marginBottom: 18 }}>
         Qui écrit sur le carnet, et ce qui s'y publie.
         {bloques > 0 && <> <b>{bloques} compte{bloques > 1 ? "s" : ""} bloqué{bloques > 1 ? "s" : ""}.</b></>}
+        {" "}
+        <b>{abonnesMail}</b> abonné{abonnesMail > 1 ? "s" : ""} au récap par e-mail.
       </p>
 
       <div className="filters">
@@ -135,7 +138,7 @@ function ModerationBody() {
               <div className="mod-membre-nom">
                 {nomDe(m)}
                 {m.bloque && <span className="mod-tag bloque">bloqué</span>}
-                {m.newsletter && <span className="mod-tag">récap</span>}
+                {m.recap_email && <span className="mod-tag">récap e-mail</span>}
               </div>
               <div className="mod-meta">
                 {m.email || "e-mail non lisible"}
