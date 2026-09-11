@@ -123,7 +123,7 @@ export default function Profil() {
             {avatar ? "Changer la photo" : "Ajouter une photo"}
           </button>
           <p className="mono" style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 5 }}>FACULTATIF</p>
-          <input ref={fileRef} type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp" hidden onChange={uploadAvatar} />
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={uploadAvatar} />
         </div>
       </div>
 

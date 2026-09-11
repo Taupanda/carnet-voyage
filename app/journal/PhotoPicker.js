@@ -1,47 +1,34 @@
 "use client";
 import { useRef } from "react";
 
-// Deux chemins explicites au lieu d'un seul champ de fichier.
+// Un seul bouton, qui ouvre le sélecteur de photos du téléphone.
 //
-// Un `<input type="file" accept="image/*">` laisse le système décider quoi
-// ouvrir, et selon l'appareil il tombe sur le gestionnaire de fichiers plutôt
-// que sur les photos. En séparant les deux intentions, chaque bouton ouvre
-// directement ce qu'il annonce : la galerie, ou l'appareil photo.
+// Il y en avait deux — « Galerie » et « Photo » — parce qu'un `<input>` unique
+// tombait parfois sur le gestionnaire de fichiers au lieu des images. Le vrai
+// coupable n'était pas le nombre de boutons mais la liste d'extensions ajoutée
+// à `accept` : dès qu'`image/*` est mélangé à des .heic/.jpg/.png explicites,
+// Chrome sur Android renonce au sélecteur de photos du système et ouvre
+// « Fichiers ». Avec `image/*` seul, il ouvre l'écran de sélection de photos,
+// où l'on voit ses vignettes — c'est le seul chemin utile ici.
 //
-// `accept` liste aussi les extensions en clair : plusieurs sélecteurs de bureau
-// filtrent les .heic de l'iPhone quand on se contente de `image/*`.
-const FORMATS = "image/*,.heic,.heif,.jpg,.jpeg,.png,.webp";
-
+// Le bouton appareil photo (`capture`) a disparu avec : les photos existent
+// déjà dans la pellicule, personne n'en prend au moment d'écrire le post. Le
+// sélecteur du système propose de toute façon l'appareil photo si besoin.
 export default function PhotoPicker({ onFiles, busy = false, compact = false }) {
-  const galerieRef = useRef(null);
-  const appareilRef = useRef(null);
-
-  const classe = compact ? "btn-secondary photo-btn-compact" : "btn-secondary photo-btn";
+  const champRef = useRef(null);
 
   return (
     <div className={compact ? "photo-choix compact" : "photo-choix"}>
       <button
         type="button"
-        className={classe}
-        onClick={() => galerieRef.current?.click()}
+        className={compact ? "btn-secondary photo-btn-compact" : "btn-secondary photo-btn"}
+        onClick={() => champRef.current?.click()}
         disabled={busy}
-        aria-label="Choisir dans la galerie"
+        aria-label="Ajouter des photos"
       >
-        🖼️{!compact && <span> Galerie</span>}
+        🖼️{!compact && <span> Ajouter des photos</span>}
       </button>
-      <button
-        type="button"
-        className={classe}
-        onClick={() => appareilRef.current?.click()}
-        disabled={busy}
-        aria-label="Prendre une photo"
-      >
-        📷{!compact && <span> Photo</span>}
-      </button>
-
-      <input ref={galerieRef} type="file" accept={FORMATS} multiple hidden onChange={onFiles} />
-      {/* capture ouvre directement l'appareil photo, sans passer par un choix */}
-      <input ref={appareilRef} type="file" accept="image/*" capture="environment" hidden onChange={onFiles} />
+      <input ref={champRef} type="file" accept="image/*" multiple hidden onChange={onFiles} />
     </div>
   );
 }

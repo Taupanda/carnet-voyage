@@ -5,18 +5,26 @@ export async function POST(request) {
   if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const { extracted, date, notes } = await request.json();
+  const { extracted, date, notes, history } = await request.json();
 
-  const system = `Tu transformes des notes brutes de voyage en une page de carnet de bord, en français.
+  const system = `Tu transformes ce qu'un voyageur vient de raconter en une page de carnet de bord, en français.
+
+TA MATIÈRE, PAR ORDRE D'AUTORITÉ
+1. LA RETRANSCRIPTION DE L'ENTRETIEN est la source principale. C'est là qu'il raconte vraiment, avec ses mots, ses détours et ses précisions. Tu la lis en entier et tu t'appuies dessus pour écrire.
+2. Les champs extraits sont un simple INDEX : ils disent dans quelle rubrique ranger quoi. Ils sont abrégés et incomplets — ne te contente jamais de les mettre en forme, va chercher le détail dans l'entretien.
+3. Le calepin est un AIDE-MÉMOIRE de choses notées sur le moment. Il sert à vérifier que rien n'est oublié, pas à fournir le récit. Une note qu'il a développée pendant l'entretien est racontée avec ce qu'il en a dit là, pas avec la note. Une note dont il n'a jamais reparlé est restituée telle quelle, en une phrase, sans être développée.
+
+IL A PARLÉ, IL N'A PAS ÉCRIT
+Ses réponses viennent d'une dictée vocale : la reconnaissance déforme des mots, surtout les noms de lieux, de plats et de personnes. Quand un mot est manifestement mal transcrit, rétablis-le d'après le contexte au lieu de le recopier tel quel, et s'il reste indéchiffrable, écris la phrase sans lui plutôt que d'inventer. Corriger une transcription n'est pas réécrire : le reste de ses mots ne bouge pas.
 
 VOIX — tu es un outil de structure, jamais de réécriture
 - Le récit est écrit à la PREMIÈRE PERSONNE ("je"). C'est LUI qui parle dans son carnet. Accords au masculin (il est un homme).
-- SES MOTS SONT LA MATIÈRE. Reprends ses tournures, son vocabulaire, ses expressions telles quelles. S'il dit "on s'est baladés", tu écris "on s'est baladés" — pas "nous avons déambulé". Ne remplace jamais un de ses mots par un synonyme que tu juges plus élégant, et ne relève jamais le niveau de langue.
+- SES MOTS SONT LA MATIÈRE, et ses mots sont ceux de l'entretien. Reprends ses tournures, son vocabulaire, ses expressions telles quelles. S'il dit "on s'est baladés", tu écris "on s'est baladés" — pas "nous avons déambulé". Ne remplace jamais un de ses mots par un synonyme que tu juges plus élégant, et ne relève jamais le niveau de langue.
 - Ton travail est de RANGER et de RELIER ce qu'il a dit : ordre, ponctuation, liaisons, fautes. Rien d'autre.
 - Tu n'ajoutes AUCUN sentiment, émotion, émerveillement ou lyrisme qu'il n'a pas exprimé lui-même. Pas de "magique", "inoubliable", "moment suspendu", etc.
 - Si LUI a exprimé une émotion, tu la restitues avec ses mots, sans l'amplifier ni la romancer.
-- Tu n'inventes AUCUN détail : pas de description de lieux, d'ambiance, de météo ou de sensations absentes des notes. Pas de phrase de liaison qui affirme un fait qu'il n'a pas dit.
-- Si une note est courte, le passage correspondant est court. Ne comble jamais un vide.
+- Tu n'inventes AUCUN détail : pas de description de lieux, d'ambiance, de météo ou de sensations qu'il n'a pas données. Pas de phrase de liaison qui affirme un fait qu'il n'a pas dit.
+- S'il a été bref sur un sujet, le passage correspondant est bref. Ne comble jamais un vide.
 
 NE RIEN DIRE DEUX FOIS — chaque fait n'apparaît qu'à UN endroit
 - Avant d'écrire, décide pour chaque élément raconté où il sera noté, et nulle part ailleurs. Un fait déjà présent dans un moment ne revient ni dans l'ouverture, ni dans l'anecdote.
@@ -34,7 +42,7 @@ Tous les faits d'une journée n'ont pas le même poids, et les mettre au même n
 - Ne sont JAMAIS des moments : un taxi pour l'aéroport, un retrait d'argent, une lessive, une carte SIM achetée, un bus pris pour aller d'un point à un autre, un billet réservé, un repas sans particularité. Ces faits d'intendance ne vont NULLE PART : ils sortent du post. Un carnet de voyage n'a pas à les consigner.
 - Sont des moments : ce dont il se souviendra dans six mois — un lieu visité, une rencontre, une marche, un repas qui l'a marqué, une difficulté traversée, une découverte, un imprévu.
 - Un déplacement ne devient un moment que s'il a été une expérience en soi : une route spectaculaire, un bus de nuit éprouvant, une traversée en bateau. Un simple trajet n'est pas retenu.
-- Si les notes sont pauvres, écris moins. Une journée calme donne une ouverture et deux moments, pas cinq moments étirés.
+- S'il a peu raconté, écris moins. Une journée calme donne une ouverture et deux moments, pas cinq moments étirés.
 
 Réponds UNIQUEMENT en JSON valide, sans markdown, sous cette forme exacte :
 {
@@ -52,6 +60,13 @@ Pour coords, donne les coordonnées approximatives du lieu principal mentionné 
 
   const calepin = Array.isArray(notes) ? notes.filter((n) => typeof n === "string" && n.trim()) : [];
 
+  // La conversation entière, pas seulement ce que l'assistant en avait retenu.
+  // Ses réponses portent le détail ; les questions donnent ce à quoi il répond.
+  const entretien = (Array.isArray(history) ? history : [])
+    .filter((m) => m && typeof m.content === "string" && m.content.trim())
+    .map((m) => `${m.role === "user" ? "LUI" : "Question"} : ${m.content.trim()}`)
+    .join("\n");
+
   const FIELD_LABELS = {
     lieu: "Lieu",
     activites: "Activités",
@@ -68,13 +83,17 @@ Pour coords, donne les coordonnées approximatives du lieu principal mentionné 
         {
           role: "user",
           content:
-            `Notes du jour (${date}) :\n${Object.keys(FIELD_LABELS)
+            `Journée du ${date}.` +
+            (entretien
+              ? `\n\n=== RETRANSCRIPTION DE L'ENTRETIEN (ta source principale) ===\n${entretien}`
+              : "") +
+            `\n\n=== INDEX DES RUBRIQUES (où ranger quoi, pas quoi écrire) ===\n${Object.keys(FIELD_LABELS)
               .map((f) => `${FIELD_LABELS[f]}: ${extracted[f] || "rien"}`)
               .join("\n")}` +
             (calepin.length
-              ? `\n\nCe qu'il avait noté sur le moment dans la journée :\n${calepin
+              ? `\n\n=== CALEPIN DE LA JOURNÉE (aide-mémoire, à ne pas oublier) ===\n${calepin
                   .map((n) => `- ${n}`)
-                  .join("\n")}\n(Ces notes complètent le récit ci-dessus. N'en invente pas le contexte : si l'une n'est pas expliquée plus haut, restitue-la telle quelle, sans la développer.)`
+                  .join("\n")}`
               : ""),
         },
       ],

@@ -98,6 +98,7 @@ export default function Journal() {
   const baseTextRef = useRef("");     // texte acquis avant la session en cours
   const sessionTextRef = useRef("");  // finaux de la session en cours
   const recActiveRef = useRef(false); // une session tourne-t-elle déjà ?
+  const purgeRef = useRef(false);     // la session en cours part à la poubelle
   const wakeLockRef = useRef(null);
   const scrollRef = useRef(null);
 
@@ -248,6 +249,10 @@ export default function Journal() {
     if (!input.trim() || loading) return;
     const userMsg = input.trim();
     setInput("");
+    // Le champ se vidait à l'écran, mais pas le moteur de dictée : sa liste de
+    // résultats contenait encore toute la phrase envoyée, et le premier mot
+    // suivant la faisait réapparaître en entier. On repart d'une page blanche.
+    repartirDeZero();
     setError(null);
     const newMessages = [...messages, { role: "user", content: userMsg }];
     setMessages(newMessages);
@@ -341,9 +346,15 @@ export default function Journal() {
     };
     rec.onend = () => {
       recActiveRef.current = false;
-      // session close : ce qu'elle a reconnu rejoint le texte acquis
-      baseTextRef.current = fusionner(baseTextRef.current, sessionTextRef.current);
-      sessionTextRef.current = "";
+      if (purgeRef.current) {
+        // message envoyé : la session mourante n'a rien à reverser.
+        purgeRef.current = false;
+        sessionTextRef.current = "";
+      } else {
+        // session close : ce qu'elle a reconnu rejoint le texte acquis
+        baseTextRef.current = fusionner(baseTextRef.current, sessionTextRef.current);
+        sessionTextRef.current = "";
+      }
       if (wantRecRef.current) {
         // Chrome coupe après quelques secondes de silence. On repart sur un
         // objet NEUF : relancer le même rejoue sa liste de résultats, et
@@ -355,6 +366,20 @@ export default function Journal() {
       }
     };
     return rec;
+  }
+
+  // Table rase entre deux tours de conversation. `abort()` plutôt que `stop()` :
+  // stop() laisse encore filer un dernier onresult, qui reremplirait le champ
+  // avec la phrase qu'on vient justement d'envoyer. abort() jette tout et ne
+  // déclenche que onend, qui relancera une session neuve si le micro est resté
+  // allumé — il peut donc enchaîner sa réponse sans retoucher au bouton.
+  function repartirDeZero() {
+    baseTextRef.current = "";
+    sessionTextRef.current = "";
+    if (recActiveRef.current) {
+      purgeRef.current = true;
+      try { recognitionRef.current?.abort(); } catch {}
+    }
   }
 
   // Démarre une session, jamais deux en parallèle : deux moteurs actifs
@@ -396,7 +421,11 @@ export default function Journal() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date, notes: notesJour.map((n) => n.texte) }) });
+      // L'entretien lui-même part avec : les champs extraits ne sont qu'un
+      // index, et tout ce qu'il a raconté sans que l'assistant le recopie mot
+      // pour mot y était perdu — d'où des posts qui ne tenaient plus que sur
+      // le calepin.
+      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date, notes: notesJour.map((n) => n.texte), history: messages }) });
       if (!res.ok) throw new Error("api");
       setPost(await res.json());
       setPhase("summary");
