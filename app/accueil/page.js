@@ -377,7 +377,9 @@ function BandeOutils() {
   const [outils, setOutils] = useState([]);
   // L'historique vit dans le navigateur : on le lit après le montage pour que le
   // rendu serveur et le rendu client partent du même état.
-  useEffect(() => { setOutils(derniersOutils(6)); }, []);
+  // Cinq, comme les cinq colonnes de la bande : en demander six la faisait
+  // repasser sur une deuxième ligne et l'accueil ne tenait plus sur un écran.
+  useEffect(() => { setOutils(derniersOutils(5)); }, []);
   if (outils.length === 0) return null;
 
   return (
