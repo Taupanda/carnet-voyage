@@ -493,6 +493,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .rp-kpi { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; }
 .rp-kpi-n { font-family: var(--police); font-weight: 600; font-size: 24px; color: #fff; line-height: 1; }
 .rp-kpi-l { font-family: var(--police); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(239,232,220,0.5); margin-top: 4px; }
+.rp-kpi-large { grid-column: 1 / -1; }
 
 .post { scroll-margin-top: 20px; }
 

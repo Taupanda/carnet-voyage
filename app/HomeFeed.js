@@ -5,6 +5,7 @@ import TripMap from "./TripMap";
 import Post from "./Post";
 import PushButton from "./PushButton";
 import { STAGES, stageForDate, stageDays, TRIP_DATES, todayLocal, fmtDate } from "../lib/stages";
+import { formateKm } from "../lib/geo";
 
 export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   const [filter, setFilter] = useState(null);
@@ -14,7 +15,10 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   const current = stageForDate(today);
   const joursAvantDepart = Math.max(0, Math.ceil((new Date(STAGES[0].debut) - new Date(today)) / 86400000));
 
-  const sortedPosts = [...posts].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+  // Le plus récent en premier : on arrive sur le blog pour lire la dernière
+  // journée, pas pour remonter tout le voyage depuis le départ. Les bandeaux
+  // d'étape suivent, la plus récente en tête.
+  const sortedPosts = [...posts].sort((a, b) => (b.day_number ?? 0) - (a.day_number ?? 0));
   const shown = filter ? sortedPosts.filter((p) => stageForDate(p.date)?.n === filter) : sortedPosts;
 
   const groups = [];
@@ -88,6 +92,14 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.villes}</span><span className="rp-kpi-l">Lieux</span></div>
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.photos}</span><span className="rp-kpi-l">Photos</span></div>
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.rencontres}</span><span className="rp-kpi-l">Rencontres</span></div>
+        {/* Sur toute la largeur : c'est le nombre le plus long, et il ferait une
+            case orpheline sur une grille à deux colonnes. */}
+        {stats.km > 0 && (
+          <div className="rp-kpi rp-kpi-large">
+            <span className="rp-kpi-n">{formateKm(stats.km)}</span>
+            <span className="rp-kpi-l">Parcourus</span>
+          </div>
+        )}
       </div>
     </>
   );
