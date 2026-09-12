@@ -194,6 +194,7 @@ function NoteRapide({ jour, notes, onFait }) {
 /* ---------- Dépense rapide : se saisit sur le moment ou s'oublie ---------- */
 function DepenseRapide({ jour, onFait }) {
   const [montant, setMontant] = useState("");
+  const [note, setNote] = useState("");
   const [cat, setCat] = useState("repas");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
@@ -206,11 +207,12 @@ function DepenseRapide({ jour, onFait }) {
     setErr(null);
     const res = await api("/api/depenses", {
       method: "POST",
-      body: JSON.stringify({ date: jour, categorie: cat, montant: valeur, note: "" }),
+      body: JSON.stringify({ date: jour, categorie: cat, montant: valeur, note: note.trim() }),
     });
     setBusy(false);
     if (!res.ok) { setErr(await motifEchec(res)); return; }
     setMontant("");
+    setNote("");
     setOk(true);
     setTimeout(() => setOk(false), 1600);
     onFait();
@@ -222,6 +224,9 @@ function DepenseRapide({ jour, onFait }) {
         <h2>Dépense</h2>
         <Link href="/budget" className="ac-lien">le budget →</Link>
       </div>
+      {/* Le montant se resserre pour laisser place au libellé sur la MÊME ligne :
+          « 180 » seul ne dit rien trois jours plus tard, et l'accueil ne peut pas
+          se permettre une rangée de plus. */}
       <div className="ac-depense">
         <input
           className="input ac-montant"
@@ -233,7 +238,15 @@ function DepenseRapide({ jour, onFait }) {
           onKeyDown={(e) => e.key === "Enter" && ajouter()}
         />
         <span className="ac-devise">€</span>
-        <button className="btn" style={{ padding: "10px 16px" }} onClick={ajouter} disabled={busy || !montant.trim()}>
+        <input
+          className="input ac-note"
+          type="text"
+          placeholder="sur quoi ?"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && ajouter()}
+        />
+        <button className="btn ac-ok" onClick={ajouter} disabled={busy || !montant.trim()}>
           {busy ? "…" : ok ? "✓" : "+"}
         </button>
       </div>

@@ -497,6 +497,11 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
    nombre de cases est impair. */
 .rp-kpi-large { grid-column: 1 / -1; }
 
+/* Historique du budget : la ligne entière ouvre la correction. */
+.depense-ouvrir { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; background: none; border: none; padding: 0; text-align: left; cursor: pointer; color: inherit; font: inherit; }
+.depense-ouvrir:hover span:first-child { color: var(--accent); }
+.depense-edit { border: 1.5px solid var(--accent); border-radius: 12px; padding: 12px; margin-bottom: 8px; background: var(--card); }
+
 .post { scroll-margin-top: 20px; }
 
 /* liste des étapes dans le panneau */
@@ -1107,9 +1112,15 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 @media (prefers-reduced-motion: reduce) { .ac-micro.on { animation: none; } }
 
 .ac-depense { display: flex; align-items: center; gap: 8px; }
-.ac-montant { font-weight: 700; font-size: 19px; flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
+.ac-montant { font-weight: 700; font-size: 19px; width: 84px; flex: 0 0 auto; min-width: 0; font-variant-numeric: tabular-nums; }
+/* Le libellé prend la place restante : c'est lui qui varie, pas le montant. */
+.ac-note { flex: 1; min-width: 0; font-size: 14px; }
 .ac-devise { font-size: 16px; color: var(--muted); font-weight: 600; }
-.ac-cats { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+/* Une seule rangée qui défile, au lieu de deux qui s'empilent : la hauteur de
+   l'accueil est comptée, et six catégories ne tiennent pas de front. */
+.ac-cats { display: flex; gap: 5px; margin-top: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.ac-cats::-webkit-scrollbar { display: none; }
+.ac-cats .ac-cat { flex: 0 0 auto; }
 .ac-cat { font-size: 11px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line2); background: none; color: var(--ink2); cursor: pointer; white-space: nowrap; }
 .ac-cat.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 

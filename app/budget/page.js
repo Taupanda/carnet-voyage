@@ -49,6 +49,8 @@ export default function Budget() {
   const [categorie, setCategorie] = useState("repas");
   const [montant, setMontant] = useState("");
   const [note, setNote] = useState("");
+  // La dépense en cours de correction, éditée sur place dans l'historique.
+  const [edition, setEdition] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [showTargets, setShowTargets] = useState(false); // paliers = action rare, repliée
@@ -89,6 +91,25 @@ export default function Budget() {
       const saved = await res.json();
       setDepenses((ds) => [saved, ...ds]);
       setMontant(""); setNote("");
+    } else setErr("Échec : " + (await res.json()).error);
+  }
+
+  // L'API enregistre par upsert : transmettre l'id met à jour au lieu de créer.
+  async function majDepense() {
+    const valeur = parseMontant(edition.montant);
+    if (!Number.isFinite(valeur) || valeur <= 0) { setErr("Montant invalide."); return; }
+    setBusy(true);
+    setErr(null);
+    const res = await api("/api/depenses", {
+      method: "POST",
+      body: JSON.stringify({ id: edition.id, date: edition.date, categorie: edition.categorie, montant: valeur, note: edition.note }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      const saved = await res.json();
+      // Réordonné : corriger la date d'une dépense la déplace dans l'historique.
+      setDepenses((ds) => [saved, ...ds.filter((d) => d.id !== saved.id)].sort((a, b) => (a.date < b.date ? 1 : -1)));
+      setEdition(null);
     } else setErr("Échec : " + (await res.json()).error);
   }
 
@@ -235,18 +256,53 @@ export default function Budget() {
 
         {/* historique */}
         <div>
-          <div className="aside-head" style={{ marginBottom: 10 }}>Historique ({depenses.length})</div>
+          <div className="aside-head" style={{ marginBottom: 10 }}>Historique ({depenses.length}) — touche une ligne pour la corriger</div>
           {depenses.map((d) => {
             const cat = CATS.find((c) => c.id === d.categorie);
+            if (edition?.id === d.id) {
+              return (
+                <div key={d.id} className="depense-edit">
+                  <div className="budget-add-row">
+                    <div style={{ flex: "1.4 1 120px" }}>
+                      <label className="lbl">Montant (€)</label>
+                      <input className="input" style={{ fontWeight: 600 }} type="text" inputMode="decimal"
+                        value={edition.montant} onChange={(e) => setEdition({ ...edition, montant: e.target.value })} />
+                    </div>
+                    <div style={{ flex: "1 1 130px" }}>
+                      <label className="lbl">Catégorie</label>
+                      <select className="input" value={edition.categorie} onChange={(e) => setEdition({ ...edition, categorie: e.target.value })}>
+                        {CATS.map((c) => <option key={c.id} value={c.id}>{c.ic} {c.label}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ flex: "1 1 130px" }}>
+                      <label className="lbl">Date</label>
+                      <input className="input" type="date" value={edition.date} onChange={(e) => setEdition({ ...edition, date: e.target.value })} />
+                    </div>
+                  </div>
+                  <input className="input" placeholder="Note (facultatif)" value={edition.note}
+                    onChange={(e) => setEdition({ ...edition, note: e.target.value })} style={{ marginTop: 8 }} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setEdition(null); setErr(null); }}>Annuler</button>
+                    <button className="btn" style={{ flex: 1 }} onClick={majDepense} disabled={busy}>{busy ? "…" : "Enregistrer"}</button>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={d.id} className="depense-row">
                 <span style={{ fontSize: 18 }}>{cat?.ic}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600 }}>{cat?.label} {d.note && <span style={{ color: "var(--muted)", fontWeight: 400 }}>· {d.note}</span>}</div>
-                  <div className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>{new Date(d.date + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</div>
-                </div>
+                {/* Toute la ligne ouvre la correction : c'est le geste qu'on
+                    tente naturellement en voyant un montant erroné. */}
+                <button
+                  type="button"
+                  className="depense-ouvrir"
+                  onClick={() => { setErr(null); setEdition({ id: d.id, date: d.date, categorie: d.categorie, montant: String(d.montant).replace(".", ","), note: d.note || "" }); }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>{cat?.label} {d.note && <span style={{ color: "var(--muted)", fontWeight: 400 }}>· {d.note}</span>}</span>
+                  <span className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>{new Date(d.date + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</span>
+                </button>
                 <span className="mono" style={{ fontWeight: 700 }}>{eur(d.montant)} €</span>
-                <button className="cmt-del" onClick={() => delDepense(d.id)}>✕</button>
+                <button className="cmt-del" onClick={() => delDepense(d.id)} aria-label="Supprimer">✕</button>
               </div>
             );
           })}
