@@ -925,6 +925,12 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .abo-canal-titre { font-size: 14.5px; font-weight: 700; margin: 0 0 3px; }
 .abo-canal-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 0; }
 .abo-canal-desc b { color: var(--ink2); font-weight: 600; }
+
+/* Liste des abonnés au récap : nom, adresse, et l'état quand il pose problème. */
+.abonne-ligne { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.abonne-ligne:last-of-type { border-bottom: none; }
+.abonne-nom { font-size: 13.5px; font-weight: 600; }
+.abonne-mail { font-size: 12.5px; color: var(--muted); word-break: break-all; }
 .photo-astuce b { font-weight: 600; color: var(--ink2); }
 .photo-envoi { font-family: var(--police); font-size: 11px; color: var(--accent); margin: 8px 0 0; }
 .photo-vide { font-size: 13px; color: var(--muted); margin: 10px 0 0; }

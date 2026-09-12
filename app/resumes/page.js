@@ -29,6 +29,8 @@ function ResumesBody() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [onglet, setOnglet] = useState("resumes");
+  const [abonnes, setAbonnes] = useState(null);
 
   async function load() {
     const res = await api("/api/weekly-recap");
@@ -36,6 +38,16 @@ function ResumesBody() {
     setLoaded(true);
   }
   useEffect(() => { load(); }, []);
+
+  // Chargé à l'ouverture de l'onglet, et rechargé à chaque fois : entre deux
+  // visites, quelqu'un a pu s'abonner ou se désabonner.
+  useEffect(() => {
+    if (onglet !== "abonnes") return;
+    setAbonnes(null);
+    api("/api/abonnes")
+      .then(async (r) => setAbonnes(r.ok ? await r.json() : { erreur: (await r.json().catch(() => ({}))).error || `erreur ${r.status}` }))
+      .catch((e) => setAbonnes({ erreur: e.message }));
+  }, [onglet]);
 
   async function generate() {
     setBusy(true);
@@ -101,6 +113,15 @@ function ResumesBody() {
         L'IA rédige un brouillon à partir de tes posts publiés. Tu valides avant publication.
       </p>
 
+      <div className="filters" style={{ marginBottom: 18 }}>
+        <button className={"filter" + (onglet === "resumes" ? " on" : "")} onClick={() => setOnglet("resumes")}>Résumés</button>
+        <button className={"filter" + (onglet === "abonnes" ? " on" : "")} onClick={() => setOnglet("abonnes")}>
+          Abonnés{abonnes?.parEmail ? ` (${abonnes.parEmail.length})` : ""}
+        </button>
+      </div>
+
+      {onglet === "abonnes" ? <Abonnes data={abonnes} /> : <>
+
       <div className="budget-card" style={{ marginBottom: 16 }}>
         <label className="lbl">Semaine à résumer (n'importe quel jour)</label>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -147,6 +168,87 @@ function ResumesBody() {
           </div>
         ))
       )}
+      </>}
     </main>
+  );
+}
+
+/* ---------- Qui recevra le prochain récap ---------- */
+function Abonnes({ data }) {
+  if (!data) return <p className="empty">Chargement…</p>;
+  if (data.erreur) return <p className="error">Liste indisponible : {data.erreur}</p>;
+
+  const joignables = data.parEmail.filter((a) => a.joignable);
+  const copier = () => {
+    const txt = joignables.map((a) => a.email).join(", ");
+    navigator.clipboard?.writeText(txt).then(
+      () => alert(`${joignables.length} adresse(s) copiée(s).`),
+      () => alert(txt)
+    );
+  };
+
+  return (
+    <>
+      <div className="budget-card" style={{ marginBottom: 16 }}>
+        <div className="aside-head" style={{ marginBottom: 8 }}>✉️ Récap par e-mail — {joignables.length}</div>
+        {!data.emailConfigure && (
+          <p className="mod-avis" style={{ marginBottom: 10 }}>
+            L'envoi d'e-mails n'est pas configuré (RESEND_API_KEY, EMAIL_FROM) :
+            ces personnes sont abonnées mais rien ne partira.
+          </p>
+        )}
+        {!data.adressesLisibles && (
+          <p className="mod-avis" style={{ marginBottom: 10 }}>
+            Les adresses ne sont pas lisibles depuis ici — les noms sortent, pas les e-mails.
+          </p>
+        )}
+        {data.parEmail.length === 0 ? (
+          <p className="empty" style={{ margin: 0 }}>Personne pour l'instant.</p>
+        ) : (
+          <>
+            {data.parEmail.map((a) => (
+              <div key={a.id} className="abonne-ligne">
+                <span className="abonne-nom">{a.nom}</span>
+                <span className="abonne-mail">{a.email || "adresse non lisible"}</span>
+                {/* Abonné mais injoignable : l'adresse manque ou n'est pas
+                    valide. Le dire ici évite de croire à un envoi qui n'aura
+                    pas lieu. */}
+                {!a.joignable && <span className="mod-tag bloque">injoignable</span>}
+              </div>
+            ))}
+            {joignables.length > 0 && (
+              <button className="btn-secondary" style={{ marginTop: 12 }} onClick={copier}>
+                Copier les {joignables.length} adresse(s)
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="budget-card">
+        <div className="aside-head" style={{ marginBottom: 8 }}>🔔 Notification — {data.push.total}</div>
+        {data.push.total === 0 ? (
+          <p className="empty" style={{ margin: 0 }}>Aucun appareil abonné.</p>
+        ) : (
+          <>
+            <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "0 0 8px", lineHeight: 1.5 }}>
+              Ce sont des <b>appareils</b>, pas des personnes : quelqu'un qui a
+              activé les notifications sur son téléphone et son ordinateur compte deux fois.
+            </p>
+            {data.push.noms.length > 0 && <p style={{ fontSize: 13, margin: "0 0 6px" }}>{data.push.noms.join(" · ")}</p>}
+            {data.push.sansCompte > 0 && (
+              <p style={{ fontSize: 12.5, color: "var(--muted)", margin: 0 }}>
+                Et {data.push.sansCompte} appareil(s) sans compte — des visiteurs non connectés.
+              </p>
+            )}
+          </>
+        )}
+        {data.push.bloquesEcartes > 0 && (
+          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 8 }}>
+            {data.push.bloquesEcartes} appareil(s) écarté(s) : compte bloqué.
+          </p>
+        )}
+      </div>
+    </>
   );
 }
