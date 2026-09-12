@@ -96,3 +96,45 @@ test("chaque mode demandé existe et porte un libellé", () => {
   assert.equal(modeInfo("avion").label, "Avion");
   assert.equal(modeInfo("inconnu").id, "autre");
 });
+
+import { cumulKm } from "../lib/geo.js";
+
+test("le cumul sépare la marche des modes de transport", () => {
+  const c = cumulKm([
+    { km_marche: 8, trajets: [{ mode: "bus", km: 340 }] },
+    { km_marche: 12, trajets: [{ mode: "bus", km: 120 }, { mode: "taxi", km: 15 }] },
+    { km_marche: 5, trajets: [] },
+  ]);
+  assert.equal(c.marche, 25);
+  assert.deepEqual(c.transports.map((t) => [t.mode, t.km]), [["bus", 460], ["taxi", 15]]);
+  assert.equal(c.transport, 475);
+  assert.equal(c.total, 500);
+});
+
+test("les modes sont classés du plus parcouru au moins parcouru", () => {
+  const c = cumulKm([
+    { trajets: [{ mode: "taxi", km: 20 }, { mode: "avion", km: 2400 }, { mode: "train", km: 300 }] },
+  ]);
+  assert.deepEqual(c.transports.map((t) => t.mode), ["avion", "train", "taxi"]);
+  assert.equal(c.transports[0].label, "Avion", "chaque mode porte son libellé et son icône");
+});
+
+test("les journées d'avant la distinction sont comptées à part, pas attribuées", () => {
+  const c = cumulKm([
+    { km: 420 },                                   // ancien format
+    { km_marche: 10, trajets: [{ mode: "bus", km: 90 }] },
+  ]);
+  assert.equal(c.nonDetaille, 420);
+  assert.equal(c.marche, 10);
+  assert.equal(c.transport, 90);
+  assert.equal(c.total, 520);
+  assert.ok(!c.transports.some((t) => t.km === 420), "jamais rangées dans un mode");
+});
+
+test("un voyage sans aucune distance ne rend que des zéros", () => {
+  const c = cumulKm([{}, { km_marche: null, trajets: [] }]);
+  assert.deepEqual([c.marche, c.transport, c.nonDetaille, c.total], [0, 0, 0, 0]);
+  assert.deepEqual(c.transports, []);
+  assert.deepEqual(cumulKm([]).transports, []);
+  assert.deepEqual(cumulKm(null).total, 0);
+});

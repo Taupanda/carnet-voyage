@@ -493,7 +493,12 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .rp-kpi { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; }
 .rp-kpi-n { font-family: var(--police); font-weight: 600; font-size: 24px; color: #fff; line-height: 1; }
 .rp-kpi-l { font-family: var(--police); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(239,232,220,0.5); margin-top: 4px; }
-.rp-kpi-large { grid-column: 1 / -1; }
+/* Kilomètres du panneau : une ligne par nature, les nombres alignés à droite. */
+.rp-km { display: flex; flex-direction: column; gap: 7px; }
+.rp-km-l { display: flex; align-items: baseline; gap: 9px; font-size: 13px; color: rgba(239,232,220,0.85); }
+.rp-km-nm { flex: 1; min-width: 0; }
+.rp-km-l b { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.rp-km-total { margin-top: 4px; padding-top: 7px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11.5px; color: rgba(239,232,220,0.5); }
 
 .post { scroll-margin-top: 20px; }
 

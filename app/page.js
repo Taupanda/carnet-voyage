@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../lib/server";
 import { STAGES, stageForDate, TRIP_DATES, todayLocal, dayNumberOf, afficheJour } from "../lib/stages";
-import { totauxKm } from "../lib/geo";
+import { cumulKm } from "../lib/geo";
 import HomeFeed from "./HomeFeed";
 
 export const revalidate = 120;
@@ -50,10 +50,9 @@ export default async function Home() {
     villes: new Set(posts.flatMap((p) => p.lieux || [])).size,
     photos: posts.reduce((s, p) => s + (p.photos?.length || 0), 0),
     rencontres: rencCount || 0,
-    // Somme des journées renseignées. totauxKm retombe sur l'ancienne colonne
-    // pour les posts d'avant la distinction marche/transport, donc rien n'est
-    // perdu ; les journées sans distance connue valent zéro et ne faussent rien.
-    km: posts.reduce((s, p) => s + totauxKm(p).total, 0),
+    // Le détail par nature de déplacement, pas un total unique : additionner des
+    // pas et des kilomètres d'avion produit un nombre ininterprétable.
+    km: cumulKm(posts),
   };
 
   return <HomeFeed posts={posts} points={points} stats={stats} dayNum={dayNum} started={started} />;

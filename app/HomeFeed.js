@@ -60,6 +60,29 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         </div>
       </div>
 
+      {/* Kilomètres, par nature de déplacement. Un total unique mélangeait la
+          marche et l'avion : chaque ligne garde donc sa propre unité de sens,
+          et le cumul ne vient qu'en dernier, à titre indicatif. */}
+      {stats.km?.total > 0 && (
+        <div className="rp-block">
+          <div className="rp-head">Kilomètres</div>
+          <div className="rp-km">
+            {stats.km.marche > 0 && (
+              <div className="rp-km-l"><span>🚶</span><span className="rp-km-nm">À pied</span><b>{formateKm(stats.km.marche)}</b></div>
+            )}
+            {stats.km.transports.map((t) => (
+              <div key={t.mode} className="rp-km-l"><span>{t.ic}</span><span className="rp-km-nm">{t.label}</span><b>{formateKm(t.km)}</b></div>
+            ))}
+            {stats.km.nonDetaille > 0 && (
+              <div className="rp-km-l"><span>🛣️</span><span className="rp-km-nm">Sans détail</span><b>{formateKm(stats.km.nonDetaille)}</b></div>
+            )}
+            {stats.km.transport > 0 && stats.km.marche > 0 && (
+              <div className="rp-km-total">Soit {formateKm(stats.km.total)} en tout</div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* étapes (liste lisible, sert aussi de filtre) */}
       <div className="rp-block">
         <div className="rp-head">Les étapes</div>
@@ -92,14 +115,7 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.villes}</span><span className="rp-kpi-l">Lieux</span></div>
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.photos}</span><span className="rp-kpi-l">Photos</span></div>
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.rencontres}</span><span className="rp-kpi-l">Rencontres</span></div>
-        {/* Sur toute la largeur : c'est le nombre le plus long, et il ferait une
-            case orpheline sur une grille à deux colonnes. */}
-        {stats.km > 0 && (
-          <div className="rp-kpi rp-kpi-large">
-            <span className="rp-kpi-n">{formateKm(stats.km)}</span>
-            <span className="rp-kpi-l">Parcourus</span>
-          </div>
-        )}
+
       </div>
     </>
   );
