@@ -5,7 +5,7 @@ import TripMap from "./TripMap";
 import Post from "./Post";
 import PushButton from "./PushButton";
 import { STAGES, stageForDate, stageDays, TRIP_DATES, todayLocal, fmtDate } from "../lib/stages";
-import { formateKm } from "../lib/geo";
+import { arrondiKm } from "../lib/geo";
 
 export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   const [filter, setFilter] = useState(null);
@@ -20,6 +20,15 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
   // d'étape suivent, la plus récente en tête.
   const sortedPosts = [...posts].sort((a, b) => (b.day_number ?? 0) - (a.day_number ?? 0));
   const shown = filter ? sortedPosts.filter((p) => stageForDate(p.date)?.n === filter) : sortedPosts;
+
+  // Une case par nature parcourue, dans l'ordre du cumul (le plus parcouru
+  // d'abord). Rien n'est affiché pour une nature à zéro.
+  const km = stats.km || {};
+  const tuilesKm = [
+    ...(km.marche > 0 ? [{ cle: "marche", n: arrondiKm(km.marche), l: "à pied" }] : []),
+    ...(km.transports || []).map((t) => ({ cle: t.mode, n: arrondiKm(t.km), l: t.cumul })),
+    ...(km.nonDetaille > 0 ? [{ cle: "autre-detail", n: arrondiKm(km.nonDetaille), l: "sans détail" }] : []),
+  ].map((t) => ({ ...t, n: t.n?.toLocaleString("fr-FR") }));
 
   const groups = [];
   for (const p of shown) {
@@ -60,29 +69,6 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         </div>
       </div>
 
-      {/* Kilomètres, par nature de déplacement. Un total unique mélangeait la
-          marche et l'avion : chaque ligne garde donc sa propre unité de sens,
-          et le cumul ne vient qu'en dernier, à titre indicatif. */}
-      {stats.km?.total > 0 && (
-        <div className="rp-block">
-          <div className="rp-head">Kilomètres</div>
-          <div className="rp-km">
-            {stats.km.marche > 0 && (
-              <div className="rp-km-l"><span>🚶</span><span className="rp-km-nm">À pied</span><b>{formateKm(stats.km.marche)}</b></div>
-            )}
-            {stats.km.transports.map((t) => (
-              <div key={t.mode} className="rp-km-l"><span>{t.ic}</span><span className="rp-km-nm">{t.label}</span><b>{formateKm(t.km)}</b></div>
-            ))}
-            {stats.km.nonDetaille > 0 && (
-              <div className="rp-km-l"><span>🛣️</span><span className="rp-km-nm">Sans détail</span><b>{formateKm(stats.km.nonDetaille)}</b></div>
-            )}
-            {stats.km.transport > 0 && stats.km.marche > 0 && (
-              <div className="rp-km-total">Soit {formateKm(stats.km.total)} en tout</div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* étapes (liste lisible, sert aussi de filtre) */}
       <div className="rp-block">
         <div className="rp-head">Les étapes</div>
@@ -115,6 +101,19 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.villes}</span><span className="rp-kpi-l">Lieux</span></div>
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.photos}</span><span className="rp-kpi-l">Photos</span></div>
         <div className="rp-kpi"><span className="rp-kpi-n">{stats.rencontres}</span><span className="rp-kpi-l">Rencontres</span></div>
+        {/* Les kilomètres prolongent la même grille, une case par nature de
+            déplacement : la marche et l'avion ne s'additionnent pas. Le nombre
+            reste le nombre, l'unité passe dans le libellé — « 2 410 / KM EN
+            AVION » se lit mieux qu'un « 2 410 km » qui déborde de la case. */}
+        {tuilesKm.map((t, i) => (
+          <div
+            key={t.cle}
+            className={"rp-kpi" + (i === tuilesKm.length - 1 && (4 + tuilesKm.length) % 2 === 1 ? " rp-kpi-large" : "")}
+          >
+            <span className="rp-kpi-n">{t.n}</span>
+            <span className="rp-kpi-l">km {t.l}</span>
+          </div>
+        ))}
 
       </div>
     </>
