@@ -52,6 +52,12 @@ function ModerationBody() {
   }
   useEffect(() => { load(); }, []);
 
+  // Ouvrir la modération, c'est avoir regardé : à partir de maintenant, seul ce
+  // qui arrive ensuite rallume la cloche.
+  useEffect(() => {
+    api("/api/notifs", { method: "POST", body: JSON.stringify({}) }).catch(() => {});
+  }, []);
+
   async function agir(opts, confirmation) {
     if (confirmation && !confirm(confirmation)) return;
     setBusy(true);
