@@ -24,6 +24,9 @@ export async function POST(request) {
     categorie: body.categorie,
     montant,
     note: body.note || null,
+    // Dépense de préparation (billet, assurance, matériel) : comptée dans le
+    // total général, retirée du total « sur place ».
+    preparation: !!body.preparation,
   };
   if (body.id) payload.id = body.id;
   const { data, error } = await db.from("depenses").upsert(payload).select().single();

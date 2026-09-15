@@ -51,6 +51,11 @@ export default function Budget() {
   const [note, setNote] = useState("");
   // La dépense en cours de correction, éditée sur place dans l'historique.
   const [edition, setEdition] = useState(null);
+  const [prep, setPrep] = useState(false);          // la nouvelle dépense est-elle de la préparation
+  const [surPlace, setSurPlace] = useState(true);   // totaux hors préparation
+  const [q, setQ] = useState("");                   // recherche libre
+  const [fJour, setFJour] = useState("");           // un jour précis
+  const [fCat, setFCat] = useState("");             // un type
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [showTargets, setShowTargets] = useState(false); // paliers = action rare, repliée
@@ -63,19 +68,44 @@ export default function Budget() {
     })));
   }, [isAdmin]);
 
-  const total = useMemo(() => depenses.reduce((s, d) => s + Number(d.montant), 0), [depenses]);
+  // « Sur place » retire les dépenses de préparation de TOUS les totaux, jauges
+  // comprises : les garder rendait la moyenne journalière et les paliers
+  // hebdomadaires illisibles, le billet d'avion écrasant tout le reste.
+  const base = useMemo(() => (surPlace ? depenses.filter((d) => !d.preparation) : depenses), [depenses, surPlace]);
+  const ecarte = useMemo(
+    () => depenses.filter((d) => d.preparation).reduce((s, d) => s + Number(d.montant), 0),
+    [depenses]
+  );
+  const nbEcartes = useMemo(() => depenses.filter((d) => d.preparation).length, [depenses]);
+
+  const total = useMemo(() => base.reduce((s, d) => s + Number(d.montant), 0), [base]);
   const parCat = useMemo(() => {
     const m = {};
     CATS.forEach((c) => (m[c.id] = 0));
-    depenses.forEach((d) => (m[d.categorie] = (m[d.categorie] || 0) + Number(d.montant)));
+    base.forEach((d) => (m[d.categorie] = (m[d.categorie] || 0) + Number(d.montant)));
     return m;
-  }, [depenses]);
+  }, [base]);
+
+  // Recherche : le texte porte sur la note ET le nom du type, pour qu'on puisse
+  // chercher « taxi » sans savoir si c'était noté ou seulement catégorisé.
+  const visibles = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    return depenses.filter((d) => {
+      if (fJour && d.date !== fJour) return false;
+      if (fCat && d.categorie !== fCat) return false;
+      if (!t) return true;
+      const libelle = CATS.find((c) => c.id === d.categorie)?.label || "";
+      return `${d.note || ""} ${libelle}`.toLowerCase().includes(t);
+    });
+  }, [depenses, q, fJour, fCat]);
+  const totalVisible = useMemo(() => visibles.reduce((s, d) => s + Number(d.montant), 0), [visibles]);
+  const filtre = !!(q.trim() || fJour || fCat);
 
   // total 7 derniers jours / 30 derniers jours
   const now = new Date();
   const sumSince = (days) => {
     const cut = new Date(now.getTime() - days * 86400000);
-    return depenses.filter((d) => new Date(d.date) >= cut).reduce((s, d) => s + Number(d.montant), 0);
+    return base.filter((d) => new Date(d.date) >= cut).reduce((s, d) => s + Number(d.montant), 0);
   };
   const semaine = sumSince(7);
   const mois = sumSince(30);
@@ -85,12 +115,12 @@ export default function Budget() {
     if (!Number.isFinite(valeur) || valeur <= 0) { setErr("Montant invalide."); return; }
     setBusy(true);
     setErr(null);
-    const res = await api("/api/depenses", { method: "POST", body: JSON.stringify({ date, categorie, montant: valeur, note }) });
+    const res = await api("/api/depenses", { method: "POST", body: JSON.stringify({ date, categorie, montant: valeur, note, preparation: prep }) });
     setBusy(false);
     if (res.ok) {
       const saved = await res.json();
       setDepenses((ds) => [saved, ...ds]);
-      setMontant(""); setNote("");
+      setMontant(""); setNote(""); setPrep(false);
     } else setErr("Échec : " + (await res.json()).error);
   }
 
@@ -102,7 +132,7 @@ export default function Budget() {
     setErr(null);
     const res = await api("/api/depenses", {
       method: "POST",
-      body: JSON.stringify({ id: edition.id, date: edition.date, categorie: edition.categorie, montant: valeur, note: edition.note }),
+      body: JSON.stringify({ id: edition.id, date: edition.date, categorie: edition.categorie, montant: valeur, note: edition.note, preparation: !!edition.preparation }),
     });
     setBusy(false);
     if (res.ok) {
@@ -172,13 +202,24 @@ export default function Budget() {
         <div className="budget-card" style={{ marginBottom: 14 }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
             <div>
-              <div className="budget-total-label">Total dépensé</div>
+              <div className="budget-total-label">{surPlace ? "Dépensé sur place" : "Total dépensé"}</div>
               <div className="budget-total">{eur(total)} €</div>
             </div>
             <div className="mono" style={{ fontSize: 12, color: "var(--muted)", textAlign: "right", lineHeight: 1.7 }}>
               7 j : {eur(semaine)} €<br />30 j : {eur(mois)} €
             </div>
           </div>
+          {/* L'interrupteur dit toujours ce qu'il retire et combien : un total
+              qui change sans expliquer pourquoi ne se vérifie pas. */}
+          {nbEcartes > 0 && (
+            <label className="budget-surplace">
+              <input type="checkbox" checked={surPlace} onChange={(e) => setSurPlace(e.target.checked)} />
+              <span>
+                Sur place — hors {nbEcartes} dépense{nbEcartes > 1 ? "s" : ""} de préparation
+                {" "}<b>({eur(ecarte)} €)</b>
+              </span>
+            </label>
+          )}
           <div style={{ marginTop: 14 }}>
             <Gauge label="Cette semaine (7 j)" spent={semaine} target={parseMontant(budgets.hebdo)} />
             <Gauge label="Ce mois (30 j)" spent={mois} target={parseMontant(budgets.mensuel)} />
@@ -230,6 +271,10 @@ export default function Budget() {
             </div>
           </div>
           <input className="input" placeholder="Note (facultatif)" value={note} onChange={(e) => setNote(e.target.value)} style={{ marginTop: 8 }} />
+          <label className="budget-prep">
+            <input type="checkbox" checked={prep} onChange={(e) => setPrep(e.target.checked)} />
+            <span>Préparation (billet, assurance, matériel) — retirée du total sur place</span>
+          </label>
           {err && <p className="error" style={{ marginTop: 8 }}>{err}</p>}
           <button className="btn" style={{ width: "100%", marginTop: 10 }} onClick={addDepense} disabled={busy}>{busy ? "…" : "Ajouter la dépense"}</button>
         </div>
@@ -256,8 +301,31 @@ export default function Budget() {
 
         {/* historique */}
         <div>
-          <div className="aside-head" style={{ marginBottom: 10 }}>Historique ({depenses.length}) — touche une ligne pour la corriger</div>
-          {depenses.map((d) => {
+          <div className="aside-head" style={{ marginBottom: 10 }}>
+            Historique ({filtre ? `${visibles.length} sur ${depenses.length}` : depenses.length}) — touche une ligne pour la corriger
+          </div>
+
+          <div className="budget-recherche">
+            <input className="input" placeholder="Chercher un libellé ou un type…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <div className="budget-recherche-bas">
+              <input className="input" type="date" value={fJour} onChange={(e) => setFJour(e.target.value)} aria-label="Filtrer par jour" />
+              <select className="input" value={fCat} onChange={(e) => setFCat(e.target.value)} aria-label="Filtrer par type">
+                <option value="">Tous les types</option>
+                {CATS.map((c) => <option key={c.id} value={c.id}>{c.ic} {c.label}</option>)}
+              </select>
+              {filtre && (
+                <button className="btn-secondary budget-vider" onClick={() => { setQ(""); setFJour(""); setFCat(""); }}>Tout voir</button>
+              )}
+            </div>
+            {/* Le sous-total de ce qui est à l'écran : chercher « taxi » doit
+                répondre « combien de taxi », pas seulement « lesquels ». */}
+            {filtre && (
+              <p className="budget-soustotal">
+                {visibles.length === 0 ? "Aucune dépense ne correspond." : <>Sous-total affiché <b>{eur(totalVisible)} €</b></>}
+              </p>
+            )}
+          </div>
+          {visibles.map((d) => {
             const cat = CATS.find((c) => c.id === d.categorie);
             if (edition?.id === d.id) {
               return (
@@ -281,6 +349,11 @@ export default function Budget() {
                   </div>
                   <input className="input" placeholder="Note (facultatif)" value={edition.note}
                     onChange={(e) => setEdition({ ...edition, note: e.target.value })} style={{ marginTop: 8 }} />
+                  <label className="budget-prep">
+                    <input type="checkbox" checked={!!edition.preparation}
+                      onChange={(e) => setEdition({ ...edition, preparation: e.target.checked })} />
+                    <span>Préparation — retirée du total sur place</span>
+                  </label>
                   <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                     <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setEdition(null); setErr(null); }}>Annuler</button>
                     <button className="btn" style={{ flex: 1 }} onClick={majDepense} disabled={busy}>{busy ? "…" : "Enregistrer"}</button>
@@ -296,9 +369,12 @@ export default function Budget() {
                 <button
                   type="button"
                   className="depense-ouvrir"
-                  onClick={() => { setErr(null); setEdition({ id: d.id, date: d.date, categorie: d.categorie, montant: String(d.montant).replace(".", ","), note: d.note || "" }); }}
+                  onClick={() => { setErr(null); setEdition({ id: d.id, date: d.date, categorie: d.categorie, montant: String(d.montant).replace(".", ","), note: d.note || "", preparation: !!d.preparation }); }}
                 >
-                  <span style={{ fontSize: 14, fontWeight: 600 }}>{cat?.label} {d.note && <span style={{ color: "var(--muted)", fontWeight: 400 }}>· {d.note}</span>}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>
+                    {cat?.label} {d.note && <span style={{ color: "var(--muted)", fontWeight: 400 }}>· {d.note}</span>}
+                    {d.preparation && <span className="mod-tag" style={{ marginLeft: 6 }}>préparation</span>}
+                  </span>
                   <span className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>{new Date(d.date + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</span>
                 </button>
                 <span className="mono" style={{ fontWeight: 700 }}>{eur(d.montant)} €</span>
