@@ -501,6 +501,8 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .depense-ouvrir { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; background: none; border: none; padding: 0; text-align: left; cursor: pointer; color: inherit; font: inherit; }
 .depense-ouvrir:hover span:first-child { color: var(--accent); }
 .depense-edit { border: 1.5px solid var(--accent); border-radius: 12px; padding: 12px; margin-bottom: 8px; background: var(--card); }
+/* Bouton de correction d'une fiche rencontre, visible de l'auteur seul. */
+.renc-editer { margin-top: 12px; padding: 7px 14px; font-size: 12.5px; }
 
 .post { scroll-margin-top: 20px; }
 

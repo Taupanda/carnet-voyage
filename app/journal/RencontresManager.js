@@ -1,14 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import PhotoPicker from "./PhotoPicker";
+import RencontreForm, { RENCONTRE_VIDE } from "../RencontreForm";
 import { appelApi, jetonCourant } from "../../lib/jeton";
 
 // Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
 // et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
 const api = appelApi;
-
-const EMPTY = { prenom: "", nom: "", pays: "", lieu_rencontre: "", activites: "", anecdote: "", reseaux: "", photo_url: null };
 
 export default function RencontresManager({ onClose }) {
   const [list, setList] = useState([]);
@@ -84,38 +82,18 @@ export default function RencontresManager({ onClose }) {
       </div>
 
       {editing ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            {editing.photo_url ? (
-              <img src={editing.photo_url} alt="" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover" }} />
-            ) : (
-              <span className="avatar avatar-fallback" style={{ width: 64, height: 64, fontSize: 26 }}>{(editing.prenom || "?")[0]?.toUpperCase()}</span>
-            )}
-            <PhotoPicker onFiles={uploadPhoto} busy={busy} />
-          </div>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <input className="input" placeholder="Prénom *" value={editing.prenom} onChange={(e) => setEditing({ ...editing, prenom: e.target.value })} />
-            <input className="input" placeholder="Nom" value={editing.nom} onChange={(e) => setEditing({ ...editing, nom: e.target.value })} />
-          </div>
-          <input className="input" placeholder="Pays d'origine" value={editing.pays} onChange={(e) => setEditing({ ...editing, pays: e.target.value })} />
-          <input className="input" placeholder="Lieu de rencontre" value={editing.lieu_rencontre} onChange={(e) => setEditing({ ...editing, lieu_rencontre: e.target.value })} />
-          <input className="input" placeholder="Activités menées ensemble" value={editing.activites} onChange={(e) => setEditing({ ...editing, activites: e.target.value })} />
-          <textarea className="input" rows={2} placeholder="Une anecdote" value={editing.anecdote} onChange={(e) => setEditing({ ...editing, anecdote: e.target.value })} />
-          <div>
-            <label className="lbl">🔒 Réseaux sociaux (privé — jamais affiché publiquement)</label>
-            <input className="input" placeholder="@instagram, WhatsApp, email…" value={editing.reseaux} onChange={(e) => setEditing({ ...editing, reseaux: e.target.value })} />
-          </div>
-
-          {err && <p className="error">{err}</p>}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setEditing(null); setErr(null); }}>Annuler</button>
-            <button className="btn" style={{ flex: 1 }} onClick={save} disabled={busy}>{busy ? "…" : "Enregistrer"}</button>
-          </div>
-        </div>
+        <RencontreForm
+          valeur={editing}
+          onChange={setEditing}
+          onEnvoyerPhoto={uploadPhoto}
+          onEnregistrer={save}
+          onAnnuler={() => { setEditing(null); setErr(null); }}
+          busy={busy}
+          err={err}
+        />
       ) : (
         <>
-          <button className="btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => setEditing({ ...EMPTY })}>+ Nouvelle rencontre</button>
+          <button className="btn" style={{ width: "100%", marginBottom: 16 }} onClick={() => setEditing({ ...RENCONTRE_VIDE })}>+ Nouvelle rencontre</button>
           {err && <p className="error">{err}</p>}
           {list.length === 0 && <p className="empty">Aucune rencontre enregistrée.</p>}
           {list.map((r) => (
