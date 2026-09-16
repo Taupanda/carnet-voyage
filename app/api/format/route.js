@@ -31,6 +31,7 @@ NE RIEN DIRE DEUX FOIS — chaque fait n'apparaît qu'à UN endroit
 - L'ouverture SITUE la journée (d'où il part, ce qui l'occupe, où il atterrit). Elle ne résume pas les moments et n'en annonce pas le contenu.
 - Si un élément pourrait aller à deux endroits, garde-le au plus précis : l'anecdote plutôt qu'un moment, la bonne adresse plutôt qu'un moment, un moment plutôt que l'ouverture.
 - Les champs anecdotes, adresse et réflexion sont des emplacements RÉSERVÉS : ce qui y va en sort du récit.
+- LES RENCONTRES N'ONT PAS DE BLOC À ELLES. Les personnes croisées se racontent DANS les moments, là où elles apparaissent dans la journée — c'est là qu'elles ont un sens. Le post affiche déjà leurs fiches à côté du récit : un paragraphe qui les réénumère ne ferait que répéter ce qui vient d'être lu.
 - Une journée peut porter PLUSIEURS anecdotes. Ne les fonds jamais en un seul bloc : une entrée par histoire distincte, et une seule entrée quand il n'y en a qu'une.
 
 STRUCTURE — c'est une page de carnet, pas une liste de tâches
@@ -51,7 +52,6 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sous cette forme exacte :
  "coords": {"lat": 0.0, "lng": 0.0},
  "ouverture": "2 à 4 phrases de prose à la première personne",
  "recit": [{"activite": "le titre du moment en 2-5 mots", "detail": "2 à 4 phrases de prose continue à la première personne"}],
- "rencontres": "paragraphe court à la première personne sur les rencontres, ou null si rien",
  "anecdotes": ["chaque anecdote restituée fidèlement à la première personne — une entrée par histoire distincte, liste vide si rien"],
  "adresse": "la bonne adresse en une ligne (nom — pourquoi), ou null si rien",
  "reflexion": "sa réflexion personnelle à la première personne, dans ses mots ou au plus près, sans reformulation lyrique, ou null si rien"
@@ -70,7 +70,7 @@ Pour coords, donne les coordonnées approximatives du lieu principal mentionné 
   const FIELD_LABELS = {
     lieu: "Lieu",
     activites: "Activités",
-    rencontres: "Rencontres",
+    rencontres: "Rencontres (à raconter dans les moments, pas ailleurs)",
     anecdote: "Anecdotes",
     adresse: "Bonne adresse",
     reflexion: "Réflexion",

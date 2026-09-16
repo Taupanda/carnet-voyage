@@ -191,7 +191,7 @@ export default function Journal() {
 
   function startManual() {
     setSaisieMode("manuel");
-    setPost({ titre: "", lieux: [], coords: null, ouverture: "", recit: [{ activite: "", detail: "" }], rencontres: "", anecdote: "", adresse: "", reflexion: "" });
+    setPost({ titre: "", lieux: [], coords: null, ouverture: "", recit: [{ activite: "", detail: "" }], anecdote: "", adresse: "", reflexion: "" });
     setError(null);
     setPhase("moods");
   }
@@ -259,7 +259,6 @@ export default function Journal() {
         coords: existing.lat ? { lat: existing.lat, lng: existing.lng } : null,
         ouverture: existing.ouverture,
         recit: existing.recit,
-        rencontres: existing.rencontres,
         anecdote: existing.anecdote,
         adresse: existing.adresse,
         reflexion: existing.reflexion,
@@ -519,7 +518,6 @@ export default function Journal() {
       lng: post.coords?.lng ?? null,
       ouverture: post.ouverture,
       recit: post.recit,
-      rencontres: post.rencontres,
       anecdote: post.anecdote,
       adresse: post.adresse,
       reflexion: post.reflexion,
@@ -1139,7 +1137,6 @@ function EditablePost({ post, setPost, photos, notes, dayNum, distance, photoPri
         </div>
       )}
 
-      <div className="section"><div className="section-head">Rencontres (texte)</div>{ta("rencontres", post.rencontres)}</div>
       <div className="section"><div className="section-head">Bonne adresse</div>{ta("adresse", post.adresse)}</div>
       </div>
 
