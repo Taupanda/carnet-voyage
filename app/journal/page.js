@@ -1018,12 +1018,38 @@ function EditablePost({ post, setPost, photos, notes, dayNum, distance, photoPri
   const delRecit = (i) => upd("recit", recit.filter((_, j) => j !== i));
   // L'ordre des moments est celui du récit : il doit pouvoir être remis d'aplomb
   // quand l'IA n'a pas suivi le fil de la journée.
-  // Les anecdotes vivent dans une seule chaîne, une par ligne : l'éditeur les
-  // manipule comme une liste et les recolle au moment d'enregistrer.
-  const anecdotes = decoupeAnecdotes(post.anecdote);
-  const majAnecdotes = (liste) => upd("anecdote", colleAnecdotes(liste));
+  // Les anecdotes vivent dans une seule chaîne, une par ligne — et cette chaîne
+  // ne peut PAS représenter une anecdote vide : le découpage écarte les lignes
+  // blanches, sinon une ligne oubliée ferait une anecdote fantôme sur le blog.
+  // Le bouton « + Une autre anecdote » ajoutait donc une ligne qui disparaissait
+  // à l'instant même où elle était écrite : rien ne se passait à l'écran.
+  //
+  // L'éditeur tient donc sa propre liste, où un champ vide a le droit d'exister
+  // le temps qu'on le remplisse ; seule la version recollée, sans les vides,
+  // remonte au post.
+  const [anecdotes, setAnecdotes] = useState(() => {
+    const d = decoupeAnecdotes(post.anecdote);
+    return d.length ? d : [""];
+  });
+  // Ce qu'on a écrit en dernier dans le post : sert à distinguer nos propres
+  // écritures d'un changement venu d'ailleurs (autre journée ouverte, post
+  // régénéré), sans quoi le champ vide serait effacé dès sa création.
+  const dernierEcrit = useRef(colleAnecdotes(decoupeAnecdotes(post.anecdote)));
+  useEffect(() => {
+    if ((post.anecdote || "") === dernierEcrit.current) return;
+    const d = decoupeAnecdotes(post.anecdote);
+    setAnecdotes(d.length ? d : [""]);
+    dernierEcrit.current = post.anecdote || "";
+  }, [post.anecdote]);
+
+  const majAnecdotes = (liste) => {
+    setAnecdotes(liste.length ? liste : [""]);
+    const colle = colleAnecdotes(liste);
+    dernierEcrit.current = colle;
+    upd("anecdote", colle);
+  };
   const updAnecdote = (i, v) => majAnecdotes(anecdotes.map((a, j) => (j === i ? v : a)));
-  const addAnecdote = () => upd("anecdote", (post.anecdote || "").replace(/\s+$/, "") + (post.anecdote?.trim() ? "\n" : "") + " ");
+  const addAnecdote = () => majAnecdotes([...anecdotes, ""]);
   const delAnecdote = (i) => majAnecdotes(anecdotes.filter((_, j) => j !== i));
 
   const moveRecit = (i, delta) => {
@@ -1149,31 +1175,21 @@ function EditablePost({ post, setPost, photos, notes, dayNum, distance, photoPri
         <div className="section-head">
           {anecdotes.length > 1 ? `Les anecdotes (${anecdotes.length})` : "L'anecdote"}
         </div>
-        {anecdotes.length === 0 ? (
-          <textarea
-            className="input"
-            style={{ fontSize: 14, lineHeight: 1.5, resize: "vertical" }}
-            rows={2}
-            value=""
-            placeholder="Une histoire à retenir de la journée…"
-            onChange={(e) => upd("anecdote", e.target.value)}
-          />
-        ) : (
-          anecdotes.map((a, i) => (
-            <div key={i} className="anecdote-champ">
-              <textarea
-                className="input"
-                style={{ fontSize: 14, lineHeight: 1.5, resize: "vertical" }}
-                rows={Math.max(2, Math.ceil(a.length / 45))}
-                value={a}
-                onChange={(e) => updAnecdote(i, e.target.value)}
-              />
-              {anecdotes.length > 1 && (
-                <button className="cmt-del" onClick={() => delAnecdote(i)} aria-label={`Retirer l'anecdote ${i + 1}`}>✕</button>
-              )}
-            </div>
-          ))
-        )}
+        {anecdotes.map((a, i) => (
+          <div key={i} className="anecdote-champ">
+            <textarea
+              className="input"
+              style={{ fontSize: 14, lineHeight: 1.5, resize: "vertical" }}
+              rows={Math.max(2, Math.ceil(a.length / 45))}
+              value={a}
+              placeholder="Une histoire à retenir de la journée…"
+              onChange={(e) => updAnecdote(i, e.target.value)}
+            />
+            {anecdotes.length > 1 && (
+              <button className="cmt-del" onClick={() => delAnecdote(i)} aria-label={`Retirer l'anecdote ${i + 1}`}>✕</button>
+            )}
+          </div>
+        ))}
         <button className="btn-secondary" style={{ padding: "7px 13px", fontSize: 12.5, alignSelf: "flex-start" }} onClick={addAnecdote}>
           + Une autre anecdote
         </button>
