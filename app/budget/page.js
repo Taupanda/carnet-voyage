@@ -5,15 +5,7 @@ import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { todayLocal } from "../../lib/stages";
 import { appelApi } from "../../lib/jeton";
-
-const CATS = [
-  { id: "hebergement", label: "Hébergement", ic: "🛏️", color: "#BC5B2E" },
-  { id: "transport", label: "Transport", ic: "🚌", color: "#5C6B4C" },
-  { id: "repas", label: "Repas", ic: "🍽️", color: "#C99A3B" },
-  { id: "sorties", label: "Sorties", ic: "🍸", color: "#8B5A8C" },
-  { id: "activites", label: "Activités", ic: "🎯", color: "#3F8CA5" },
-  { id: "autres", label: "Autres", ic: "📦", color: "#948B7E" },
-];
+import { CATEGORIES as CATS } from "../../lib/categories";
 
 // Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
 // et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.

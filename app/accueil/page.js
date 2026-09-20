@@ -9,15 +9,7 @@ import { derniersOutils } from "../../lib/outils";
 import { creerDictee } from "../../lib/dictee";
 import { creerGardeEcran } from "../../lib/veille";
 import { appelApi } from "../../lib/jeton";
-
-const CATS = [
-  { id: "repas", label: "Repas", ic: "🍽️" },
-  { id: "transport", label: "Transport", ic: "🚌" },
-  { id: "hebergement", label: "Hébergement", ic: "🛏️" },
-  { id: "activites", label: "Activités", ic: "🎯" },
-  { id: "sorties", label: "Sorties", ic: "🍸" },
-  { id: "autres", label: "Autres", ic: "📦" },
-];
+import { CATEGORIES as CATS } from "../../lib/categories";
 
 const FALLBACK_RATE = 19.5; // 1 € ≈ X MXN, repli hors-ligne
 
