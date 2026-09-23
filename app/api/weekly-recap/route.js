@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { supabaseAdmin, checkAdmin, callClaude, extractJson } from "../../../lib/server";
 import { destinatairesRecap, recapEnHtml, envoyerRecap, envoiEmailDispo } from "../../../lib/courriel";
+import { chiffresSemaine, miseEnPageDepuisIA, miseEnPageDepuisEditeur, contenuTexte, photosDuJour } from "../../../lib/recap";
 
 // Les adresses vivent dans auth.users, pas dans profiles : il faut la liste des
 // comptes. Paginée, sinon seuls les cinquante premiers sortent.
@@ -30,11 +31,37 @@ function addDays(dateStr, n) {
   return d.toISOString().slice(0, 10);
 }
 
+// Les posts publiés de la semaine, sans la réflexion : elle peut être privée, et
+// ni l'IA ni un e-mail n'en ont besoin.
+async function postsDeLaSemaine(db, lundi) {
+  const { data, error } = await db
+    .from("entries")
+    .select("*")
+    .eq("status", "published")
+    .gte("date", lundi)
+    .lte("date", addDays(lundi, 6))
+    .order("date", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data || []).map(({ reflexion, reflexion_privee, ...e }) => e);
+}
+
+const lienSemaine = (base, lundi) => `${base}/semaines/${lundi}`;
+
 export async function GET(request) {
   if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const db = supabaseAdmin();
+  // Les photos de la semaine, pour choisir couverture et illustrations.
+  const photos = new URL(request.url).searchParams.get("photos");
+  if (photos) {
+    try {
+      const posts = await postsDeLaSemaine(db, mondayOf(photos));
+      return NextResponse.json(posts.map((e) => ({ date: e.date, titre: e.titre, photos: photosDuJour(e) })));
+    } catch (e) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+  }
   const { data, error } = await db.from("weekly_recaps").select("*").order("semaine_debut", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data || []);
@@ -80,7 +107,7 @@ export async function POST(request) {
         const payload = JSON.stringify({
           title: recap.titre || "Le récap de la semaine",
           body: txt.slice(0, 120) + (txt.length > 120 ? "…" : ""),
-          url: "/semaines",
+          url: `/semaines/${recap.semaine_debut}`,
           tag: `recap-${recap.id}`,
         });
         const results = await Promise.allSettled(
@@ -107,7 +134,12 @@ export async function POST(request) {
         const { data: profils } = await db.from("profiles").select("id, prenom, recap_email, bloque");
         const adresses = await adressesDesComptes(db, (profils || []).map((p) => p.id));
         const destinataires = destinatairesRecap(profils, adresses);
-        const html = recapEnHtml(recap, { lien: `${base}/semaines`, lienDesabo: `${base}/profil` });
+        const posts = await postsDeLaSemaine(db, recap.semaine_debut).catch(() => []);
+        const html = recapEnHtml(recap, {
+          lien: lienSemaine(base, recap.semaine_debut),
+          lienDesabo: `${base}/profil`,
+          chiffres: chiffresSemaine(posts),
+        });
         resultat.email = await envoyerRecap(destinataires, {
           sujet: recap.titre || "Le récap de la semaine",
           html,
@@ -118,47 +150,77 @@ export async function POST(request) {
     return NextResponse.json({ ok: true, ...resultat });
   }
 
+  // --- Aperçu de l'e-mail, sur le résumé tel qu'il est à l'écran ---
+  if (body.action === "apercu") {
+    const lundi = body.semaine_debut ? mondayOf(body.semaine_debut) : null;
+    if (!lundi) return NextResponse.json({ error: "semaine_debut requise" }, { status: 400 });
+    const posts = await postsDeLaSemaine(db, lundi).catch(() => []);
+    const recap = {
+      semaine_debut: lundi,
+      titre: body.titre,
+      contenu: body.contenu,
+      mise_en_page: body.mise_en_page ? miseEnPageDepuisEditeur(body.mise_en_page, posts) : null,
+    };
+    const base = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+    const html = recapEnHtml(recap, { lien: lienSemaine(base, lundi), lienDesabo: `${base}/profil`, chiffres: chiffresSemaine(posts) });
+    return NextResponse.json({ html });
+  }
+
   // --- Générer un brouillon depuis les posts de la semaine ---
   if (body.action === "generate") {
     if (!body.semaine) return NextResponse.json({ error: "semaine requise" }, { status: 400 });
     const lundi = mondayOf(body.semaine);
     const dimanche = addDays(lundi, 6);
 
-    const { data: entries, error } = await db
-      .from("entries")
-      .select("date, titre, lieux, recit, reflexion, reflexion_privee")
-      .eq("status", "published")
-      .gte("date", lundi)
-      .lte("date", dimanche)
-      .order("date", { ascending: true });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (!entries || entries.length === 0) {
+    let entries;
+    try { entries = await postsDeLaSemaine(db, lundi); } catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+    if (!entries.length) {
       return NextResponse.json({ error: "Aucun post publié cette semaine." }, { status: 400 });
     }
 
+    // Les activités avec leur détail, un peu tronqué : de quoi écrire des
+    // chapitres concrets sans envoyer tout le carnet.
     const brief = entries
       .map((e) => {
-        const acts = Array.isArray(e.recit) ? e.recit.map((r) => r.activite).filter(Boolean).join(", ") : "";
         const lieux = Array.isArray(e.lieux) ? e.lieux.join(", ") : "";
-        return `- ${e.date} · ${e.titre || ""}${lieux ? ` (${lieux})` : ""}${acts ? ` : ${acts}` : ""}`;
+        const acts = (Array.isArray(e.recit) ? e.recit : [])
+          .filter((r) => r?.activite)
+          .map((r) => `  · ${r.activite}${r.detail ? ` — ${String(r.detail).replace(/\s+/g, " ").slice(0, 280)}` : ""}`)
+          .join("\n");
+        return `${e.date} · ${e.titre || ""}${lieux ? ` (${lieux})` : ""}${acts ? `\n${acts}` : ""}`;
       })
       .join("\n");
 
     const system = `Tu écris le résumé hebdomadaire d'un carnet de voyage (Mexique / Amérique centrale), à la PREMIÈRE PERSONNE ("je"), au masculin, pour les proches qui suivent le voyage.
 - Ton chaleureux mais SOBRE et factuel. Aucune emphase inventée, aucun lyrisme ("magique", "inoubliable"…), tu restes fidèle aux faits fournis.
-- 2 à 4 courts paragraphes maximum. Donne une vue d'ensemble de la semaine (où je suis allé, ce que j'ai fait), pas un jour-par-jour exhaustif.
+- Une accroche d'une ou deux phrases qui donne la couleur de la semaine.
+- Puis 2 à 4 chapitres courts qui suivent la semaine dans l'ordre (un lieu, un moment, une étape), pas un jour-par-jour exhaustif. Chaque chapitre : un titre de 2 à 5 mots, 1 ou 2 courts paragraphes (séparés par une ligne vide), et les dates (AAAA-MM-JJ) des jours qu'il couvre, prises dans la liste fournie.
 - N'invente aucun détail absent des notes.
-Réponds UNIQUEMENT en JSON valide, sans markdown : {"titre": "titre court de la semaine (4-8 mots)", "contenu": "le résumé"}`;
+Réponds UNIQUEMENT en JSON valide, sans markdown :
+{"titre": "titre court de la semaine (4-8 mots)", "chapeau": "l'accroche", "sections": [{"titre": "…", "texte": "…", "jours": ["AAAA-MM-JJ"]}]}`;
 
-    const raw = await callClaude(system, [
-      { role: "user", content: `Semaine du ${lundi} au ${dimanche}. Posts publiés :\n${brief}` },
-    ], 1200);
+    let raw;
+    try {
+      raw = await callClaude(system, [
+        { role: "user", content: `Semaine du ${lundi} au ${dimanche}. Posts publiés :\n${brief}` },
+      ], 2000);
+    } catch (e) {
+      return NextResponse.json({ error: e.message }, { status: 502 });
+    }
     let parsed;
     try { parsed = extractJson(raw); } catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }); }
 
+    const miseEnPage = miseEnPageDepuisIA(parsed, entries);
     const { data: saved, error: upErr } = await db
       .from("weekly_recaps")
-      .upsert({ semaine_debut: lundi, titre: parsed.titre || null, contenu: parsed.contenu || null, status: "draft", updated_at: new Date().toISOString() }, { onConflict: "semaine_debut" })
+      .upsert({
+        semaine_debut: lundi,
+        titre: String(parsed.titre || "").trim() || null,
+        contenu: contenuTexte(miseEnPage) || null,
+        mise_en_page: miseEnPage,
+        status: "draft",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "semaine_debut" })
       .select()
       .single();
     if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
@@ -177,6 +239,16 @@ Réponds UNIQUEMENT en JSON valide, sans markdown : {"titre": "titre court de la
     status: body.status === "published" ? "published" : "draft",
     updated_at: new Date().toISOString(),
   };
+  // Résumé illustré : les photos sont vérifiées contre celles de la semaine, et
+  // la version texte est recalculée pour rester fidèle à ce qui est affiché.
+  if (body.mise_en_page) {
+    const lundi = body.semaine_debut ? mondayOf(body.semaine_debut) : null;
+    if (!lundi) return NextResponse.json({ error: "semaine_debut requise" }, { status: 400 });
+    let posts;
+    try { posts = await postsDeLaSemaine(db, lundi); } catch (e) { return NextResponse.json({ error: e.message }, { status: 500 }); }
+    row.mise_en_page = miseEnPageDepuisEditeur(body.mise_en_page, posts);
+    row.contenu = contenuTexte(row.mise_en_page) || null;
+  }
   const { data, error } = await db
     .from("weekly_recaps")
     .upsert(row, { onConflict: body.id ? "id" : "semaine_debut" })

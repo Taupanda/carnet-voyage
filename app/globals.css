@@ -435,6 +435,56 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .etape-jours { margin-left: auto; color: var(--muted); }
 .etape-ligne.invalide .etape-jours { color: #C2453A; }
 
+/* ============ RÉSUMÉS ILLUSTRÉS ============ */
+.recap-cover { position: relative; margin: 14px 0 0; border-radius: 18px; overflow: hidden; min-height: 320px; display: flex; align-items: flex-end; background: var(--stage); color: #fff; }
+.recap-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.recap-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(20,14,8,0.8) 100%); }
+.recap-cover.sans-photo { min-height: 190px; }
+.recap-cover.sans-photo::after { display: none; }
+.recap-cover-texte { position: relative; z-index: 1; padding: 22px 22px 20px; }
+.recap-cover-etapes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.recap-cover-etapes span { font-family: var(--police); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 999px; color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
+.recap-cover-dates { font-family: var(--police); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.9; margin: 0 0 4px; }
+.recap-cover h1 { font-family: var(--police); font-weight: 700; font-size: clamp(26px, 6vw, 38px); line-height: 1.1; margin: 0; text-shadow: 0 2px 12px rgba(0,0,0,0.35); }
+.recap-chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-top: 14px; }
+.recap-chiffres div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px; text-align: center; }
+.recap-chiffres strong { display: block; font-family: var(--police); font-size: 22px; font-weight: 700; color: var(--stage); line-height: 1.15; }
+.recap-chiffres span { font-size: 11.5px; color: var(--muted); }
+.recap-chapeau { font-size: 19px; line-height: 1.55; margin: 24px 0 4px; color: var(--ink); border-left: 3px solid var(--stage); padding-left: 14px; }
+.recap-carte { margin: 20px 0 4px; }
+.recap-section { margin-top: 30px; }
+.recap-section h2 { font-family: var(--police); font-size: 21px; font-weight: 700; margin: 0 0 8px; color: var(--stage); }
+.recap-section p { font-size: 16px; line-height: 1.7; color: var(--ink2); margin: 0 0 12px; }
+.recap-photos { display: grid; gap: 6px; margin: 12px 0 6px; }
+.recap-photos img { width: 100%; height: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 10px; cursor: zoom-in; display: block; }
+.recap-photos.n1 img { aspect-ratio: 16/10; }
+.recap-photos.n2 { grid-template-columns: 1fr 1fr; }
+.recap-photos.n3 { grid-template-columns: 2fr 1fr; }
+.recap-photos.n3 img:first-child { grid-row: span 2; aspect-ratio: auto; }
+.recap-jours-liens { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.recap-jours-liens a { font-family: var(--police); font-size: 11.5px; padding: 5px 11px; border-radius: 999px; border: 1.5px solid var(--stage); color: var(--stage); text-decoration: none; }
+.recap-toutes { margin-top: 28px; width: 100%; padding: 14px; border-radius: 12px; border: 1.5px dashed var(--line2); background: var(--card); color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
+.recap-ruban { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+.recap-jour { flex: none; width: 150px; scroll-snap-align: start; text-decoration: none; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--c); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.recap-jour img, .recap-jour-vide { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--line); }
+.recap-jour-n { font-family: var(--police); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 8px 10px 2px; }
+.recap-jour-titre { font-size: 13.5px; font-weight: 600; line-height: 1.3; padding: 0 10px 10px; }
+.recap-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--line); }
+.recap-nav a { font-size: 13.5px; color: var(--accent); text-decoration: none; font-weight: 600; }
+.recap-cartes { display: flex; flex-direction: column; gap: 14px; }
+.recap-carte-lien { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; text-decoration: none; color: var(--ink); transition: transform 0.15s, box-shadow 0.15s; }
+.recap-carte-lien:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(33,29,23,0.10); }
+.recap-carte-lien img, .recap-carte-vide { width: 100%; aspect-ratio: 2/1; object-fit: cover; display: block; background: var(--line); }
+.recap-carte-texte { padding: 16px 18px 18px; }
+.recap-carte-texte h2 { font-family: var(--police); font-size: 21px; font-weight: 700; margin: 4px 0 6px; }
+.recap-carte-texte p { font-size: 14.5px; line-height: 1.55; color: var(--ink2); margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.recap-edit-section { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-top: 10px; background: var(--bg); }
+.recap-vignettes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.recap-vignettes button { position: relative; padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden; width: 60px; height: 60px; cursor: pointer; background: none; opacity: 0.55; }
+.recap-vignettes button.on { border-color: var(--accent); opacity: 1; }
+.recap-vignettes button.on::after { content: "✓"; position: absolute; top: 1px; right: 4px; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+.recap-vignettes img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 /* ============ DASHBOARD (home) ============ */
 .dash-hero { border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #BC5B2E 0%, #8B4A2E 55%, #5C3D2E 100%); position: relative; margin-bottom: 18px; }
 .dash-hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 75% 30%, rgba(242,180,80,0.35), transparent 55%); }

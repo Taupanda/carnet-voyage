@@ -31,6 +31,8 @@ function ResumesBody() {
   const [loaded, setLoaded] = useState(false);
   const [onglet, setOnglet] = useState("resumes");
   const [abonnes, setAbonnes] = useState(null);
+  const [photosSemaine, setPhotosSemaine] = useState([]); // [{ date, titre, photos }]
+  const [apercu, setApercu] = useState(null); // HTML de l'e-mail
 
   async function load() {
     const res = await api("/api/weekly-recap");
@@ -49,6 +51,45 @@ function ResumesBody() {
       .catch((e) => setAbonnes({ erreur: e.message }));
   }, [onglet]);
 
+  // Les photos de la semaine affichée, pour choisir couverture et illustrations.
+  const semaineCourante = current?.semaine_debut;
+  useEffect(() => {
+    setPhotosSemaine([]);
+    setApercu(null);
+    if (!semaineCourante) return;
+    api(`/api/weekly-recap?photos=${semaineCourante}`)
+      .then(async (r) => (r.ok ? setPhotosSemaine(await r.json()) : null))
+      .catch(() => {});
+  }, [semaineCourante]);
+
+  const setMp = (f) => setCurrent((c) => ({ ...c, mise_en_page: f(c.mise_en_page) }));
+  const setSection = (i, champs) => setMp((mp) => ({ ...mp, sections: mp.sections.map((sec, j) => (j === i ? { ...sec, ...champs } : sec)) }));
+  const retirerSection = (i) => setMp((mp) => ({ ...mp, sections: mp.sections.filter((_, j) => j !== i) }));
+  function basculerPhoto(i, url) {
+    const a = current.mise_en_page.sections[i].photos || [];
+    setSection(i, { photos: a.includes(url) ? a.filter((u) => u !== url) : a.length >= 3 ? a : [...a, url] });
+  }
+  const toutesPhotos = photosSemaine.flatMap((j) => j.photos);
+  const photosDesJours = (jours) => {
+    const liste = photosSemaine.filter((j) => !jours?.length || jours.includes(j.date)).flatMap((j) => j.photos);
+    return liste.length ? liste : toutesPhotos;
+  };
+
+  const corpsResume = () => ({
+    id: current.id,
+    semaine_debut: current.semaine_debut,
+    titre: current.titre,
+    contenu: current.contenu,
+    ...(current.mise_en_page ? { mise_en_page: current.mise_en_page } : {}),
+  });
+
+  async function voirApercu() {
+    setErr(null);
+    const res = await api("/api/weekly-recap", { method: "POST", body: JSON.stringify({ action: "apercu", ...corpsResume() }) });
+    if (res.ok) setApercu((await res.json()).html);
+    else setErr(((await res.json().catch(() => ({}))).error) || "Aperçu impossible.");
+  }
+
   async function generate() {
     setBusy(true);
     setErr(null);
@@ -59,16 +100,14 @@ function ResumesBody() {
   }
 
   async function save(status) {
-    if (!current) return;
+    if (!current) return false;
     setBusy(true);
     setErr(null);
-    const res = await api("/api/weekly-recap", {
-      method: "POST",
-      body: JSON.stringify({ id: current.id, semaine_debut: current.semaine_debut, titre: current.titre, contenu: current.contenu, status }),
-    });
+    const res = await api("/api/weekly-recap", { method: "POST", body: JSON.stringify({ ...corpsResume(), status }) });
     setBusy(false);
-    if (res.ok) { setCurrent(await res.json()); load(); }
-    else setErr(((await res.json()).error) || "Échec.");
+    if (res.ok) { setCurrent(await res.json()); load(); return true; }
+    setErr(((await res.json().catch(() => ({}))).error) || "Échec.");
+    return false;
   }
 
   // Les canaux sont choisis à chaque envoi : les abonnés ne sont pas les mêmes
@@ -79,6 +118,9 @@ function ResumesBody() {
     const quoi = canaux.length === 2 ? "en notification ET par e-mail"
       : canaux[0] === "email" ? "par e-mail" : "en notification";
     if (!confirm(`Envoyer ce récap ${quoi} aux abonnés concernés ?`)) return;
+    // Ce qui part est ce qui est à l'écran : les retouches non enregistrées
+    // partaient sinon à la trappe.
+    if (!(await save(current.status === "published" ? "published" : "draft"))) return;
     setBusy(true);
     setErr(null);
     const res = await api("/api/weekly-recap", { method: "POST", body: JSON.stringify({ action: "send", id: current.id, canaux }) });
@@ -140,15 +182,63 @@ function ResumesBody() {
             </span>
           </div>
           <input className="input serif" style={{ fontSize: 17, marginBottom: 8 }} value={current.titre || ""} onChange={(e) => setCurrent({ ...current, titre: e.target.value })} placeholder="Titre" />
-          <textarea className="input" rows={8} value={current.contenu || ""} onChange={(e) => setCurrent({ ...current, contenu: e.target.value })} style={{ lineHeight: 1.6 }} />
+          {current.mise_en_page ? (
+            <>
+              <label className="lbl" style={{ marginTop: 6 }}>Couverture</label>
+              <div className="recap-vignettes">
+                {toutesPhotos.map((u) => (
+                  <button key={u} type="button" className={current.mise_en_page.couverture === u ? "on" : ""} onClick={() => setMp((mp) => ({ ...mp, couverture: u }))}>
+                    <img src={u} alt="" loading="lazy" />
+                  </button>
+                ))}
+                {!toutesPhotos.length && <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>Aucune photo cette semaine.</span>}
+              </div>
+              <label className="lbl" style={{ marginTop: 12 }}>Accroche</label>
+              <textarea className="input" rows={3} value={current.mise_en_page.chapeau || ""} onChange={(e) => setMp((mp) => ({ ...mp, chapeau: e.target.value }))} style={{ lineHeight: 1.55 }} />
+              {(current.mise_en_page.sections || []).map((sec, i) => (
+                <div key={i} className="recap-edit-section">
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input className="input" style={{ fontWeight: 600 }} value={sec.titre || ""} onChange={(e) => setSection(i, { titre: e.target.value })} placeholder={`Chapitre ${i + 1}`} />
+                    <button type="button" className="btn-secondary" style={{ padding: "8px 12px" }} onClick={() => retirerSection(i)} title="Retirer ce chapitre">✕</button>
+                  </div>
+                  <textarea className="input" rows={5} value={sec.texte || ""} onChange={(e) => setSection(i, { texte: e.target.value })} style={{ lineHeight: 1.6, marginTop: 6 }} />
+                  <div className="mono" style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
+                    Photos {(sec.photos || []).length}/3 — touche pour ajouter ou retirer
+                  </div>
+                  <div className="recap-vignettes">
+                    {photosDesJours(sec.jours).map((u) => (
+                      <button key={u} type="button" className={(sec.photos || []).includes(u) ? "on" : ""} onClick={() => basculerPhoto(i, u)}>
+                        <img src={u} alt="" loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <textarea className="input" rows={8} value={current.contenu || ""} onChange={(e) => setCurrent({ ...current, contenu: e.target.value })} style={{ lineHeight: 1.6 }} />
+          )}
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-            <button className="btn-secondary" onClick={() => save("draft")} disabled={busy}>Enregistrer le brouillon</button>
+            <button className="btn-secondary" onClick={() => save(current.status === "published" ? "published" : "draft")} disabled={busy}>Enregistrer</button>
+            <button className="btn-secondary" onClick={voirApercu} disabled={busy}>👁 Aperçu e-mail</button>
+            {current.status === "published" && (
+              <a className="btn-secondary" href={`/semaines/${current.semaine_debut}`} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>↗ Voir la page</a>
+            )}
             <button className="btn-secondary" onClick={() => sendRecap(["push"])} disabled={busy || !current.id}>🔔 Notifier</button>
             <button className="btn-secondary" onClick={() => sendRecap(["email"])} disabled={busy || !current.id}>✉️ Par e-mail</button>
             <button className="btn" onClick={() => sendRecap(["push", "email"])} disabled={busy || !current.id}>📨 Les deux</button>
             <button className="btn-danger" onClick={() => del(current.id)} style={{ marginLeft: "auto" }}>Supprimer</button>
           </div>
-          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>L'envoi publie aussi le récap (accessible via le lien de la notification).</p>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>L'envoi enregistre tes retouches et publie le récap (accessible via le lien de la notification).</p>
+          {apercu && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                <span className="aside-head" style={{ margin: 0 }}>Aperçu de l'e-mail</span>
+                <button className="btn-secondary" style={{ marginLeft: "auto", padding: "6px 12px", fontSize: 13 }} onClick={() => setApercu(null)}>Fermer</button>
+              </div>
+              <iframe title="Aperçu de l'e-mail" srcDoc={apercu} sandbox="" style={{ width: "100%", height: 760, border: "1px solid var(--line)", borderRadius: 12, background: "#F5F0E8" }} />
+            </div>
+          )}
         </div>
       )}
 
