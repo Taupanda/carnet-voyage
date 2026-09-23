@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "../lib/server";
-import { STAGES, stageForDate, TRIP_DATES, todayLocal, dayNumberOf, afficheJour } from "../lib/stages";
+import { DEPART, todayLocal, dayNumberOf, afficheJour } from "../lib/stages";
+import { calendrierServeur } from "../lib/etapesServeur";
 import { cumulKm } from "../lib/geo";
 import HomeFeed from "./HomeFeed";
 
@@ -38,8 +39,9 @@ export default async function Home() {
   const points = [...posts].reverse().filter((p) => p.lat && p.lng)
     .map((p) => ({ lat: p.lat, lng: p.lng, titre: p.titre, day_number: p.day_number, date: p.date }));
 
+  const { TRIP_DATES } = await calendrierServeur();
   const today = todayLocal();
-  const started = today >= STAGES[0].debut;
+  const started = today >= DEPART;
   // Le premier jour du voyage est le jour 1 : dayNumberOf compte les écarts
   // depuis le départ et vaut donc 0 ce jour-là.
   const dayNum = started ? Math.min(TRIP_DATES, afficheJour(dayNumberOf(today))) : null;

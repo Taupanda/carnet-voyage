@@ -1,20 +1,21 @@
 "use client";
 import { useState, useMemo } from "react";
-import { STAGES, stageForDate } from "../../lib/stages";
+import { useCalendrier } from "../EtapesProvider";
 import Lightbox from "../Lightbox";
 
 export default function AlbumClient({ shots }) {
+  const { STAGES, stageForDate } = useCalendrier();
   const [filter, setFilter] = useState(null);
   const [open, setOpen] = useState(null);
 
   const used = useMemo(() => {
     const set = new Set(shots.map((s) => stageForDate(s.date)?.n).filter(Boolean));
     return STAGES.filter((s) => set.has(s.n));
-  }, [shots]);
+  }, [shots, STAGES, stageForDate]);
 
   const list = useMemo(
     () => (filter ? shots.filter((s) => stageForDate(s.date)?.n === filter) : shots),
-    [shots, filter]
+    [shots, filter, stageForDate]
   );
 
   const urls = list.map((s) => s.url);

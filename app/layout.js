@@ -7,6 +7,8 @@ import ServiceWorkerRegister from "./ServiceWorkerRegister";
 import BarreAdmin from "./BarreAdmin";
 import ArriveeAdmin from "./ArriveeAdmin";
 import SuiviVisites from "./SuiviVisites";
+import EtapesProvider from "./EtapesProvider";
+import { etapesServeur } from "../lib/etapesServeur";
 
 export const metadata = {
   title: "Les aventures de Maxou — Mexique & Amérique centrale",
@@ -16,7 +18,8 @@ export const metadata = {
 
 export const viewport = { themeColor: "#F5F0E8" };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const etapes = await etapesServeur();
   return (
     <html lang="fr">
       <head>
@@ -29,21 +32,23 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body>
-        <AuthProvider>
-          <ModeProvider>
-            <div className="shell">
-              <Nav />
-              <div className="shell-main">
-                <BarreAdmin />
-                {children}
+        <EtapesProvider etapes={etapes}>
+          <AuthProvider>
+            <ModeProvider>
+              <div className="shell">
+                <Nav />
+                <div className="shell-main">
+                  <BarreAdmin />
+                  {children}
+                </div>
               </div>
-            </div>
-            <ArriveeAdmin />
-            <SuiviVisites />
-            <ProfileRedirect />
-            <ServiceWorkerRegister />
-          </ModeProvider>
-        </AuthProvider>
+              <ArriveeAdmin />
+              <SuiviVisites />
+              <ProfileRedirect />
+              <ServiceWorkerRegister />
+            </ModeProvider>
+          </AuthProvider>
+        </EtapesProvider>
       </body>
     </html>
   );

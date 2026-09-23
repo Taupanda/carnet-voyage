@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { STAGES, stageForDate } from "../lib/stages";
+import { useCalendrier } from "./EtapesProvider";
 
 export default function TripMap({ points, big }) {
+  const { stageForDate } = useCalendrier();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -126,7 +127,7 @@ export default function TripMap({ points, big }) {
       map.on("mouseenter", "day-dots", () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", "day-dots", () => (map.getCanvas().style.cursor = ""));
     });
-  }, [ready, points]);
+  }, [ready, points, stageForDate]);
 
   if (failed) {
     return (

@@ -1,7 +1,7 @@
 import PhotoGridV2 from "./PhotoGridV2";
 import PostSocial from "./PostSocial";
 import PostAdmin from "./PostAdmin";
-import { stageForDate, afficheJour, decoupeAnecdotes } from "../lib/stages";
+import { afficheJour, decoupeAnecdotes } from "../lib/stages";
 import { meteoInfo } from "../lib/weather";
 import { formateKm, totauxKm, modeInfo } from "../lib/geo";
 
@@ -22,8 +22,7 @@ function Dots({ v }) {
   );
 }
 
-export default function Post({ e }) {
-  const stage = stageForDate(e.date);
+export default function Post({ e, stage }) {
   const dist = totauxKm(e);
   const c = stage?.couleur || "#BC5B2E";
   const recit = Array.isArray(e.recit) ? e.recit : [];

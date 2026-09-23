@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "../../lib/server";
-import { STAGES, stageForDate, afficheJour, decoupeAnecdotes } from "../../lib/stages";
+import { afficheJour, decoupeAnecdotes } from "../../lib/stages";
+import { calendrierServeur } from "../../lib/etapesServeur";
 import PrintButton from "./PrintButton";
 
 export const revalidate = 300;
@@ -7,6 +8,7 @@ export const revalidate = 300;
 const BRAND = "Les aventures de Maxou";
 
 export default async function Livre() {
+  const { stageForDate } = await calendrierServeur();
   const db = supabaseAdmin();
   const { data } = await db
     .from("entries")

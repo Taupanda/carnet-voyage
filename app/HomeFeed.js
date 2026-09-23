@@ -4,10 +4,12 @@ import Link from "next/link";
 import TripMap from "./TripMap";
 import Post from "./Post";
 import PushButton from "./PushButton";
-import { STAGES, stageForDate, stageDays, TRIP_DATES, todayLocal, fmtDate } from "../lib/stages";
+import { stageDays, todayLocal, fmtDate } from "../lib/stages";
+import { useCalendrier } from "./EtapesProvider";
 import { arrondiKm } from "../lib/geo";
 
 export default function HomeFeed({ posts, points, stats, dayNum, started }) {
+  const { STAGES, stageForDate, TRIP_DATES } = useCalendrier();
   const [filter, setFilter] = useState(null);
   const [mapOpen, setMapOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -137,7 +139,7 @@ export default function HomeFeed({ posts, points, stats, dayNum, started }) {
                   </div>
                 </div>
               )}
-              {g.posts.map((e) => <Post key={e.date} e={e} />)}
+              {g.posts.map((e) => <Post key={e.date} e={e} stage={g.stage} />)}
             </div>
           ))
         )}

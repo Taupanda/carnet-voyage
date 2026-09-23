@@ -421,6 +421,20 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .budget-total { font-family: var(--police); font-weight: 600; font-size: clamp(28px, 8vw, 42px); color: var(--accent); line-height: 1; margin-top: 4px; }
 .depense-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
 
+/* ============ GESTION DES ÉTAPES ============ */
+.etapes-liste { display: flex; flex-direction: column; gap: 6px; }
+.etape-ligne { display: flex; gap: 12px; align-items: flex-start; padding: 12px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: 10px; }
+.etape-ligne.invalide { border-color: #C2453A; border-left-color: #C2453A; }
+.etape-n { flex: none; width: 26px; height: 26px; border-radius: 999px; background: var(--c); color: #fff; font-family: var(--police); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; margin-top: 6px; }
+.etape-corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.etape-haut { display: flex; align-items: center; gap: 8px; }
+.etape-nom { padding: 7px 10px; font-weight: 600; font-size: 14px; }
+.etape-badge { flex: none; font-family: var(--police); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 999px; background: var(--c); color: #fff; }
+.etape-dates { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink2); flex-wrap: wrap; }
+.etape-fin { width: auto; padding: 5px 8px; font-size: 13px; }
+.etape-jours { margin-left: auto; color: var(--muted); }
+.etape-ligne.invalide .etape-jours { color: #C2453A; }
+
 /* ============ DASHBOARD (home) ============ */
 .dash-hero { border-radius: 20px; overflow: hidden; background: linear-gradient(135deg, #BC5B2E 0%, #8B4A2E 55%, #5C3D2E 100%); position: relative; margin-bottom: 18px; }
 .dash-hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 75% 30%, rgba(242,180,80,0.35), transparent 55%); }

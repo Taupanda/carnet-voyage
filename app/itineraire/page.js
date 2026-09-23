@@ -3,6 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { PHASES } from "../../lib/itinerary";
+import { stageDays, plageDates, afficheJour } from "../../lib/stages";
+import { useCalendrier } from "../EtapesProvider";
 
 const ItineraryMap = dynamic(() => import("./ItineraryMap"), { ssr: false });
 
@@ -20,6 +22,16 @@ const TOTAL = SPLIT.reduce((s, x) => s + x.days, 0);
 export default function Itineraire() {
   const [view, setView] = useState("apercu"); // apercu | calendrier
   const [openPhase, setOpenPhase] = useState(null);
+  const { STAGES, TRIP_START, TRIP_DATES } = useCalendrier();
+  // Les dates viennent des étapes, appariées rang par rang : la page ne les
+  // recopie plus, elle ne peut donc plus les contredire.
+  const phases = PHASES.map((p, i) => ({
+    ...p,
+    debut: STAGES[i].debut,
+    fin: STAGES[i].fin,
+    days: stageDays(STAGES[i]),
+    dates: plageDates(STAGES[i].debut, STAGES[i].fin),
+  }));
 
   return (
     <main className="container-wide" style={{ paddingTop: 30, paddingBottom: 70 }}>
@@ -52,7 +64,7 @@ export default function Itineraire() {
 
       {view === "apercu" ? (
         <>
-          <ItineraryMap phases={PHASES} />
+          <ItineraryMap phases={phases} />
 
           {/* répartition thématique */}
           <div style={{ margin: "24px 0 10px" }}>
@@ -75,7 +87,7 @@ export default function Itineraire() {
 
           {/* étapes détaillées */}
           <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
-            {PHASES.map((p) => {
+            {phases.map((p) => {
               const open = openPhase === p.id;
               return (
                 <div key={p.id} className="phase-card" style={{ "--c": p.color }}>
@@ -159,47 +171,25 @@ export default function Itineraire() {
           </div>
         </>
       ) : (
-        <CalendarView />
+        <CalendarView phases={phases} debut={TRIP_START} nombre={TRIP_DATES} />
       )}
     </main>
   );
 }
 
-function CalendarView() {
-  // construit une timeline jour par jour à partir des dates des phases
-  const MONTHS = { "sept": 8, "oct": 9, "nov": 10, "déc": 11 };
-  function parseDate(str, year = 2026) {
-    // ex "8", "23 oct", "3 nov"
-    const parts = str.trim().split(" ");
-    const day = parseInt(parts[0]);
-    const mon = parts[1] ? MONTHS[parts[1]] : null;
-    return { day, mon };
-  }
-
-  // recompose début/fin de chaque phase depuis "8 – 16 sept" ou "23 oct – 3 nov"
-  const phases = PHASES.map((p) => {
-    const [left, right] = p.dates.split("–").map((s) => s.trim());
-    const rMon = right.match(/(sept|oct|nov|déc)/);
-    const rightMon = rMon ? MONTHS[rMon[1]] : 8;
-    const lMon = left.match(/(sept|oct|nov|déc)/);
-    const leftMon = lMon ? MONTHS[lMon[1]] : rightMon;
-    const debut = new Date(2026, leftMon, parseInt(left));
-    const fin = new Date(2026, rightMon, parseInt(right));
-    return { ...p, debut, fin };
-  });
-
-  const start = new Date(2026, 8, 8);
+// Une case par jour du voyage, colorée par l'étape qui le couvre.
+function CalendarView({ phases, debut, nombre }) {
   const days = [];
-  for (let i = 0; i <= 100; i++) {
-    const d = new Date(start.getTime() + i * 86400000);
-    const ph = phases.find((p) => d >= p.debut && d <= p.fin);
-    days.push({ n: i, date: d, phase: ph });
+  for (let i = 0; i < nombre; i++) {
+    const date = new Date(Date.parse(debut + "T00:00:00Z") + i * 86400000);
+    const iso = date.toISOString().slice(0, 10);
+    days.push({ n: i, date, phase: phases.find((p) => iso >= p.debut && iso <= p.fin) });
   }
 
   // grouper par mois
   const byMonth = {};
   days.forEach((d) => {
-    const key = d.date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+    const key = d.date.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
     (byMonth[key] = byMonth[key] || []).push(d);
   });
 
@@ -211,8 +201,8 @@ function CalendarView() {
           <div className="cal-itin">
             {ds.map((d) => (
               <div key={d.n} className="cal-itin-day" style={{ background: d.phase ? d.phase.color : "var(--ink3)", color: d.phase ? "#16111C" : "var(--muted)" }}
-                title={d.phase ? `Jour ${d.n} — ${d.phase.title}` : `Jour ${d.n}`}>
-                <span className="cal-itin-num">{d.date.getDate()}</span>
+                title={d.phase ? `Jour ${afficheJour(d.n)} — ${d.phase.title}` : `Jour ${afficheJour(d.n)}`}>
+                <span className="cal-itin-num">{d.date.getUTCDate()}</span>
                 {d.phase && <span className="cal-itin-emoji">{d.phase.emoji}</span>}
               </div>
             ))}
@@ -220,7 +210,7 @@ function CalendarView() {
         </div>
       ))}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginTop: 16 }}>
-        {PHASES.map((p) => (
+        {phases.map((p) => (
           <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
             <span style={{ width: 10, height: 10, borderRadius: 3, background: p.color }} />
             {p.emoji} {p.title}

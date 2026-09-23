@@ -3,7 +3,8 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { STAGES, stageForDate, todayLocal, TRIP_START, TRIP_END, TRIP_DATES } from "../../lib/stages";
+import { todayLocal } from "../../lib/stages";
+import { useCalendrier } from "../EtapesProvider";
 import { appelApi } from "../../lib/jeton";
 
 // Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
@@ -18,13 +19,13 @@ async function motifEchec(res) {
 
 // Le voyage entier, du départ au dernier jour : on ne masque rien, on se
 // contente d'amener la vue sur aujourd'hui à l'ouverture.
-const TOUS_LES_JOURS = (() => {
+function tousLesJours(debut, nombre) {
   const out = [];
-  for (let i = 0; i < TRIP_DATES; i++) {
-    out.push(new Date(new Date(TRIP_START + "T00:00:00").getTime() + i * 86400000).toISOString().slice(0, 10));
+  for (let i = 0; i < nombre; i++) {
+    out.push(new Date(new Date(debut + "T00:00:00").getTime() + i * 86400000).toISOString().slice(0, 10));
   }
   return out;
-})();
+}
 
 export default function Planning() {
   return (
@@ -35,6 +36,8 @@ export default function Planning() {
 }
 
 function PlanningBody() {
+  const { stageForDate, TRIP_START, TRIP_END, TRIP_DATES } = useCalendrier();
+  const TOUS_LES_JOURS = useMemo(() => tousLesJours(TRIP_START, TRIP_DATES), [TRIP_START, TRIP_DATES]);
   const [plans, setPlans] = useState({}); // date -> ligne
   const [loaded, setLoaded] = useState(false);
   const [masquerPasse, setMasquerPasse] = useState(false);
@@ -44,7 +47,7 @@ function PlanningBody() {
   const aujourdhui = todayLocal();
   const jours = useMemo(
     () => (masquerPasse ? TOUS_LES_JOURS.filter((d) => d >= aujourdhui) : TOUS_LES_JOURS),
-    [masquerPasse, aujourdhui]
+    [TOUS_LES_JOURS, masquerPasse, aujourdhui]
   );
 
   async function load() {

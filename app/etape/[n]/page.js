@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "../../../lib/server";
-import { STAGES, stageDays, fmtDate } from "../../../lib/stages";
+import { ETAPES_DEFAUT, stageDays, fmtDate } from "../../../lib/stages";
+import { etapesServeur } from "../../../lib/etapesServeur";
 import Post from "../../Post";
 
 export const revalidate = 120;
 
 export async function generateStaticParams() {
-  return STAGES.map((s) => ({ n: String(s.n) }));
+  return ETAPES_DEFAUT.map((s) => ({ n: String(s.n) }));
 }
 
 export default async function Etape({ params }) {
-  const stage = STAGES.find((s) => String(s.n) === params.n);
+  const stage = (await etapesServeur()).find((s) => String(s.n) === params.n);
   if (!stage) notFound();
 
   const db = supabaseAdmin();
@@ -45,7 +46,7 @@ export default async function Etape({ params }) {
         {posts.length === 0 ? (
           <p className="empty">Cette étape n'a pas encore été écrite.</p>
         ) : (
-          posts.map((e) => <Post key={e.date} e={e} />)
+          posts.map((e) => <Post key={e.date} e={e} stage={stage} />)
         )}
       </div>
     </main>

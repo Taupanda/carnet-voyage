@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { supabaseAdmin } from "../../../lib/server";
-import { stageForDate } from "../../../lib/stages";
+import { calendrierServeur } from "../../../lib/etapesServeur";
 
 // Fuseau du voyage (Mexique / Amérique centrale). Réglable via TRIP_TIMEZONE.
 // On dérive la date locale avec Intl → correct même en cas de changement d'heure,
@@ -68,6 +68,7 @@ export async function GET(request) {
     .lte("date", today);
   const written = new Set((recent || []).map((r) => r.date));
 
+  const { stageForDate } = await calendrierServeur();
   const missing = [];
   for (let i = 0; i <= 2; i++) {
     const d = ymd(new Date(now - i * 86400000));

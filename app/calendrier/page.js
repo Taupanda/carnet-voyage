@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { supabaseAdmin } from "../../lib/server";
-import { STAGES, stageForDate, TRIP_START, TRIP_DAYS, TRIP_DATES, todayLocal } from "../../lib/stages";
+import { todayLocal } from "../../lib/stages";
+import { calendrierServeur } from "../../lib/etapesServeur";
 
 export const revalidate = 120;
 
 export default async function Calendrier() {
+  const { STAGES, stageForDate, TRIP_START, TRIP_DATES } = await calendrierServeur();
   const db = supabaseAdmin();
   const { data } = await db
     .from("entries")

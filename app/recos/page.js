@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { STAGES, todayLocal } from "../../lib/stages";
+import { todayLocal } from "../../lib/stages";
+import { useCalendrier } from "../EtapesProvider";
 import { Avatar, attachProfiles } from "../Social";
 import { jetonCourant } from "../../lib/jeton";
 
@@ -15,6 +16,7 @@ const CATS = [
 ];
 
 export default function Recos() {
+  const { STAGES } = useCalendrier();
   const { user } = useAuth();
   const isAdmin = !!user?.email && user.email.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase();
   const [recos, setRecos] = useState([]);
