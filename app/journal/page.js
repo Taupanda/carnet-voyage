@@ -14,6 +14,7 @@ import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes 
 import RencontresManager from "./RencontresManager";
 import PhotoPicker, { AstucePartage } from "./PhotoPicker";
 import { appelApi } from "../../lib/jeton";
+import { sauverConversation, effacerConversation, conversationsEnCours, apercuConversation } from "../../lib/brouillonJournal";
 
 const KIFF = ["😑", "🙂", "😊", "🤩", "🥳"];
 const AVENTURE = ["🛋️", "🚶", "🧗", "🏄", "🌋"];
@@ -170,6 +171,43 @@ export default function Journal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, entriesLoaded]);
 
+  // La conversation en cours est écrite sur le téléphone à chaque échange, et à
+  // chaque mot du champ de saisie : un retour arrière ou un onglet fermé ne
+  // perd plus rien. Seulement pendant la conversation elle-même — ailleurs,
+  // `messages` peut encore contenir celle d'un autre jour.
+  useEffect(() => {
+    if (phase !== "chat" || saisieMode !== "ia") return;
+    sauverConversation(date, { messages, extracted, input, photos });
+  }, [phase, saisieMode, date, messages, extracted, input, photos]);
+
+  const [enCours, setEnCours] = useState([]);
+  useEffect(() => { setEnCours(conversationsEnCours()); }, [phase, date]);
+  const enCoursDuJour = enCours.find((b) => b.date === date);
+
+  function reprendreConversation(b) {
+    openDate(b.date);
+    setSaisieMode("ia");
+    setMessages(b.messages || []);
+    setExtracted(b.extracted || emptyExtracted());
+    setPhotos(avecPartage(b.photos || []));
+    saisieManuelle(b.input || "");
+    setError(null);
+    setPhase("chat");
+  }
+
+  // Passer à la suite avec ce qui a été raconté : quand l'assistant conclut, ou
+  // quand on préfère s'arrêter là (conversation reprise, ou assez dit).
+  function terminerConversation() {
+    api("/api/rencontres").then((r) => r.ok && r.json().then(setAllRencontres)).catch(() => {});
+    setPhase("moods");
+  }
+
+  function oublierConversation(b) {
+    if (!confirm("Effacer cette conversation commencée ? Ce qui a été raconté sera perdu.")) return;
+    effacerConversation(b.date);
+    setEnCours(conversationsEnCours());
+  }
+
   function startInterview() {
     setSaisieMode("ia");
     setMessages([{ role: "assistant", content: "Alors, cette journée ? Raconte-moi comme tu veux, dans l'ordre que tu veux — je remets tout en forme après." }]);
@@ -237,6 +275,9 @@ export default function Journal() {
     setError(null);
     const existing = entries.find((e) => e.date === d);
     if (existing) {
+      // La conversation en mémoire est celle d'un autre jour : la garder la
+      // ferait repartir vers l'IA à la prochaine régénération de ce post.
+      setMessages([]);
       setExtracted(existing.raw_extracted || emptyExtracted());
       setNoteHumeur(existing.note_humeur ?? 3);
       setNoteEnergie(existing.note_energie ?? 3);
@@ -295,10 +336,7 @@ export default function Journal() {
       const parsed = await res.json();
       setExtracted((prev) => ({ ...prev, ...parsed.extracted }));
       setMessages((m) => [...m, { role: "assistant", content: parsed.reply }]);
-      if (parsed.done) {
-        api("/api/rencontres").then((r) => r.ok && r.json().then(setAllRencontres)).catch(() => {});
-        setTimeout(() => setPhase("moods"), 600);
-      }
+      if (parsed.done) setTimeout(terminerConversation, 600);
     } catch (e) {
       // Le message exact, pas un « souci de connexion » générique : sans lui,
       // une panne côté serveur ressemblait à un simple problème de réseau et
@@ -560,6 +598,8 @@ export default function Journal() {
       // rattachées pour de bon : elles ne doivent pas suivre vers un autre jour
       partageRef.current = [];
       setPartageRecu(0);
+      // Le post est enregistré : la conversation qui l'a produit peut partir.
+      effacerConversation(date);
       setPhase("saved");
     } catch (e) {
       setError("Échec de l'enregistrement : " + e.message);
@@ -677,6 +717,9 @@ export default function Journal() {
 
       {phase === "date" && !showInbox && !showComments && !showRencontres && (
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+          {enCours.map((b) => (
+            <ConversationEnCours key={b.date} b={b} avecDate onReprendre={() => reprendreConversation(b)} onEffacer={() => oublierConversation(b)} />
+          ))}
           {(envoiPhotos > 0 || partageRecu > 0) && (
             <p className="partage-banniere">
               {envoiPhotos > 0
@@ -715,6 +758,9 @@ export default function Journal() {
       {phase === "choose" && (
         <div style={{ flex: 1, overflowY: "auto", padding: "26px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
           <button className="btn-secondary" style={{ alignSelf: "flex-start", padding: "6px 12px", fontSize: 13 }} onClick={() => setPhase("date")}>← Calendrier</button>
+          {enCoursDuJour && (
+            <ConversationEnCours b={enCoursDuJour} onReprendre={() => reprendreConversation(enCoursDuJour)} onEffacer={() => oublierConversation(enCoursDuJour)} />
+          )}
           <h2 className="serif" style={{ fontSize: 20 }}>Comment veux-tu saisir cette journée ?</h2>
           <p style={{ fontSize: 13.5, color: "var(--muted)" }}>Dans les deux cas tu gardes la main sur le texte final. L'assistant t'aide juste à remplir.</p>
           <button className="mode-card" onClick={startManual}>
@@ -843,6 +889,9 @@ export default function Journal() {
             )}
           </div>
           {error && <p className="error" style={{ margin: "0 12px 8px" }}>{error}</p>}
+          {messages.some((m) => m.role === "user") && !loading && (
+            <button className="jr-terminer" onClick={terminerConversation}>Terminer et passer à la suite →</button>
+          )}
           <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid var(--line)", background: "var(--bg2)" }}>
             <PhotoPicker onFiles={handlePhotos} busy={envoiPhotos > 0} compact />
             <button
@@ -966,6 +1015,9 @@ export default function Journal() {
 
       {phase === "summary" && post && (
         <div className="jr-scroll">
+          {enCoursDuJour && !messages.some((m) => m.role === "user") && (
+            <ConversationEnCours b={enCoursDuJour} onReprendre={() => reprendreConversation(enCoursDuJour)} onEffacer={() => oublierConversation(enCoursDuJour)} />
+          )}
           <p style={{ fontSize: 12, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
             {saisieMode === "manuel" ? "Remplis ta journée" : "Aperçu — clique un texte pour le modifier"}
           </p>
@@ -1199,6 +1251,26 @@ function EditablePost({ post, setPost, photos, notes, dayNum, distance, photoPri
           Garder ma réflexion privée (invisible sur le blog)
         </label>
       )}
+      </div>
+    </div>
+  );
+}
+
+// Une conversation commencée et pas encore transformée en post.
+function ConversationEnCours({ b, avecDate, onReprendre, onEffacer }) {
+  const { nombre, extrait } = apercuConversation(b);
+  const jour = new Date(b.date + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  return (
+    <div className="conversation-en-cours">
+      <div style={{ fontWeight: 600, fontSize: 14 }}>
+        💬 Conversation commencée{avecDate ? <> · <span style={{ textTransform: "capitalize" }}>{jour}</span></> : ""}
+      </div>
+      <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
+        {nombre} message{nombre > 1 ? "s" : ""} envoyé{nombre > 1 ? "s" : ""}{extrait ? ` — « ${extrait} »` : ""}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <button className="btn" style={{ padding: "8px 16px", fontSize: 13.5 }} onClick={onReprendre}>Reprendre</button>
+        <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={onEffacer}>Effacer</button>
       </div>
     </div>
   );
