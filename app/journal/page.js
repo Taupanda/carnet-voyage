@@ -32,12 +32,15 @@ const dayNumber = (d) => dayNumberOf(d);
 async function motifEchec(res) {
   if (res.status === 401) return "session expirée, reconnecte-toi";
   if (res.status === 504 || res.status === 408) return "le serveur a mis trop de temps";
+  // Vercel refuse au-delà de 4,5 Mo, avant même notre code, avec une page HTML.
+  if (res.status === 413) return "photo trop lourde pour le serveur";
   const detail = await res.json().catch(() => null);
   return detail?.error || `erreur ${res.status}`;
 }
 
 function motifLisible(e) {
   if (e?.name === "AbortError") return "délai dépassé (45 s)";
+  if (e instanceof TypeError) return "connexion impossible";
   return e?.message || "cause inconnue";
 }
 
@@ -365,7 +368,7 @@ export default function Journal() {
       fd.append("date", date);
       try {
         const res = await api("/api/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error("upload");
+        if (!res.ok) throw new Error(await motifEchec(res));
         const { url } = await res.json();
         if (partage) {
           partageRef.current = [...partageRef.current, url];
@@ -373,7 +376,9 @@ export default function Journal() {
         }
         setPhotos((p) => (p.includes(url) ? p : [...p, url]));
       } catch (err) {
-        setError("Échec de l'envoi d'une photo — réessaie.");
+        // La cause exacte : un « échec » sans raison ne permettait pas de
+        // distinguer une session expirée, un stockage plein ou un réseau coupé.
+        setError(`Échec de l'envoi de « ${f.name} » — ${motifLisible(err)}. Réessaie.`);
       } finally {
         setEnvoiPhotos((n) => Math.max(0, n - 1));
       }
