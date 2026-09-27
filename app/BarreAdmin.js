@@ -9,10 +9,11 @@ import { jetonCourant } from "../lib/jeton";
 
 // Quatre destinations et un bouton d'ajout. Elles absorbent les dix-neuf
 // entrées du Menu : Outils recueille tout ce qui n'est ni le voyage, ni le
-// carnet, ni un geste du jour.
+// carnet, ni un geste du jour. « Journal » mène au blog tel que les lecteurs le
+// voient : l'éditeur, c'est déjà le bouton + juste à côté.
 const ONGLETS = [
   { href: "/accueil", label: "Accueil", ic: "⌂" },
-  { href: "/journal", label: "Journal", ic: "📖" },
+  { href: "/", label: "Journal", ic: "📖" },
   { href: "/itineraire", label: "Voyage", ic: "🧭", aussi: ["/planning"] },
   { href: "/atelier", label: "Outils", ic: "⚙" },
 ];
@@ -47,21 +48,15 @@ export default function BarreAdmin() {
     <nav className="barre-admin" aria-label="Navigation">
       {ONGLETS.slice(0, 2).map((o) => (
         <Link key={o.href} href={o.href} className={"barre-geste" + (actif(o) ? " on" : "")}>
-          <span className="barre-ic">
-            {o.ic}
-            {/* La journée pas encore écrite se signale ici plutôt que sur le
-                bouton d'ajout : une pastille collée au cercle le faisait
-                paraître de travers. */}
-            {o.href === "/journal" && journeeManquante && (
-              <span className="barre-pastille" aria-hidden="true" />
-            )}
-          </span>
+          <span className="barre-ic">{o.ic}</span>
           <span className="barre-label">{o.label}</span>
         </Link>
       ))}
 
       {/* Ajouter un post, c'est raconter sa journée : un seul geste pour les
-          deux, plutôt qu'un bouton et une carte qui font la même chose. */}
+          deux, plutôt qu'un bouton et une carte qui font la même chose. La
+          journée pas encore écrite s'y signale par un anneau : une pastille
+          collée au cercle le faisait paraître de travers. */}
       <Link
         href="/journal"
         className={"barre-fab" + (journeeManquante ? " du" : "")}

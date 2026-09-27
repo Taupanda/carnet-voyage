@@ -85,12 +85,12 @@ export default async function Livre() {
                       ))}
                     </div>
                   )}
-                  {decoupeAnecdotes(e.anecdote).length > 0 && (
-                    <div className="book-block">
-                      <div className="block-head">{decoupeAnecdotes(e.anecdote).length > 1 ? "Les anecdotes" : "L'anecdote"}</div>
-                      {decoupeAnecdotes(e.anecdote).map((a, i) => <p key={i} className="anecdote-item">{a}</p>)}
+                  {decoupeAnecdotes(e.anecdote).map((a, i, toutes) => (
+                    <div key={i} className="book-block">
+                      <div className="block-head">{toutes.length > 1 ? `Anecdote ${i + 1}` : "L'anecdote"}</div>
+                      <p className="anecdote-item">{a}</p>
                     </div>
-                  )}
+                  ))}
                   {e.adresse && <div className="book-block"><div className="block-head">Bonne adresse</div><p>{e.adresse}</p></div>}
                   {e.reflexion && <div className="book-block quote"><div className="block-head">Ce que je garde</div><p>{e.reflexion}</p></div>}
                 </div>

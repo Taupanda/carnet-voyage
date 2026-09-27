@@ -1133,7 +1133,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
    la zone des gestes système et paraissait décalé vers le bas. Il tient
    maintenant entièrement dans la barre, centré sur les deux axes. */
 .barre-fab { width: 46px; height: 46px; justify-self: center; align-self: center; margin: 0; text-decoration: none; border-radius: 50%; background: var(--accent); color: #fff; border: none; font-size: 27px; font-weight: 300; line-height: 1; cursor: pointer; box-shadow: 0 4px 12px rgba(188,91,46,0.34); display: flex; align-items: center; justify-content: center; padding-bottom: 3px; }
-.barre-fab.du { box-shadow: 0 4px 14px rgba(188,91,46,0.48); }
+.barre-fab.du { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px #C2453A, 0 4px 14px rgba(188,91,46,0.48); }
 
 
 .voyage-bascule { display: flex; gap: 4px; background: var(--accent-soft); border-radius: 999px; padding: 3px; margin-bottom: 16px; }

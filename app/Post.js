@@ -67,12 +67,14 @@ export default function Post({ e, stage }) {
             </div>
           )}
 
-          {anecdotes.length > 0 && (
-            <div className="block framed">
-              <div className="block-head">{anecdotes.length > 1 ? "Les anecdotes" : "L'anecdote"}</div>
-              {anecdotes.map((a, i) => <p key={i} className="anecdote-item">{a}</p>)}
+          {/* Une anecdote par encadré : réunies sous un même titre, elles se
+              lisaient comme un seul paragraphe. */}
+          {anecdotes.map((a, i) => (
+            <div key={i} className="block framed">
+              <div className="block-head">{anecdotes.length > 1 ? `Anecdote ${i + 1}` : "L'anecdote"}</div>
+              <p className="anecdote-item">{a}</p>
             </div>
-          )}
+          ))}
           {e.adresse && (
             <div className="block">
               <div className="block-head">Bonne adresse</div>
