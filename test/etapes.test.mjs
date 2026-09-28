@@ -20,22 +20,30 @@ test("une base vide ou injoignable affiche les étapes par défaut", () => {
   assert.equal(fusionnerEtapes([]), ETAPES_DEFAUT);
 });
 
+test("Guadalajara passe avant la Basse Californie, du 28 septembre au jeudi 1er octobre", () => {
+  const cal = creerCalendrier();
+  assert.equal(cal.stageForDate("2026-09-28").nom, "Guadalajara");
+  assert.equal(cal.stageForDate("2026-10-01").nom, "Guadalajara");
+  assert.equal(cal.stageForDate("2026-10-02").nom, "Basse Californie");
+  assert.equal(new Date("2026-10-01T00:00:00Z").getUTCDay(), 4, "le 1er octobre est un jeudi");
+});
+
 test("une frontière déplacée en base est appliquée", () => {
-  const etapes = fusionnerEtapes(lignes({ 4: { fin: "2026-10-12" }, 5: { debut: "2026-10-13" } }));
+  const etapes = fusionnerEtapes(lignes({ 4: { fin: "2026-10-02" }, 5: { debut: "2026-10-03" } }));
   const cal = creerCalendrier(etapes);
-  assert.equal(cal.stageForDate("2026-10-12").nom, "Basse Californie");
-  assert.equal(cal.stageForDate("2026-10-13").nom, "Guadalajara");
+  assert.equal(cal.stageForDate("2026-10-02").nom, "Guadalajara");
+  assert.equal(cal.stageForDate("2026-10-03").nom, "Basse Californie");
   // la couleur reste celle du code
   assert.equal(etapes[3].couleur, ETAPES_DEFAUT[3].couleur);
 });
 
 test("un renommage en base est appliqué", () => {
-  assert.equal(fusionnerEtapes(lignes({ 5: { nom: "Jalisco" } }))[4].nom, "Jalisco");
+  assert.equal(fusionnerEtapes(lignes({ 4: { nom: "Jalisco" } }))[3].nom, "Jalisco");
 });
 
 test("un découpage incohérent en base n'atteint pas le blog", () => {
   // fin déplacée sans décaler le début suivant : un jour sans étape
-  assert.equal(fusionnerEtapes(lignes({ 4: { fin: "2026-10-10" } })), ETAPES_DEFAUT);
+  assert.equal(fusionnerEtapes(lignes({ 4: { fin: "2026-09-30" } })), ETAPES_DEFAUT);
 });
 
 test("le départ ne peut pas bouger", () => {
@@ -46,8 +54,8 @@ test("le départ ne peut pas bouger", () => {
 
 test("une étape qui finit avant de commencer est refusée", () => {
   const etapes = ETAPES_DEFAUT.map((s) => ({ ...s }));
-  etapes[4].fin = "2026-10-11";          // Guadalajara finit la veille de son début
-  etapes[5].debut = lendemain("2026-10-11");
+  etapes[3].fin = "2026-09-27";          // Guadalajara finit la veille de son début
+  etapes[4].debut = lendemain("2026-09-27");
   assert.ok(erreursEtapes(etapes).some((e) => e.includes("finit avant de commencer")));
 });
 
