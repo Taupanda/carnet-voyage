@@ -2,7 +2,7 @@ import { supabaseAdmin } from "../../lib/server";
 import { afficheJour, decoupeAnecdotes, stageDays, plageDates } from "../../lib/stages";
 import { calendrierServeur } from "../../lib/etapesServeur";
 import { photosDuJour } from "../../lib/recap";
-import { chiffresLivre, moyennesNotes, meteosFrequentes, PHOTOS_PAR_PLANCHE } from "../../lib/livre";
+import { chiffresLivre, moyennesNotes, meteosFrequentes, partagerPhotos, avanceeEtape, PHOTOS_PAR_PLANCHE } from "../../lib/livre";
 import { meteoInfo } from "../../lib/weather";
 import { totauxKm, arrondiKm, modeInfo } from "../../lib/geo";
 import PrintButton from "./PrintButton";
@@ -22,6 +22,16 @@ const NOTES = [
   { key: "note_aventure", label: "Aventure", ic: "🌋" },
 ];
 
+// Couverture : les couleurs des étapes en taches légères, du début à la fin du voyage.
+function aquarelle(etapes) {
+  const places = ["18% 18%", "82% 26%", "30% 62%", "78% 72%", "50% 40%", "12% 88%"];
+  const choisies = [0, 3, 5, 7, 9, 11].map((i) => etapes[i]).filter(Boolean);
+  return [
+    ...choisies.map((s, k) => `radial-gradient(42% 32% at ${places[k]}, ${s.couleur}2e, transparent 72%)`),
+    "#fff",
+  ].join(", ");
+}
+
 const dateLongue = (d) =>
   new Date(d + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
@@ -33,13 +43,23 @@ function Points({ v, max = 5 }) {
   );
 }
 
-function Feuille({ cote, stage, className = "", tete, pied, children, hidden }) {
+// La progression dans l'étape : un trait par jour, ceux déjà passés en couleur.
+function Progression({ av }) {
+  if (!av) return <span />;
   return (
-    <section
-      className={`feuille feuille-${cote} ${className}`}
-      style={stage ? { "--stage": stage.couleur, "--n": stage.n } : undefined}
-      hidden={hidden}
-    >
+    <span className="progression" title={`Jour ${av.rang} sur ${av.total} de l'étape`}>
+      <span className="progression-trait">
+        {Array.from({ length: av.total }, (_, i) => <i key={i} className={i < av.rang ? "on" : ""} />)}
+      </span>
+      {av.rang}/{av.total}
+    </span>
+  );
+}
+
+function Feuille({ cote, stage, av, className = "", tete, pied, children, hidden, fond }) {
+  const style = stage ? { "--stage": stage.couleur, "--n": stage.n, "--avancee": av?.avancee ?? 0 } : fond ? { background: fond } : undefined;
+  return (
+    <section className={`feuille feuille-${cote} ${stage ? "feuille-etape" : ""} ${className}`} style={style} hidden={hidden}>
       {stage && <span className="feuille-filet" />}
       {stage && <span className="onglet">{stage.n}</span>}
       {tete && <header className="feuille-tete">{tete}</header>}
@@ -103,7 +123,7 @@ export default async function Livre() {
 
       <Ajusteur>
         {/* Couverture : page de droite */}
-        <Feuille cote="droite" className="feuille-couverture">
+        <Feuille cote="droite" className="feuille-couverture" fond={aquarelle(STAGES)}>
           <div className="couverture">
             <div className="couverture-sur">Journal de voyage</div>
             <h1>{BRAND}</h1>
@@ -177,6 +197,8 @@ export default async function Livre() {
           const jour = afficheJour(e.day_number);
           const toutes = photosDuJour(e);
           const photos = toutes.slice(0, PHOTOS_PAR_PLANCHE);
+          const [premieres, secondes] = partagerPhotos(photos);
+          const av = avanceeEtape(e.date, stage);
           const recit = Array.isArray(e.recit) ? e.recit : [];
           const etape = stage ? <span className="etape">Étape {stage.n} · {stage.nom}</span> : <span />;
           const titre = <>Jour {jour}{stage ? ` · ${stage.nom}` : ""}</>;
@@ -187,12 +209,21 @@ export default async function Livre() {
               <Feuille
                 cote="gauche"
                 stage={stage}
+                av={av}
+                className="feuille-photos"
                 tete={<><span>{BRAND}</span>{etape}</>}
-                pied={<><span>Jour {jour}</span><span>{toutes.length > photos.length ? `${photos.length} photos sur ${toutes.length}` : (e.lieux || []).join(" · ")}</span></>}
+                pied={<><span>Jour {jour}</span><Progression av={av} /><span>{toutes.length > photos.length ? `${photos.length} photos sur ${toutes.length}` : (e.lieux || []).join(" · ")}</span></>}
               >
                 <div className="feuille-contenu">
                   {photos.length ? (
-                    <Planche photos={photos} {...PLANCHE} />
+                    <>
+                      <div className="variante-complete"><Planche photos={photos} {...PLANCHE} /></div>
+                      {/* Si le récit déborde, cette planche ne garde que la
+                          première moitié : la seconde comble la page d'après. */}
+                      {secondes.length > 0 && (
+                        <div className="variante-moitie" hidden><Planche photos={premieres} {...PLANCHE} /></div>
+                      )}
+                    </>
                   ) : (
                     <div className="carte-jour">
                       <div className="carte-jour-n">Jour {jour}</div>
@@ -204,9 +235,9 @@ export default async function Livre() {
               </Feuille>
 
               {/* Page de droite : le bandeau du jour et le récit */}
-              <Feuille cote="droite" stage={stage} className="feuille-texte" tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>{dateLongue(e.date)}</span><span>Jour {jour}</span></>}>
+              <Feuille cote="droite" stage={stage} av={av} className="feuille-texte" tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>{dateLongue(e.date)}</span><Progression av={av} /><span>Jour {jour}</span></>}>
                 <Bandeau e={e} />
-                <div className="texte-corps">
+                <div className="texte-corps" data-photo-unique={photos.length === 1 ? photos[0] : undefined}>
                   <div className="jour-entete">
                     <div className="jour-num">{titre}</div>
                     <h2>{e.titre}</h2>
@@ -231,14 +262,18 @@ export default async function Livre() {
                 </div>
               </Feuille>
 
-              {/* Seulement si le récit déborde : sa suite, puis une page de notes
-                  pour que la journée suivante reparte sur une double page. */}
-              <Feuille cote="gauche" stage={stage} className="feuille-suite" hidden tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>{dateLongue(e.date)}</span><span>Jour {jour} · suite</span></>}>
+              {/* Seulement si le récit déborde : sa suite, puis la seconde
+                  moitié des photos, pour que la journée suivante reparte sur
+                  une double page. Sans assez de photos pour combler, le récit
+                  s'étale plutôt sur les deux pages en regard (voir Ajusteur). */}
+              <Feuille cote="gauche" stage={stage} av={av} className="feuille-suite" hidden tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>{dateLongue(e.date)}</span><Progression av={av} /><span>Jour {jour} · suite</span></>}>
                 <div className="texte-corps" />
               </Feuille>
-              <Feuille cote="droite" stage={stage} className="feuille-notes" hidden tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>Notes</span><span>Jour {jour}</span></>}>
-                <div className="notes-lignes"><span>Notes</span></div>
-              </Feuille>
+              {secondes.length > 0 && (
+                <Feuille cote="droite" stage={stage} av={av} className="feuille-complement" hidden tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>Jour {jour}</span><Progression av={av} /><span>{(e.lieux || []).join(" · ")}</span></>}>
+                  <div className="feuille-contenu"><Planche photos={secondes} {...PLANCHE} /></div>
+                </Feuille>
+              )}
             </div>
           );
         })}

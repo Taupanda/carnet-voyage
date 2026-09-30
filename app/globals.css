@@ -800,6 +800,18 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
    tranche, placé à la hauteur de son numéro — livre fermé, les étapes se
    repèrent comme dans un répertoire. */
 .feuille-filet { position: absolute; top: 0; left: 0; right: 0; height: 3.5mm; background: var(--stage); }
+/* Un fondu à la couleur de l'étape, qui s'affirme de jour en jour : du premier
+   au dernier jour de l'étape, --avancee va de 0 à 1. */
+.feuille-etape {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--stage) calc(9% + 17% * var(--avancee, 0)), #fff) 0, #fff 42%),
+    linear-gradient(0deg, color-mix(in srgb, var(--stage) calc(4% + 8% * var(--avancee, 0)), #fff) 0, rgba(255,255,255,0) 22%),
+    #fff;
+}
+.progression { display: inline-flex; align-items: center; gap: 2mm; color: var(--stage); font-weight: 700; }
+.progression-trait { display: inline-flex; gap: 0.6mm; }
+.progression-trait i { width: 3mm; height: 1.2mm; border-radius: 0.6mm; background: #E6DED0; }
+.progression-trait i.on { background: var(--stage); }
 .onglet {
   position: absolute; width: 7mm; height: 17mm; top: calc(24mm + (var(--n) - 1) * 19.5mm);
   background: var(--stage); color: #fff; display: flex; align-items: center; justify-content: center;
@@ -849,8 +861,8 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .encadre-titre { font-family: var(--police); font-size: 0.72em; letter-spacing: 0.14em; text-transform: uppercase; color: var(--stage); font-weight: 700; margin-bottom: 0.2em; }
 .encadre p { margin: 0; font-size: 0.95em; color: #3B342C; }
 .encadre.citation p { font-style: italic; color: #211D17; }
-.notes-lignes { flex: 1; margin: 6mm 0; background: repeating-linear-gradient(#fff 0 9.5mm, #E6DED0 9.5mm 9.8mm); }
-.notes-lignes span { font-family: var(--police); font-size: 8pt; letter-spacing: 0.14em; text-transform: uppercase; color: var(--stage); }
+/* photo unique en tête d'un récit étalé sur deux pages */
+.texte-corps .texte-banniere { display: block; height: 70mm; width: auto; max-width: 100%; object-fit: contain; margin: 0 auto; border-radius: 1.5mm; }
 
 /* couverture */
 .feuille-couverture { padding: 0; }
@@ -869,7 +881,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .frise { display: flex; height: 9mm; border-radius: 2mm; overflow: hidden; gap: 0.6mm; }
 .frise i { display: flex; align-items: center; justify-content: center; color: #fff; font-style: normal; font-family: var(--police); font-weight: 700; font-size: 7.5pt; }
 .legende-etapes { list-style: none; padding: 0; margin: 7mm 0 0; }
-.legende-etapes li { display: grid; grid-template-columns: 8mm 1fr auto 24mm; align-items: center; gap: 3mm; padding: 2.4mm 0; border-bottom: 0.3mm solid #F0EAE0; font-size: 9.5pt; }
+.legende-etapes li { display: grid; grid-template-columns: 8mm 1fr auto 24mm; align-items: center; gap: 3mm; padding: 2.2mm 2.5mm; margin-bottom: 1.2mm; border-radius: 2mm; font-size: 9.5pt; background: linear-gradient(90deg, color-mix(in srgb, var(--stage) 16%, #fff), #fff 85%); }
 .legende-n { width: 7mm; height: 7mm; border-radius: 1.5mm; background: var(--stage); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--police); font-weight: 700; font-size: 8.5pt; }
 .legende-nom { font-weight: 600; }
 .legende-dates { color: #5A5147; font-size: 8.5pt; }

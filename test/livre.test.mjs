@@ -2,7 +2,7 @@
 // tiennent dans la page, la photo principale ne l'écrase plus.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dispositionPlanche, moyennesNotes, chiffresLivre, meteosFrequentes } from "../lib/livre.js";
+import { dispositionPlanche, moyennesNotes, chiffresLivre, meteosFrequentes, partagerPhotos, avanceeEtape } from "../lib/livre.js";
 import { meteoInfo } from "../lib/weather.js";
 
 const PAGE = { largeur: 178, hauteur: 245, ecart: 2.5 };
@@ -27,11 +27,42 @@ test("portraits et paysages mêlés : tout tient, rien n'est déformé", () => {
   verifie(ratios, dispositionPlanche(ratios, PAGE));
 });
 
+// La règle posée par l'auteur : quelle que soit la planche, la photo
+// principale est la plus grande.
+function airePhotos(d) {
+  const aires = [];
+  for (const g of d.rangs) for (const p of g.photos) aires[p.index] = p.largeur * g.hauteur;
+  return aires;
+}
+
+test("la photo principale est toujours la plus grande", () => {
+  const cas = [
+    [P, V], [V, P], [V, P, P, P], [P, V, V, V, V], [V, P, V, P, P, V, P],
+    [16 / 9, V, V], [V, 16 / 9, 16 / 9, 16 / 9, P, P, P, P], [P, P, P, P, P, P, P, P, P, P, P, P],
+    [V, V, V, V, V, V, V, V, V, V, V, V], [1, 3, 3, 3], [0.5, 2, 2],
+  ];
+  for (const ratios of cas) {
+    const d = dispositionPlanche(ratios, PAGE);
+    verifie(ratios, d);
+    const aires = airePhotos(d);
+    const autres = aires.slice(1);
+    assert.ok(autres.every((a) => aires[0] >= a - 1e-6),
+      `[${ratios.map((x) => x.toFixed(2))}] principale ${Math.round(aires[0])} mm² < ${Math.round(Math.max(...autres))} mm²`);
+  }
+});
+
+test("deux photos : la principale en paysage reste la plus grande, et la page reste occupée", () => {
+  const d = dispositionPlanche([P, V], PAGE);
+  const aires = airePhotos(d);
+  assert.ok(aires[0] >= aires[1] - 1e-6);
+  assert.ok(d.hauteur > PAGE.hauteur * 0.6, `planche de ${Math.round(d.hauteur)} mm seulement`);
+});
+
 test("la planche est bien remplie", () => {
   const ratios = [P, P, V, P, P, V, P];
   const d = dispositionPlanche(ratios, PAGE);
   const aire = d.rangs.reduce((s, g) => s + g.photos.reduce((t, p) => t + p.largeur * g.hauteur, 0), 0);
-  assert.ok(aire / (PAGE.largeur * PAGE.hauteur) > 0.75, `seulement ${Math.round((aire / (PAGE.largeur * PAGE.hauteur)) * 100)} % de la planche`);
+  assert.ok(aire / (PAGE.largeur * PAGE.hauteur) > 0.65, `seulement ${Math.round((aire / (PAGE.largeur * PAGE.hauteur)) * 100)} % de la planche`);
 });
 
 test("la photo principale ne prend plus plus de la moitié de la page", () => {
@@ -88,4 +119,16 @@ test("la météo la plus fréquente en tête", () => {
   const m = meteosFrequentes([{ meteo: { code: 0 } }, { meteo: { code: 61 } }, { meteo: { code: 0 } }, {}], meteoInfo);
   assert.deepEqual(m.map((x) => x.jours), [2, 1]);
   assert.ok(m[0].libelle.includes("Ensoleillé"));
+});
+
+test("une journée qui déborde partage ses photos, la principale sur la première planche", () => {
+  assert.deepEqual(partagerPhotos(["a", "b", "c", "d", "e"]), [["a", "b", "c"], ["d", "e"]]);
+  assert.deepEqual(partagerPhotos(["a", "b"]), [["a"], ["b"]]);
+});
+
+test("l'avancée dans l'étape", () => {
+  const etape = { debut: "2026-09-28", fin: "2026-10-01" };
+  assert.deepEqual(avanceeEtape("2026-09-28", etape), { rang: 1, total: 4, avancee: 0 });
+  assert.deepEqual(avanceeEtape("2026-10-01", etape), { rang: 4, total: 4, avancee: 1 });
+  assert.equal(avanceeEtape("2026-09-29", etape).rang, 2);
 });

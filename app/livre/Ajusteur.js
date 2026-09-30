@@ -17,18 +17,40 @@ function reduire(corps, depart = 1, min = MIN) {
 }
 
 // Une journée trop longue pour sa page, même en petit : la fin du récit passe
-// sur une page de suite, et une page de notes suit pour que chaque journée
-// reparte sur une double page (photos à gauche, récit à droite). Les blocs
-// sont recopiés plutôt que déplacés : React garde les siens, simplement masqués.
+// sur une page de suite. Pour que la journée suivante reparte sur une double
+// page (photos à gauche, récit à droite), la page d'après est comblée avec des
+// photos : la planche du jour se partage en deux. Sans assez de photos pour
+// cela, le récit s'étale sur les deux pages en regard, sa photo éventuelle en
+// tête. Les blocs sont recopiés plutôt que déplacés : React garde les siens,
+// simplement masqués.
 function repartir(feuille) {
+  const jour = feuille.closest(".livre-jour");
   const corps = feuille.querySelector(".texte-corps");
-  const suite = feuille.nextElementSibling;
-  const notes = suite?.nextElementSibling;
-  if (!corps || !suite?.classList.contains("feuille-suite")) return;
+  const suite = jour?.querySelector(".feuille-suite");
+  if (!corps || !suite) return;
   const corpsSuite = suite.querySelector(".texte-corps");
-  const blocs = [...corps.children];
+  const complement = jour.querySelector(".feuille-complement");
+  const pagePhotos = jour.querySelector(".feuille-photos");
   suite.hidden = false;
-  if (notes) notes.hidden = false;
+
+  if (complement) {
+    complement.hidden = false;
+    pagePhotos.querySelector(".variante-complete").hidden = true;
+    pagePhotos.querySelector(".variante-moitie").hidden = false;
+  } else {
+    pagePhotos.hidden = true;
+    feuille.classList.replace("feuille-droite", "feuille-gauche");
+    suite.classList.replace("feuille-gauche", "feuille-droite");
+    const unique = corps.dataset.photoUnique;
+    if (unique && !corps.querySelector(".texte-banniere")) {
+      const img = document.createElement("img");
+      img.src = unique;
+      img.alt = "";
+      img.className = "texte-banniere";
+      corps.prepend(img);
+    }
+  }
+  const blocs = [...corps.children];
 
   const couper = (k) => {
     blocs.forEach((b, i) => b.classList.toggle("vers-suite", i >= blocs.length - k));
