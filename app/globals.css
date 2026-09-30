@@ -771,59 +771,132 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .carte-now-label { font-family: var(--police); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .carte-now-stage { font-family: var(--police); font-weight: 600; font-size: 20px; margin-top: 3px; }
 
-/* ============ LIVRE / BOOK (vue + impression PDF A4) ============ */
-.book { max-width: 760px; margin: 0 auto; padding: 24px 20px 70px; }
-.book-toolbar { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+/* ============ LIVRE (pages A4, identiques à l'écran et à l'impression) ============ */
+/* Tout est en millimètres et en points : la page mesurée à l'écran est celle qui
+   sortira de l'imprimante. Le texte du récit est en em, pour pouvoir être réduit
+   d'un bloc quand une journée est longue (voir Ajusteur.js). */
+.book { padding: 18px 12px 70px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.book-toolbar { max-width: 820px; margin: 0 auto 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: space-between; }
+.book-toolbar p { font-size: 12.5px; color: var(--muted); margin: 0; flex: 1; min-width: 220px; }
+.livre-zone { max-width: 820px; margin: 0 auto; overflow: hidden; }
+.livre-feuilles { width: 210mm; transform-origin: top left; }
 
-.book-page {
-  box-sizing: border-box;
-  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-  padding: 26px 28px; margin-bottom: 18px;
+.feuille {
+  position: relative; box-sizing: border-box; overflow: hidden;
+  width: 210mm; height: 297mm; padding: 14mm 16mm 13mm;
   display: flex; flex-direction: column;
+  background: #fff; color: #211D17; font-size: 10pt;
+  margin-bottom: 8mm; box-shadow: 0 2px 16px rgba(33,29,23,0.14);
 }
-.book-run {
-  display: flex; justify-content: space-between; gap: 12px;
-  font-family: var(--police); font-size: 9.5px; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--muted);
+.feuille[hidden] { display: none; }
+.feuille-tete, .feuille-pied {
+  flex: none; height: 7mm; display: flex; align-items: center; justify-content: space-between; gap: 4mm;
+  font-family: var(--police); font-size: 6.8pt; letter-spacing: 0.12em; text-transform: uppercase; color: #948B7E;
 }
-.book-run:first-of-type { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
-.book-run:last-of-type { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 18px; }
+.feuille-tete { border-bottom: 0.3mm solid #E6DED0; }
+.feuille-pied { border-top: 0.3mm solid #E6DED0; margin-top: auto; }
+.feuille-tete .etape { color: var(--stage); font-weight: 700; }
+/* Le code couleur de l'étape : un filet en haut de page et un onglet sur la
+   tranche, placé à la hauteur de son numéro — livre fermé, les étapes se
+   repèrent comme dans un répertoire. */
+.feuille-filet { position: absolute; top: 0; left: 0; right: 0; height: 3.5mm; background: var(--stage); }
+.onglet {
+  position: absolute; width: 7mm; height: 17mm; top: calc(24mm + (var(--n) - 1) * 19.5mm);
+  background: var(--stage); color: #fff; display: flex; align-items: center; justify-content: center;
+  font-family: var(--police); font-weight: 700; font-size: 8.5pt;
+}
+.feuille-gauche .onglet { left: 0; border-radius: 0 2mm 2mm 0; }
+.feuille-droite .onglet { right: 0; border-radius: 2mm 0 0 2mm; }
+.feuille-contenu { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; margin: 4mm 0; }
+
+/* planche photo : rangées justifiées, calculées en mm (lib/livre.js) */
+.planche { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5mm; }
+.planche[data-attente] { background: #F5F0E8; border-radius: 2mm; }
+.planche-rang { display: flex; gap: 2.5mm; }
+.planche img { display: block; object-fit: cover; border-radius: 1.5mm; }
+
+/* journée sans photo : une carte aux couleurs de l'étape */
+.carte-jour { text-align: center; padding: 20mm 12mm; border-radius: 4mm; width: 100%; background: color-mix(in srgb, var(--stage) 12%, #fff); }
+.carte-jour-n { font-family: var(--police); font-size: 30pt; font-weight: 800; color: var(--stage); }
+.carte-jour-titre { font-family: var(--police); font-size: 17pt; font-weight: 700; margin-top: 3mm; }
+.carte-jour-lieux { font-size: 10pt; color: #5A5147; margin-top: 3mm; }
+
+/* bandeau du jour */
+.bandeau-jour {
+  flex: none; margin-top: 4mm; display: flex; flex-wrap: wrap; align-items: center; gap: 1.5mm 5mm;
+  padding: 2.4mm 4mm; border-radius: 2mm; font-size: 8pt; color: #3B342C;
+  background: color-mix(in srgb, var(--stage) 11%, #fff); border-left: 1.5mm solid var(--stage);
+}
+.bandeau-item { display: inline-flex; align-items: center; gap: 1.4mm; white-space: nowrap; }
+.bandeau-faible { color: #948B7E; }
+.livre-points { display: inline-flex; gap: 0.8mm; }
+.livre-points i { width: 1.7mm; height: 1.7mm; border-radius: 50%; background: #E6DED0; }
+.livre-points i.on { background: var(--stage, #BC5B2E); }
+
+/* récit */
+.texte-corps { flex: 1; min-height: 0; overflow: hidden; margin-top: 4mm; font-size: calc(10pt * var(--echelle, 1)); line-height: 1.55; }
+.texte-corps > * { margin: 0; }
+.texte-corps > * + * { margin-top: 0.85em; }
+.texte-corps .vers-suite { display: none; }
+.jour-num { font-family: var(--police); font-size: 0.78em; letter-spacing: 0.14em; text-transform: uppercase; color: var(--stage); font-weight: 700; }
+.jour-entete h2 { font-family: var(--police); font-weight: 700; font-size: 2.05em; line-height: 1.12; margin: 0.15em 0 0.12em; }
+.jour-date { color: #948B7E; font-size: 0.9em; text-transform: capitalize; }
+.jour-lieux { font-size: 0.9em; color: #5A5147; margin-top: 0.25em; }
+.texte-corps .chapo { font-size: 1.06em; font-style: italic; color: #211D17; }
+.moment h3 { font-family: var(--police); font-weight: 700; font-size: 1.04em; color: var(--stage); margin: 0 0 0.15em; }
+.moment p { margin: 0; color: #3B342C; }
+.encadre { padding: 0.6em 0.9em; background: #FBF7F0; border-left: 1.2mm solid var(--stage); border-radius: 1.5mm; }
+.encadre-titre { font-family: var(--police); font-size: 0.72em; letter-spacing: 0.14em; text-transform: uppercase; color: var(--stage); font-weight: 700; margin-bottom: 0.2em; }
+.encadre p { margin: 0; font-size: 0.95em; color: #3B342C; }
+.encadre.citation p { font-style: italic; color: #211D17; }
+.notes-lignes { flex: 1; margin: 6mm 0; background: repeating-linear-gradient(#fff 0 9.5mm, #E6DED0 9.5mm 9.8mm); }
+.notes-lignes span { font-family: var(--police); font-size: 8pt; letter-spacing: 0.14em; text-transform: uppercase; color: var(--stage); }
 
 /* couverture */
-.book-cover { align-items: center; justify-content: center; text-align: center; min-height: 58vh; }
-.book-cover-title { font-size: clamp(30px, 7vw, 54px); margin: 8px 0 6px; }
-.book-cover-sub { font-family: var(--police); font-style: italic; font-size: 18px; color: var(--ink2); }
-.book-cover-meta { font-family: var(--police); font-size: 12px; color: var(--muted); margin-top: 16px; letter-spacing: 0.08em; }
+.feuille-couverture { padding: 0; }
+.couverture { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20mm; }
+.couverture-sur { font-family: var(--police); font-size: 9pt; letter-spacing: 0.2em; text-transform: uppercase; color: #BC5B2E; }
+.couverture h1 { font-family: var(--police); font-weight: 800; font-size: 38pt; line-height: 1.05; margin: 5mm 0 4mm; }
+.couverture-sous { font-family: var(--police); font-style: italic; font-size: 15pt; color: #5A5147; }
+.couverture-dates { font-family: var(--police); font-size: 10pt; color: #948B7E; margin-top: 6mm; letter-spacing: 0.06em; }
+.couverture-etapes { display: flex; height: 14mm; flex: none; }
 
-/* page photo (gauche) */
-.book-photo-wrap { flex: 1; display: flex; flex-direction: column; gap: 8px; margin: 16px 0; min-height: 340px; }
-.book-photo-main { width: 100%; flex: 1; object-fit: cover; border-radius: 10px; min-height: 240px; }
-.book-photo-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
-.book-photo-strip img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; }
-
-/* page texte (droite) */
-.book-text-body { flex: 1; padding: 18px 0; }
-.book-day-num { font-family: var(--police); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--stage); }
-.book-day-title { font-size: clamp(22px, 4vw, 32px); margin: 4px 0 2px; }
-.book-day-date { color: var(--muted); font-size: 13.5px; text-transform: capitalize; margin-bottom: 12px; }
-.book-day-lieux { font-size: 13px; color: var(--ink2); margin-bottom: 14px; }
-.book-recit { margin: 6px 0 14px; }
-.book-block { margin-top: 12px; padding: 12px 15px; background: #FBF7F0; border-left: 4px solid var(--stage); border-radius: 8px; }
-.book-block p { color: var(--ink2); font-size: 14px; }
-.book-block.quote p { font-family: var(--police); font-style: italic; color: var(--ink); }
+/* double page d'ouverture */
+.ouverture { flex: 1; min-height: 0; padding-top: 7mm; }
+.ouverture h2 { font-family: var(--police); font-weight: 800; font-size: 22pt; margin: 0; }
+.ouverture h3 { font-family: var(--police); font-weight: 700; font-size: 11pt; margin: 9mm 0 3mm; }
+.ouverture-sous { color: #948B7E; font-size: 9.5pt; margin: 2mm 0 7mm; }
+.frise { display: flex; height: 9mm; border-radius: 2mm; overflow: hidden; gap: 0.6mm; }
+.frise i { display: flex; align-items: center; justify-content: center; color: #fff; font-style: normal; font-family: var(--police); font-weight: 700; font-size: 7.5pt; }
+.legende-etapes { list-style: none; padding: 0; margin: 7mm 0 0; }
+.legende-etapes li { display: grid; grid-template-columns: 8mm 1fr auto 24mm; align-items: center; gap: 3mm; padding: 2.4mm 0; border-bottom: 0.3mm solid #F0EAE0; font-size: 9.5pt; }
+.legende-n { width: 7mm; height: 7mm; border-radius: 1.5mm; background: var(--stage); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--police); font-weight: 700; font-size: 8.5pt; }
+.legende-nom { font-weight: 600; }
+.legende-dates { color: #5A5147; font-size: 8.5pt; }
+.legende-racontes { color: var(--stage); font-size: 8pt; text-align: right; font-weight: 600; }
+.ouverture-note { font-size: 8.5pt; color: #948B7E; margin-top: 6mm; }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin-top: 7mm; }
+.kpi { border: 0.3mm solid #E6DED0; border-radius: 2.5mm; padding: 4mm 3mm; text-align: center; }
+.kpi strong { display: block; font-family: var(--police); font-size: 19pt; font-weight: 800; color: #BC5B2E; line-height: 1.1; }
+.kpi span { font-size: 8pt; color: #5A5147; }
+.moyennes { display: grid; gap: 2.5mm; }
+.moyenne { display: grid; grid-template-columns: 34mm auto 1fr; align-items: center; gap: 3mm; font-size: 9.5pt; }
+.moyenne .livre-points i { width: 2.6mm; height: 2.6mm; }
+.moyenne b { font-family: var(--police); color: #BC5B2E; }
+.meteos { display: flex; flex-wrap: wrap; gap: 2.5mm 6mm; font-size: 9.5pt; }
+.meteos b { color: #BC5B2E; font-family: var(--police); }
 
 @media print {
   @page { size: A4; margin: 0; }
-  .sidebar, .topbar, .no-print, .home3-fab, .home3-panel { display: none !important; }
-  .shell { display: block !important; }
-  .book { max-width: 100%; padding: 0; }
-  .book-page {
-    border: none; border-radius: 0; margin: 0;
-    width: 100%; min-height: 100vh; height: 100vh;
-    padding: 1.4cm 1.5cm; break-after: page; page-break-after: always;
-  }
-  .book-photo-wrap, .book-photo-main { min-height: 0; }
+  .sidebar, .topbar, .barre-admin, .no-print, .home3-fab, .home3-panel { display: none !important; }
+  .shell, .shell-main { display: block !important; padding: 0 !important; margin: 0 !important; }
   body { background: #fff; }
+  .book { padding: 0; }
+  .livre-zone { max-width: none; height: auto !important; overflow: visible; }
+  .livre-feuilles { transform: none !important; }
+  /* saut avant chaque page plutôt qu'après : pas de page blanche en fin de livre */
+  .feuille { margin: 0; box-shadow: none; break-before: page; page-break-before: always; }
+  .feuille-couverture { break-before: auto; page-break-before: auto; }
   a { color: inherit; text-decoration: none; }
 }
 
@@ -850,7 +923,6 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .moments { display: flex; flex-direction: column; gap: 18px; margin: 18px 0 4px; }
 .moment-titre { font-family: var(--police); font-weight: 600; font-size: 15.5px; color: var(--stage); margin-bottom: 5px; }
 .moment-texte { font-size: 14.5px; line-height: 1.65; color: var(--ink2); }
-.book-lead { font-size: 14.5px; }
 
 /* ---- Choix de la photo de tête, dans la relecture du post ---- */
 .photo-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
