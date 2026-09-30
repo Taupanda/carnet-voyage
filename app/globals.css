@@ -799,15 +799,17 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 /* Le code couleur de l'étape : un filet en haut de page et un onglet sur la
    tranche, placé à la hauteur de son numéro — livre fermé, les étapes se
    repèrent comme dans un répertoire. */
-.feuille-filet { position: absolute; top: 0; left: 0; right: 0; height: 3.5mm; background: var(--stage); }
-/* Un fondu à la couleur de l'étape, qui s'affirme de jour en jour : du premier
-   au dernier jour de l'étape, --avancee va de 0 à 1. */
-.feuille-etape {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--stage) calc(9% + 17% * var(--avancee, 0)), #fff) 0, #fff 42%),
-    linear-gradient(0deg, color-mix(in srgb, var(--stage) calc(4% + 8% * var(--avancee, 0)), #fff) 0, rgba(255,255,255,0) 22%),
-    #fff;
+/* Fond blanc ; l'étape se lit dans une bande claire en haut de page, comme
+   sur le blog. */
+.feuille-etape { padding-top: 17mm; }
+.bande-etape {
+  position: absolute; top: 0; left: 0; right: 0; height: 11mm; padding: 0 16mm;
+  display: flex; align-items: center; justify-content: space-between; gap: 4mm;
+  background: color-mix(in srgb, var(--stage) 14%, #fff); border-bottom: 0.8mm solid var(--stage);
+  font-family: var(--police); font-size: 7.2pt; letter-spacing: 0.12em; text-transform: uppercase; color: #948B7E;
 }
+.bande-etape-nom { display: inline-flex; align-items: center; gap: 2.5mm; color: var(--stage); font-weight: 700; }
+.bande-etape-nom b { width: 6mm; height: 6mm; border-radius: 1.5mm; background: var(--stage); color: #fff; display: inline-flex; align-items: center; justify-content: center; letter-spacing: 0; }
 .progression { display: inline-flex; align-items: center; gap: 2mm; color: var(--stage); font-weight: 700; }
 .progression-trait { display: inline-flex; gap: 0.6mm; }
 .progression-trait i { width: 3mm; height: 1.2mm; border-radius: 0.6mm; background: #E6DED0; }
@@ -835,7 +837,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 
 /* bandeau du jour */
 .bandeau-jour {
-  flex: none; margin-top: 4mm; display: flex; flex-wrap: wrap; align-items: center; gap: 1.5mm 5mm;
+  margin-top: 0.8em; display: flex; flex-wrap: wrap; align-items: center; gap: 1.5mm 5mm;
   padding: 2.4mm 4mm; border-radius: 2mm; font-size: 8pt; color: #3B342C;
   background: color-mix(in srgb, var(--stage) 11%, #fff); border-left: 1.5mm solid var(--stage);
 }

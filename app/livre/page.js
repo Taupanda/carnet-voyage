@@ -13,7 +13,7 @@ export const revalidate = 300;
 
 const BRAND = "Les aventures de Maxou";
 // Zone utile d'une page photo : A4 moins les marges, l'en-tête et le pied.
-const PLANCHE = { largeur: 178, hauteur: 243 };
+const PLANCHE = { largeur: 178, hauteur: 248 };
 
 const NOTES = [
   { key: "note_humeur", label: "Humeur", ic: "😊" },
@@ -56,11 +56,17 @@ function Progression({ av }) {
   );
 }
 
-function Feuille({ cote, stage, av, className = "", tete, pied, children, hidden, fond }) {
-  const style = stage ? { "--stage": stage.couleur, "--n": stage.n, "--avancee": av?.avancee ?? 0 } : fond ? { background: fond } : undefined;
+function Feuille({ cote, stage, className = "", tete, pied, children, hidden, fond }) {
+  const style = stage ? { "--stage": stage.couleur, "--n": stage.n } : fond ? { background: fond } : undefined;
   return (
     <section className={`feuille feuille-${cote} ${stage ? "feuille-etape" : ""} ${className}`} style={style} hidden={hidden}>
-      {stage && <span className="feuille-filet" />}
+      {/* Comme sur le blog : une bande claire à la couleur de l'étape. */}
+      {stage && (
+        <div className="bande-etape">
+          <span className="bande-etape-nom"><b>{stage.n}</b>{stage.nom}</span>
+          <span>{plageDates(stage.debut, stage.fin)} · {BRAND}</span>
+        </div>
+      )}
       {stage && <span className="onglet">{stage.n}</span>}
       {tete && <header className="feuille-tete">{tete}</header>}
       {children}
@@ -200,7 +206,6 @@ export default async function Livre() {
           const [premieres, secondes] = partagerPhotos(photos);
           const av = avanceeEtape(e.date, stage);
           const recit = Array.isArray(e.recit) ? e.recit : [];
-          const etape = stage ? <span className="etape">Étape {stage.n} · {stage.nom}</span> : <span />;
           const titre = <>Jour {jour}{stage ? ` · ${stage.nom}` : ""}</>;
 
           return (
@@ -209,9 +214,8 @@ export default async function Livre() {
               <Feuille
                 cote="gauche"
                 stage={stage}
-                av={av}
                 className="feuille-photos"
-                tete={<><span>{BRAND}</span>{etape}</>}
+               
                 pied={<><span>Jour {jour}</span><Progression av={av} /><span>{toutes.length > photos.length ? `${photos.length} photos sur ${toutes.length}` : (e.lieux || []).join(" · ")}</span></>}
               >
                 <div className="feuille-contenu">
@@ -235,14 +239,14 @@ export default async function Livre() {
               </Feuille>
 
               {/* Page de droite : le bandeau du jour et le récit */}
-              <Feuille cote="droite" stage={stage} av={av} className="feuille-texte" tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>{dateLongue(e.date)}</span><Progression av={av} /><span>Jour {jour}</span></>}>
-                <Bandeau e={e} />
+              <Feuille cote="droite" stage={stage} className="feuille-texte" pied={<><span>{dateLongue(e.date)}</span><Progression av={av} /><span>Jour {jour}</span></>}>
                 <div className="texte-corps" data-photo-unique={photos.length === 1 ? photos[0] : undefined}>
                   <div className="jour-entete">
                     <div className="jour-num">{titre}</div>
                     <h2>{e.titre}</h2>
                     <div className="jour-date">{dateLongue(e.date)}</div>
                     {e.lieux?.length > 0 && <div className="jour-lieux">📍 {e.lieux.join(" · ")}</div>}
+                    <Bandeau e={e} />
                   </div>
                   {e.ouverture && <p className="chapo">{e.ouverture}</p>}
                   {recit.map((it, i) => (
@@ -266,11 +270,11 @@ export default async function Livre() {
                   moitié des photos, pour que la journée suivante reparte sur
                   une double page. Sans assez de photos pour combler, le récit
                   s'étale plutôt sur les deux pages en regard (voir Ajusteur). */}
-              <Feuille cote="gauche" stage={stage} av={av} className="feuille-suite" hidden tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>{dateLongue(e.date)}</span><Progression av={av} /><span>Jour {jour} · suite</span></>}>
+              <Feuille cote="gauche" stage={stage} className="feuille-suite" hidden pied={<><span>{dateLongue(e.date)}</span><Progression av={av} /><span>Jour {jour} · suite</span></>}>
                 <div className="texte-corps" />
               </Feuille>
               {secondes.length > 0 && (
-                <Feuille cote="droite" stage={stage} av={av} className="feuille-complement" hidden tete={<><span>{BRAND}</span>{etape}</>} pied={<><span>Jour {jour}</span><Progression av={av} /><span>{(e.lieux || []).join(" · ")}</span></>}>
+                <Feuille cote="droite" stage={stage} className="feuille-complement" hidden pied={<><span>Jour {jour}</span><Progression av={av} /><span>{(e.lieux || []).join(" · ")}</span></>}>
                   <div className="feuille-contenu"><Planche photos={secondes} {...PLANCHE} /></div>
                 </Feuille>
               )}
