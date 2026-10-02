@@ -435,6 +435,7 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .etape-jours { margin-left: auto; color: var(--muted); }
 .etape-ligne.invalide .etape-jours { color: #C2453A; }
 
+.rappel-depenses { background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px; padding: 14px 18px; text-align: center; margin: 6px 0; }
 .jr-terminer { align-self: flex-end; margin: 0 12px 8px; background: none; border: none; color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 2px; }
 .conversation-en-cours { background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px; padding: 14px 16px; }
 

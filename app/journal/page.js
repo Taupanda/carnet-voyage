@@ -183,6 +183,20 @@ export default function Journal() {
     sauverConversation(date, { messages, extracted, input, photos });
   }, [phase, saisieMode, date, messages, extracted, input, photos]);
 
+  // Les dépenses déjà notées pour la journée, affichées sur l'écran de fin.
+  const [depensesJour, setDepensesJour] = useState(null);
+  useEffect(() => {
+    if (phase !== "saved") return;
+    setDepensesJour(null);
+    api("/api/depenses")
+      .then(async (r) => {
+        if (!r.ok) return setDepensesJour({ n: 0, total: 0 });
+        const du = (await r.json()).filter((d) => d.date === date);
+        setDepensesJour({ n: du.length, total: du.reduce((s, d) => s + Number(d.montant), 0) });
+      })
+      .catch(() => setDepensesJour({ n: 0, total: 0 }));
+  }, [phase, date]);
+
   const [enCours, setEnCours] = useState([]);
   useEffect(() => { setEnCours(conversationsEnCours()); }, [phase, date]);
   const enCoursDuJour = enCours.find((b) => b.date === date);
@@ -1055,7 +1069,19 @@ export default function Journal() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: 24 }}>
           <div style={{ fontSize: 40 }}>✓</div>
           <p className="serif" style={{ fontSize: 19 }}>Journée enregistrée</p>
-          <button className="btn" onClick={() => setPhase("date")}>Retour au calendrier</button>
+          {/* Le moment où l'on pense encore à ce qu'on a payé dans la journée. */}
+          <div className="rappel-depenses">
+            <div style={{ fontWeight: 600 }}>💰 Et les dépenses du jour ?</div>
+            <div style={{ fontSize: 13, color: "var(--muted)", margin: "3px 0 10px" }}>
+              {depensesJour === null ? "…" : depensesJour.n === 0
+                ? "Aucune dépense notée pour cette journée."
+                : `${depensesJour.n} dépense${depensesJour.n > 1 ? "s" : ""} déjà notée${depensesJour.n > 1 ? "s" : ""} · ${depensesJour.total.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
+            </div>
+            <Link href={`/budget?date=${date}`} className="btn" style={{ display: "inline-block", textDecoration: "none" }}>
+              Renseigner les dépenses du {new Date(date + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+            </Link>
+          </div>
+          <button className="btn-secondary" onClick={() => setPhase("date")}>Retour au calendrier</button>
         </div>
       )}
     </main>

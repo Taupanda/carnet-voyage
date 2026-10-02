@@ -47,6 +47,13 @@ export default function Budget() {
   const [surPlace, setSurPlace] = useState(true);   // totaux hors préparation
   const [q, setQ] = useState("");                   // recherche libre
   const [fJour, setFJour] = useState("");           // un jour précis
+
+  // Arrivée depuis le journal (?date=AAAA-MM-JJ) : la saisie part sur ce jour,
+  // et l'historique ne montre que lui, pour voir ce qui est déjà noté.
+  useEffect(() => {
+    const d = new URLSearchParams(window.location.search).get("date");
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) { setDate(d); setFJour(d); }
+  }, []);
   const [fCat, setFCat] = useState("");             // un type
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
