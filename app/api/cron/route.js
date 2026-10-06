@@ -2,21 +2,13 @@ import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { supabaseAdmin } from "../../../lib/server";
 import { calendrierServeur } from "../../../lib/etapesServeur";
+import { soireeEnCours, heureEtDate } from "../../../lib/stages";
 
-// Fuseau du voyage (Mexique / Amérique centrale). Réglable via TRIP_TIMEZONE.
-// On dérive la date locale avec Intl → correct même en cas de changement d'heure,
-// contrairement à un offset codé en dur.
-const TRIP_TZ = process.env.TRIP_TIMEZONE || "America/Mexico_City";
-
-function ymd(date) {
-  // en-CA formate en AAAA-MM-JJ.
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: TRIP_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
+// Le rappel part à 23 h, heure locale de l'étape en cours. Selon l'étape,
+// 23 h tombe à 4, 5 ou 6 h UTC : vercel.json appelle cette route à chacune de
+// ces heures, et seule celle qui tombe à 23 h sur place envoie quelque chose.
+const HEURE_RAPPEL = 23;
+const veille = (d) => new Date(Date.parse(d + "T00:00:00Z") - 86400000).toISOString().slice(0, 10);
 
 async function sendTo(subs, payload) {
   webpush.setVapidDetails(
@@ -55,12 +47,24 @@ export async function GET(request) {
   }
 
   const db = supabaseAdmin();
-  const now = Date.now();
-  const today = ymd(new Date(now));
-  const actions = [];
+  const { STAGES, stageForDate } = await calendrierServeur();
+  const maintenant = new Date();
+  let soiree = soireeEnCours(maintenant, STAGES, HEURE_RAPPEL);
+  if (!soiree) {
+    if (!isManualTest) {
+      return NextResponse.json({ ok: true, actions: [`pas ${HEURE_RAPPEL} h sur place, rien à envoyer`] });
+    }
+    // Test manuel : on prend la date locale de l'étape en cours, quelle que soit l'heure.
+    const parDefaut = STAGES[0].fuseau;
+    const d = heureEtDate(maintenant, parDefaut).date;
+    const etape = stageForDate(d);
+    soiree = { date: heureEtDate(maintenant, etape?.fuseau || parDefaut).date, fuseau: etape?.fuseau || parDefaut };
+  }
+  const today = soiree.date;
+  const actions = [`${HEURE_RAPPEL} h à ${soiree.fuseau}, journée du ${today}`];
 
   // --- Which recent days are still missing a note? ---
-  const since = ymd(new Date(now - 3 * 86400000));
+  const since = veille(veille(today));
   const { data: recent } = await db
     .from("entries")
     .select("date")
@@ -68,10 +72,8 @@ export async function GET(request) {
     .lte("date", today);
   const written = new Set((recent || []).map((r) => r.date));
 
-  const { stageForDate } = await calendrierServeur();
   const missing = [];
-  for (let i = 0; i <= 2; i++) {
-    const d = ymd(new Date(now - i * 86400000));
+  for (let i = 0, d = today; i <= 2; i++, d = veille(d)) {
     // only count days inside the trip
     if (stageForDate(d) && !written.has(d)) missing.push(d);
   }
@@ -84,7 +86,7 @@ export async function GET(request) {
         payload = {
           title: "Alors, cette journée ?",
           body: "Deux minutes pour raconter, et c'est dans les aventures.",
-          url: "/journal",
+          url: `/journal?date=${today}`,
           tag: "reminder",
           requireInteraction: true,
         };

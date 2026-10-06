@@ -110,6 +110,16 @@ export default function Journal() {
     })();
   }, [isAdmin]);
 
+  // ?date=AAAA-MM-JJ (lien du rappel du soir) : la journée s'ouvre directement.
+  // Le jour du lien fait foi : c'est celui du lieu où l'on se trouve, qui peut
+  // différer du « aujourd'hui » de Mexico après 23 h en Basse Californie.
+  useEffect(() => {
+    if (!isAdmin || !entriesLoaded) return;
+    const d = new URLSearchParams(window.location.search).get("date");
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) openDate(d);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, entriesLoaded]);
+
   // ouverture automatique d'un panneau via ?panel=
   useEffect(() => {
     if (!isAdmin) return;
