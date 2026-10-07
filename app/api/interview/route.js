@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { callClaude, checkAdmin, extractJson } from "../../../lib/server";
 
+export const maxDuration = 60;
+
 export async function POST(request) {
   if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

@@ -4,6 +4,8 @@ import { supabaseAdmin, checkAdmin, callClaude, extractJson } from "../../../lib
 import { destinatairesRecap, recapEnHtml, envoyerRecap, envoiEmailDispo } from "../../../lib/courriel";
 import { chiffresSemaine, miseEnPageDepuisIA, miseEnPageDepuisEditeur, contenuTexte, photosDuJour } from "../../../lib/recap";
 
+export const maxDuration = 60;
+
 // Les adresses vivent dans auth.users, pas dans profiles : il faut la liste des
 // comptes. Paginée, sinon seuls les cinquante premiers sortent.
 async function adressesDesComptes(db, ids) {

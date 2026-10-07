@@ -280,13 +280,14 @@ export default function Journal() {
     setLoading(true);
     try {
       const res = await api("/api/rencontres", { method: "POST", body: JSON.stringify(quickRenc) });
-      if (res.ok) {
-        const saved = await res.json();
-        setAllRencontres((rs) => [saved, ...rs]);
-        setLinkedRencontres((ids) => [...ids, saved.id]);
-        setQuickRenc(null);
-      }
-    } catch {}
+      if (!res.ok) throw new Error(await motifEchec(res));
+      const saved = await res.json();
+      setAllRencontres((rs) => [saved, ...rs]);
+      setLinkedRencontres((ids) => [...ids, saved.id]);
+      setQuickRenc(null);
+    } catch (e) {
+      setError(`La rencontre n'a pas été créée — ${motifLisible(e)}.`);
+    }
     setLoading(false);
   }
 
@@ -540,8 +541,8 @@ export default function Journal() {
       // index, et tout ce qu'il a raconté sans que l'assistant le recopie mot
       // pour mot y était perdu — d'où des posts qui ne tenaient plus que sur
       // le calepin.
-      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date, notes: notesJour.map((n) => n.texte), history: messages }) });
-      if (!res.ok) throw new Error("api");
+      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date, notes: notesJour.map((n) => n.texte), history: messages }), timeout: 70000 });
+      if (!res.ok) throw new Error(await motifEchec(res));
       const genere = await res.json();
       setPost(genere);
       // L'estimation n'est plus posée d'office : elle ne connaît que la distance
@@ -549,7 +550,7 @@ export default function Journal() {
       setEstimation(estimationKm(genere?.coords) ?? 0);
       setPhase("summary");
     } catch (e) {
-      setError("Impossible de générer le post, réessaie.");
+      setError(`Impossible de générer le post — ${motifLisible(e)}. Ce que tu as raconté est gardé : réessaie.`);
     } finally {
       setLoading(false);
     }
@@ -1036,9 +1037,26 @@ export default function Journal() {
           )}
 
           {error && <p className="error">{error}</p>}
-          <button className="btn" style={{ marginTop: "auto" }} onClick={saisieMode === "manuel" ? () => { setError(null); setPhase("summary"); } : generatePost} disabled={loading}>
-            {loading ? "Mise en forme…" : saisieMode === "manuel" ? "Rédiger le post →" : "Voir mon post"}
-          </button>
+          {/* Revenir ici depuis le post (pour lier une rencontre, ajouter une
+              photo) ne doit pas le régénérer : c'était écraser les retouches,
+              et un échec laissait bloqué ici sans retour possible au post. */}
+          {saisieMode === "ia" && post ? (
+            <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+              <button className="btn" onClick={() => { setError(null); setPhase("summary"); }} disabled={loading}>Revenir à mon post →</button>
+              <button
+                className="btn-secondary"
+                style={{ fontSize: 13 }}
+                disabled={loading}
+                onClick={() => confirm("Régénérer le texte du post ? Tes retouches seront remplacées.") && generatePost()}
+              >
+                {loading ? "Mise en forme…" : "Régénérer le texte"}
+              </button>
+            </div>
+          ) : (
+            <button className="btn" style={{ marginTop: "auto" }} onClick={saisieMode === "manuel" ? () => { setError(null); setPhase("summary"); } : generatePost} disabled={loading}>
+              {loading ? "Mise en forme…" : saisieMode === "manuel" ? "Rédiger le post →" : "Voir mon post"}
+            </button>
+          )}
         </div>
       )}
 
@@ -1062,11 +1080,20 @@ export default function Journal() {
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => saveEntry("draft")} disabled={loading}>Brouillon</button>
             <button className="btn" style={{ flex: 1 }} onClick={() => saveEntry("published")} disabled={loading}>Publier</button>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            {saisieMode === "ia" ? (
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={startInterview}>Refaire l'interview</button>
-            ) : (
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setPhase("moods")}>← Ressentis & photos</button>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {/* Ressentis, photos et rencontres se retouchent sans perdre le post :
+                avec l'assistant, la seule sortie était « Refaire l'interview »,
+                qui effaçait tout, ou le calendrier, qui perdait le post non
+                enregistré. */}
+            <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setPhase("moods")}>← Ressentis, photos & rencontres</button>
+            {saisieMode === "ia" && (
+              <button
+                className="btn-secondary"
+                style={{ flex: 1 }}
+                onClick={() => confirm("Refaire l'interview depuis zéro ? La conversation et le post actuels seront effacés.") && startInterview()}
+              >
+                Refaire l'interview
+              </button>
             )}
             {entries.some((e) => e.date === date) && (
               <button className="btn-danger" onClick={deleteEntry}>Supprimer</button>

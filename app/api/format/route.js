@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { callClaude, checkAdmin, extractJson } from "../../../lib/server";
 
+// Une longue journée prend plusieurs dizaines de secondes à mettre en forme.
+export const maxDuration = 60;
+
 export async function POST(request) {
   if (!(await checkAdmin(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -97,7 +100,7 @@ Pour coords, donne les coordonnées approximatives du lieu principal mentionné 
               : ""),
         },
       ],
-      2000 // la prose demande plus de place que les puces télégraphiques
+      4000 // une longue journée en prose dépassait 2 000 tokens, et la réponse coupée devenait illisible
     );
     const parsed = extractJson(raw);
     // Garde-fou : le modèle peut ignorer le plafond de 5 moments. Au-delà, on
