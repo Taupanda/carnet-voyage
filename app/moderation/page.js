@@ -52,11 +52,29 @@ function ModerationBody() {
   }
   useEffect(() => { load(); }, []);
 
-  // Ouvrir la modération, c'est avoir regardé : à partir de maintenant, seul ce
-  // qui arrive ensuite rallume la cloche.
+  // Ce qui a allumé la cloche, lu AVANT de marquer comme vu : la page le montre
+  // en tête, pour que le point rouge corresponde toujours à quelque chose.
+  // Ensuite seulement, ouvrir la modération vaut « vu » pour les conseils et
+  // commentaires ; les mots privés, eux, se marquent lus explicitement.
+  const [nouveau, setNouveau] = useState(null);
+  async function marquerVu(motsLus = []) {
+    const res = await api("/api/notifs", { method: "POST", body: JSON.stringify({ motsLus }) });
+    if (!res.ok) { setErr("La cloche n'a pas pu être remise à zéro : " + (await motifEchec(res))); return false; }
+    window.dispatchEvent(new Event("notifs-vues"));
+    return true;
+  }
   useEffect(() => {
-    api("/api/notifs", { method: "POST", body: JSON.stringify({}) }).catch(() => {});
+    (async () => {
+      const res = await api("/api/notifs");
+      if (res.ok) setNouveau(await res.json());
+      await marquerVu();
+    })().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  async function motsLus(ids) {
+    if (!(await marquerVu(ids))) return;
+    setNouveau((n) => ({ ...n, elements: { ...n.elements, mots: n.elements.mots.filter((m) => !ids.includes(m.id)) } }));
+  }
 
   async function agir(opts, confirmation) {
     if (confirmation && !confirm(confirmation)) return;
@@ -109,6 +127,48 @@ function ModerationBody() {
         {" "}
         <b>{abonnesMail}</b> abonné{abonnesMail > 1 ? "s" : ""} au récap par e-mail.
       </p>
+
+      {nouveau?.total > 0 && (
+        <div className="nouveautes">
+          <div className="aside-head" style={{ marginBottom: 8 }}>
+            Nouveau {nouveau.dejaOuvert ? `depuis ta visite du ${quand(nouveau.depuis)}` : "cette semaine"}
+          </div>
+          {nouveau.elements.mots.length > 0 && (
+            <div className="nouveautes-groupe">
+              <div className="nouveautes-titre">
+                ✉️ {nouveau.elements.mots.length} mot{nouveau.elements.mots.length > 1 ? "s" : ""} privé{nouveau.elements.mots.length > 1 ? "s" : ""} non lu{nouveau.elements.mots.length > 1 ? "s" : ""}
+                {nouveau.elements.mots.length > 1 && (
+                  <button className="btn-secondary nouveautes-lu" onClick={() => motsLus(nouveau.elements.mots.map((m) => m.id))}>Tout marquer lu</button>
+                )}
+              </div>
+              {nouveau.elements.mots.map((m) => (
+                <div key={m.id} className="nouveautes-ligne">
+                  <span>« {String(m.contenu || "").slice(0, 140)}{String(m.contenu || "").length > 140 ? "…" : ""} » <i>· {quand(m.created_at)}</i></span>
+                  <button className="btn-secondary nouveautes-lu" onClick={() => motsLus([m.id])}>Lu</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {nouveau.elements.commentaires.length > 0 && (
+            <div className="nouveautes-groupe">
+              <div className="nouveautes-titre">💬 {nouveau.elements.commentaires.length} commentaire{nouveau.elements.commentaires.length > 1 ? "s" : ""}</div>
+              {nouveau.elements.commentaires.map((c) => (
+                <div key={c.id} className="nouveautes-ligne">
+                  <span>« {String(c.contenu || "").slice(0, 140)} » <i>· journée du {quand(c.entry_date)}</i></span>
+                </div>
+              ))}
+            </div>
+          )}
+          {nouveau.elements.conseils.length > 0 && (
+            <div className="nouveautes-groupe">
+              <div className="nouveautes-titre">💡 {nouveau.elements.conseils.length} conseil{nouveau.elements.conseils.length > 1 ? "s" : ""}</div>
+              {nouveau.elements.conseils.map((r) => (
+                <div key={r.id} className="nouveautes-ligne"><span>{r.titre} <i>· {quand(r.created_at)}</i></span></div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="filters">
         {ONGLETS.map((o) => (

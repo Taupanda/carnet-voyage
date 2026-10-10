@@ -14,12 +14,12 @@ export default function AuthBar() {
   const [recu, setRecu] = useState(0);
 
   // La cloche se pose sur la photo de profil, au même endroit sur toutes les
-  // pages. Elle ne s'allume que quand quelque chose est arrivé : un mot non lu,
-  // un conseil ou un commentaire de la semaine.
+  // pages. Elle ne s'allume que quand quelque chose est arrivé : un mot privé
+  // non lu, ou un conseil ou un commentaire depuis la dernière visite.
   useEffect(() => {
     if (!adminView) { setRecu(0); return; }
     let annule = false;
-    (async () => {
+    const lire = async () => {
       try {
         const token = await jetonCourant();
         if (!token) return;
@@ -28,8 +28,12 @@ export default function AuthBar() {
         const n = await res.json();
         if (!annule) setRecu(n.total || 0);
       } catch {}
-    })();
-    return () => { annule = true; };
+    };
+    lire();
+    // La modération vient de marquer comme vu : la cloche se met à jour tout de
+    // suite, sans attendre un changement de page.
+    window.addEventListener("notifs-vues", lire);
+    return () => { annule = true; window.removeEventListener("notifs-vues", lire); };
   }, [adminView, pathname]);
 
   if (loading) return <span style={{ width: 30 }} />;

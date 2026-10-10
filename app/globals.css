@@ -437,6 +437,12 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 
 .rappel-depenses { background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px; padding: 14px 18px; text-align: center; margin: 6px 0; }
 .jr-terminer { align-self: flex-end; margin: 0 12px 8px; background: none; border: none; color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 2px; }
+.nouveautes { background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; }
+.nouveautes-groupe + .nouveautes-groupe { margin-top: 12px; }
+.nouveautes-titre { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.nouveautes-ligne { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13.5px; color: var(--ink2); padding: 5px 0; border-top: 1px solid var(--line); }
+.nouveautes-ligne i { color: var(--muted); font-style: normal; font-size: 12px; }
+.nouveautes-lu { padding: 4px 10px; font-size: 12px; flex: none; }
 .conversation-en-cours { background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px; padding: 14px 16px; }
 
 /* ============ RÉSUMÉS ILLUSTRÉS ============ */
