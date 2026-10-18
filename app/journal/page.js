@@ -6,8 +6,8 @@ import { useAuth } from "../AuthProvider";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { fetchMeteo } from "../../lib/weather";
 import { compressImage } from "../../lib/compressImage";
-import { creerDictee } from "../../lib/dictee";
-import { creerGardeEcran } from "../../lib/veille";
+import Micro from "../Micro";
+import { ajouterTexte } from "../../lib/enregistreur";
 import { distanceKm, arrondiKm, normaliseTrajets } from "../../lib/geo";
 import DistanceJour from "./DistanceJour";
 import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
@@ -70,7 +70,6 @@ export default function Journal() {
   const [reflexionPrivee, setReflexionPrivee] = useState(false);
   const [post, setPost] = useState(null);
   const [error, setError] = useState(null);
-  const [recording, setRecording] = useState(false);
   const [saisieMode, setSaisieMode] = useState("ia"); // "ia" | "manuel"
   const [inbox, setInbox] = useState([]);
   const [showInbox, setShowInbox] = useState(false);
@@ -83,18 +82,12 @@ export default function Journal() {
   const [exporting, setExporting] = useState(false);
   const [notesJour, setNotesJour] = useState([]); // le calepin de la journée choisie
   const [envoiPhotos, setEnvoiPhotos] = useState(0); // photos en cours d'envoi
-  const recognitionRef = useRef(null);
-  const dicteeRef = useRef(null);     // l'état de la dictée (lib/dictee.js)
-  const dernierDicteRef = useRef(null); // dernière valeur écrite PAR la dictée
-  const recActiveRef = useRef(false); // une session tourne-t-elle déjà ?
-  const purgeRef = useRef(false);     // la session en cours part à la poubelle
   // Photos arrivées par la galerie : elles n'appartiennent encore à aucune
   // journée. Elles vivent dans une ref, pas dans `photos`, parce qu'openDate()
   // réinitialise `photos` et les effacerait au moment même où l'on choisit le
   // jour auquel les rattacher.
   const partageRef = useRef([]);
   const [partageRecu, setPartageRecu] = useState(0);
-  const wakeLockRef = useRef(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -135,16 +128,6 @@ export default function Journal() {
     if (d) openDate(d);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, entriesLoaded]);
-
-  // En quittant le journal, on coupe le micro : une session laissée en vie
-  // continuerait d'écrire dans un champ que plus personne ne regarde.
-  useEffect(() => {
-    return () => {
-      try { recognitionRef.current?.abort(); } catch {}
-      releaseWakeLock();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // ---- Photos partagées depuis la galerie (share_target) ----
   // Le bouton de l'app dépend du sélecteur qu'Android veut bien ouvrir. Partir
@@ -217,7 +200,7 @@ export default function Journal() {
     setMessages(b.messages || []);
     setExtracted(b.extracted || emptyExtracted());
     setPhotos(avecPartage(b.photos || []));
-    saisieManuelle(b.input || "");
+    setInput(b.input || "");
     setError(null);
     setPhase("chat");
   }
@@ -350,10 +333,6 @@ export default function Journal() {
     if (!input.trim() || loading) return;
     const userMsg = input.trim();
     setInput("");
-    // Le champ se vidait à l'écran, mais pas le moteur de dictée : sa liste de
-    // résultats contenait encore toute la phrase envoyée, et le premier mot
-    // suivant la faisait réapparaître en entier. On repart d'une page blanche.
-    repartirDeZero();
     setError(null);
     const newMessages = [...messages, { role: "user", content: userMsg }];
     setMessages(newMessages);
@@ -413,124 +392,6 @@ export default function Journal() {
   function retirerPhoto(url) {
     setPhotos((p) => p.filter((x) => x !== url));
     setPhotoPrincipale((pp) => (pp === url ? null : pp));
-  }
-
-  // ---- Dictée vocale ----
-  //
-  // Un appui = une prise de parole, puis le micro s'arrête. Il se relançait
-  // tout seul à chaque silence, et la session repartie écrasait le champ au
-  // résultat suivant : impossible d'écrire au clavier — ni de se servir du
-  // micro du clavier — sans se faire effacer. Une session qui ne survit pas au
-  // silence ne peut plus voler la main, et elle supprime du même coup le rejeu
-  // au redémarrage, principale source des répétitions.
-  // Le garde est créé à la demande : il pose un écouteur de visibilité, qu'il
-  // faut pouvoir retirer aussi sûrement qu'on l'a mis.
-  function garde() {
-    if (!wakeLockRef.current) {
-      wakeLockRef.current = creerGardeEcran({
-        surEchec: (raison) =>
-          setError(`L'écran risque de s'éteindre pendant la dictée (${raison}). Touche l'écran de temps en temps, ou augmente le délai de veille du téléphone.`),
-      });
-    }
-    return wakeLockRef.current;
-  }
-  async function requestWakeLock() { await garde().allumer(); }
-  function releaseWakeLock() { wakeLockRef.current?.eteindre(); }
-  // Contre les répétitions, un seul principe : ne jamais CUMULER un delta, mais
-  // RECONSTRUIRE le texte de la session à chaque événement. Si le navigateur
-  // rejoue des résultats déjà vus — ce qu'il fait au redémarrage — on retombe
-  // sur le même texte, donc rien ne peut se dupliquer.
-  function buildRecognition() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const rec = new SR();
-    rec.lang = "fr-FR";
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.onresult = (ev) => {
-      const resultats = [];
-      for (let i = 0; i < ev.results.length; i++) {
-        resultats.push({ transcript: ev.results[i][0]?.transcript || "", isFinal: ev.results[i].isFinal });
-      }
-      const reconstruit = dicteeRef.current?.surResultat(resultats);
-      if (typeof reconstruit === "string") {
-        dernierDicteRef.current = reconstruit;
-        setInput(reconstruit);
-      }
-    };
-    rec.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        setError("Micro refusé — autorise le micro pour ce site dans les réglages du navigateur.");
-      }
-    };
-    rec.onend = () => {
-      recActiveRef.current = false;
-      if (purgeRef.current) {
-        // message envoyé : la session mourante n'a rien à reverser.
-        purgeRef.current = false;
-        dicteeRef.current?.purger();
-      } else {
-        dicteeRef.current?.surFin();
-      }
-      setRecording(false);
-      releaseWakeLock();
-    };
-    return rec;
-  }
-
-  // Le champ appartient à celui qui écrit. Quand la valeur ne vient pas de la
-  // dictée, c'est une saisie humaine — clavier, ou micro du clavier : la dictée
-  // repart de CE texte au lieu de le remplacer par le sien au coup suivant.
-  function saisieManuelle(valeur) {
-    setInput(valeur);
-    if (valeur === dernierDicteRef.current) return;
-    dernierDicteRef.current = null;
-    dicteeRef.current = creerDictee(valeur);
-  }
-
-  // Table rase entre deux tours de conversation. `abort()` plutôt que `stop()` :
-  // stop() laisse encore filer un dernier onresult, qui reremplirait le champ
-  // avec la phrase qu'on vient justement d'envoyer.
-  function repartirDeZero() {
-    dicteeRef.current?.purger();
-    dernierDicteRef.current = null;
-    if (recActiveRef.current) {
-      purgeRef.current = true;
-      try { recognitionRef.current?.abort(); } catch {}
-    }
-  }
-
-  // Démarre une session, jamais deux en parallèle : deux moteurs actifs
-  // transcrivent chaque mot en double.
-  function demarrerDictee(reessai = true) {
-    if (recActiveRef.current) return;
-    const rec = buildRecognition();
-    recognitionRef.current = rec;
-    try {
-      rec.start();
-      recActiveRef.current = true;
-    } catch {
-      if (reessai) setTimeout(() => demarrerDictee(false), 300);
-    }
-  }
-  async function toggleRecording() {
-    if (recording) {
-      try { recognitionRef.current?.stop(); } catch {}
-      setRecording(false);
-      releaseWakeLock();
-      return;
-    }
-    const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
-    if (!SR) {
-      setError("La dictée n'est pas dispo sur ce navigateur (souvent le cas sur iPhone). Astuce : utilise le micro du clavier, il écrit directement dans le champ.");
-      return;
-    }
-    setError(null);
-    // On repart toujours du contenu réel du champ, pas d'un état mémorisé.
-    dicteeRef.current = creerDictee(input || "");
-    dernierDicteRef.current = null;
-    await requestWakeLock();
-    demarrerDictee();
-    setRecording(true);
   }
 
   async function generatePost() {
@@ -924,21 +785,18 @@ export default function Journal() {
           )}
           <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid var(--line)", background: "var(--bg2)" }}>
             <PhotoPicker onFiles={handlePhotos} busy={envoiPhotos > 0} compact />
-            <button
+            <Micro
               className="btn-secondary"
-              style={{ padding: 10, width: 42, ...(recording ? { background: "var(--pink)", borderColor: "var(--pink)" } : {}) }}
-              onClick={toggleRecording}
-              aria-label="Dicter"
-            >
-              🎙️
-            </button>
+              onTexte={(t) => setInput((v) => ajouterTexte(v, t))}
+              onErreur={setError}
+            />
             <input
               className="input"
               style={{ flex: 1 }}
               value={input}
-              onChange={(e) => saisieManuelle(e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={recording ? "Je t'écoute…" : "Raconte… (ou 🎙️, ou le micro de ton clavier)"}
+              placeholder="Raconte… (ou 🎙️ pour parler)"
             />
             <button className="btn" style={{ padding: "10px 16px" }} onClick={handleSend} disabled={loading}>➤</button>
           </div>

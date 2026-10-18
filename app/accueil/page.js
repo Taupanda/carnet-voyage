@@ -6,8 +6,8 @@ import { supabaseBrowser } from "../../lib/supabaseClient";
 import { todayLocal } from "../../lib/stages";
 import { meteoInfo, fetchMeteoJour } from "../../lib/weather";
 import { derniersOutils } from "../../lib/outils";
-import { creerDictee } from "../../lib/dictee";
-import { creerGardeEcran } from "../../lib/veille";
+import Micro from "../Micro";
+import { ajouterTexte } from "../../lib/enregistreur";
 import { appelApi } from "../../lib/jeton";
 import { CATEGORIES as CATS } from "../../lib/categories";
 
@@ -72,18 +72,7 @@ function NoteRapide({ jour, notes, onFait }) {
   const [texte, setTexte] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
-  const [ecoute, setEcoute] = useState(false);
-  const [dispo, setDispo] = useState(false);
   const champ = useRef(null);
-  const recRef = useRef(null);
-  const dicteeRef = useRef(null);
-  const gardeRef = useRef(null);
-  const dernierDicteRef = useRef(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setDispo(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
-  }, []);
 
   async function enregistrer(t) {
     const valeur = (t || "").trim();
@@ -97,46 +86,6 @@ function NoteRapide({ jour, notes, onFait }) {
     onFait();
   }
 
-  // Dictée d'une note : une phrase, puis on s'arrête. Même moteur de
-  // reconstruction que le journal (lib/dictee.js), pour que les répétitions
-  // soient traitées au même endroit — et testées une seule fois.
-  function dicter() {
-    if (ecoute) { try { recRef.current?.stop(); } catch {} return; }
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    const rec = new SR();
-    recRef.current = rec;
-    rec.lang = "fr-FR";
-    rec.continuous = false;
-    rec.interimResults = true;
-    // Ce qui était déjà écrit dans le champ n'est pas effacé par la dictée.
-    // Passe par la ref, pas par une variable capturée : une correction au
-    // clavier en cours de dictée remplace l'objet, et le résultat suivant doit
-    // repartir du nouveau, pas de celui d'il y a trois secondes.
-    dicteeRef.current = creerDictee(texte);
-    rec.onresult = (ev) => {
-      const resultats = [];
-      for (let i = 0; i < ev.results.length; i++) {
-        resultats.push({ transcript: ev.results[i][0]?.transcript || "", isFinal: ev.results[i].isFinal });
-      }
-      const reconstruit = dicteeRef.current?.surResultat(resultats);
-      if (typeof reconstruit !== "string") return;
-      dernierDicteRef.current = reconstruit;
-      setTexte(reconstruit);
-    };
-    rec.onerror = () => { setEcoute(false); gardeRef.current?.eteindre(); setErr("Micro indisponible."); };
-    rec.onend = () => { setEcoute(false); gardeRef.current?.eteindre(); champ.current?.focus(); };
-    try {
-      rec.start();
-      setEcoute(true);
-      setErr(null);
-      // L'écran ne doit pas s'éteindre pendant qu'on parle : la reconnaissance
-      // s'arrête avec lui, en plein milieu d'une phrase.
-      if (!gardeRef.current) gardeRef.current = creerGardeEcran({});
-      gardeRef.current.allumer();
-    } catch {}
-  }
-
   return (
     <section className="ac-part">
       <div className="ac-bloc-tete">
@@ -144,32 +93,17 @@ function NoteRapide({ jour, notes, onFait }) {
         <Link href="/notes" className="ac-lien">le calepin →</Link>
       </div>
       <div className="ac-note">
-        {dispo && (
-          <button
-            type="button"
-            className={"ac-micro" + (ecoute ? " on" : "")}
-            onClick={dicter}
-            aria-pressed={ecoute}
-            aria-label={ecoute ? "Arrêter la dictée" : "Dicter la note"}
-          >
-            🎤
-          </button>
-        )}
+        <Micro
+          className="ac-micro"
+          onTexte={(t) => { setTexte((v) => ajouterTexte(v, t)); champ.current?.focus(); }}
+          onErreur={setErr}
+        />
         <input
           ref={champ}
           className="input"
-          placeholder={ecoute ? "Je t'écoute…" : "Écrire ou dicter…"}
+          placeholder="Écrire ou dicter…"
           value={texte}
-          onChange={(e) => {
-            // Même règle que le journal : ce qui est tapé à la main prime, et la
-            // dictée repart de ce texte plutôt que de le remplacer.
-            const v = e.target.value;
-            setTexte(v);
-            if (v !== dernierDicteRef.current) {
-              dernierDicteRef.current = null;
-              dicteeRef.current = creerDictee(v);
-            }
-          }}
+          onChange={(e) => setTexte(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && enregistrer(texte)}
           disabled={busy}
         />

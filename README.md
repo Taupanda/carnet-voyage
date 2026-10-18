@@ -24,6 +24,7 @@ Journal de bord conversationnel : une interview guidée par IA chaque soir, un b
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key (même page) |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key (même page — SECRET) |
 | `ANTHROPIC_API_KEY` | ta clé API Anthropic (SECRET) |
+| `MISTRAL_API_KEY` | clé Mistral (console.mistral.ai — SECRET) : transcription des enregistrements vocaux. `OPENAI_API_KEY` marche aussi à la place |
 | `ADMIN_PASSWORD` | un mot de passe de ton choix pour accéder à /journal |
 
 4. Clique **Deploy** — 2 minutes plus tard ton site est en ligne à l'adresse `xxx.vercel.app`
