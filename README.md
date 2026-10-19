@@ -24,6 +24,7 @@ Journal de bord conversationnel : une interview guidée par IA chaque soir, un b
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon public key (même page) |
 | `SUPABASE_SERVICE_ROLE_KEY` | service_role key (même page — SECRET) |
 | `ANTHROPIC_API_KEY` | ta clé API Anthropic (SECRET) |
+| `GROQ_API_KEY` | clé Groq (console.groq.com → API Keys — SECRET) : transcription gratuite des enregistrements vocaux (Whisper). `OPENAI_API_KEY`, payante, passe devant si elle existe |
 | `OPENAI_API_KEY` | clé OpenAI (platform.openai.com → API keys — SECRET) : transcription des enregistrements vocaux. Prioritaire sur `MISTRAL_API_KEY` si les deux existent |
 | `ADMIN_PASSWORD` | un mot de passe de ton choix pour accéder à /journal |
 

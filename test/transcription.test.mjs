@@ -27,7 +27,7 @@ test("OpenAI est préféré quand les deux clés existent", () => {
 });
 
 test("sans clé, un message qui dit quoi ajouter", async () => {
-  await assert.rejects(transcrireAudio(son(), { env: {} }), (e) => e.status === 503 && /OPENAI_API_KEY/.test(e.message));
+  await assert.rejects(transcrireAudio(son(), { env: {} }), (e) => e.status === 503 && /GROQ_API_KEY/.test(e.message));
 });
 
 test("les formats des téléphones sont reconnus", () => {
@@ -76,6 +76,18 @@ test("modèle récent indisponible pour ce compte : repli sur gpt-4o-transcribe"
   assert.equal(await transcrireAudio(son(), { env: { OPENAI_API_KEY: "k" }, fetchImpl, indices: ["Creel"] }), "repli");
   assert.deepEqual(appels.map((a) => a.champs.model[0]), ["gpt-transcribe", "gpt-4o-transcribe"]);
   assert.match(appels[1].champs.prompt[0], /Creel/);
+});
+
+test("Groq : Whisper large v3 gratuit, prompt court", async () => {
+  assert.equal(fournisseurTranscription({ GROQ_API_KEY: "g", MISTRAL_API_KEY: "m" }).nom, "groq");
+  assert.equal(fournisseurTranscription({ GROQ_API_KEY: "g", OPENAI_API_KEY: "o" }).nom, "openai");
+  const { appels, fetchImpl } = fauxService([{ status: 200, corps: { text: "gratuit" } }]);
+  const indices = Array.from({ length: 80 }, (_, i) => `Lieu ${i}`);
+  assert.equal(await transcrireAudio(son(), { env: { GROQ_API_KEY: "g" }, fetchImpl, indices }), "gratuit");
+  assert.equal(appels[0].url, "https://api.groq.com/openai/v1/audio/transcriptions");
+  assert.deepEqual(appels[0].champs.model, ["whisper-large-v3"]);
+  assert.deepEqual(appels[0].champs.language, ["fr"]);
+  assert.ok(appels[0].champs.prompt[0].length < 400, "prompt court pour Whisper");
 });
 
 test("une clé refusée remonte telle quelle, sans seconde tentative", async () => {
