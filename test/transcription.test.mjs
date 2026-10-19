@@ -19,14 +19,15 @@ function fauxService(reponses) {
   return { appels, fetchImpl };
 }
 
-test("Mistral est préféré quand les deux clés existent", () => {
-  assert.equal(fournisseurTranscription({ MISTRAL_API_KEY: "m", OPENAI_API_KEY: "o" }).nom, "mistral");
-  assert.equal(fournisseurTranscription({ OPENAI_API_KEY: "o" }).nom, "openai");
+test("OpenAI est préféré quand les deux clés existent", () => {
+  assert.equal(fournisseurTranscription({ MISTRAL_API_KEY: "m", OPENAI_API_KEY: "o" }).nom, "openai");
+  assert.equal(fournisseurTranscription({ MISTRAL_API_KEY: "m" }).nom, "mistral");
   assert.equal(fournisseurTranscription({}), null);
+  assert.deepEqual(fournisseurTranscription({ OPENAI_API_KEY: "o", OPENAI_TRANSCRIPTION_MODEL: "whisper-1" }).modeles, ["whisper-1"]);
 });
 
 test("sans clé, un message qui dit quoi ajouter", async () => {
-  await assert.rejects(transcrireAudio(son(), { env: {} }), (e) => e.status === 503 && /MISTRAL_API_KEY/.test(e.message));
+  await assert.rejects(transcrireAudio(son(), { env: {} }), (e) => e.status === 503 && /OPENAI_API_KEY/.test(e.message));
 });
 
 test("les formats des téléphones sont reconnus", () => {
@@ -51,7 +52,8 @@ test("Mistral : français, Voxtral, noms propres en context_bias", async () => {
 test("OpenAI : les noms propres passent dans le prompt", async () => {
   const { appels, fetchImpl } = fauxService([{ status: 200, corps: { text: "ok" } }]);
   await transcrireAudio(son("audio/mp4"), { env: { OPENAI_API_KEY: "k" }, fetchImpl, indices: ["Creel"] });
-  assert.deepEqual(appels[0].champs.model, ["gpt-4o-transcribe"]);
+  assert.deepEqual(appels[0].champs.model, ["gpt-transcribe"]);
+  assert.deepEqual(appels[0].champs.language, ["fr"]);
   assert.match(appels[0].champs.prompt[0], /Creel/);
   assert.equal(appels[0].champs.file[0].name, "enregistrement.mp4");
 });
@@ -64,6 +66,16 @@ test("indices refusés par le service : on retente sans, l'enregistrement n'est 
   assert.equal(await transcrireAudio(son(), { env: { MISTRAL_API_KEY: "k" }, fetchImpl, indices: ["Creel"] }), "transcrit");
   assert.equal(appels.length, 2);
   assert.equal(appels[1].champs.context_bias, undefined);
+});
+
+test("modèle récent indisponible pour ce compte : repli sur gpt-4o-transcribe", async () => {
+  const { appels, fetchImpl } = fauxService([
+    { status: 404, corps: { error: { message: "The model `gpt-transcribe` does not exist or you do not have access to it." } } },
+    { status: 200, corps: { text: "repli" } },
+  ]);
+  assert.equal(await transcrireAudio(son(), { env: { OPENAI_API_KEY: "k" }, fetchImpl, indices: ["Creel"] }), "repli");
+  assert.deepEqual(appels.map((a) => a.champs.model[0]), ["gpt-transcribe", "gpt-4o-transcribe"]);
+  assert.match(appels[1].champs.prompt[0], /Creel/);
 });
 
 test("une clé refusée remonte telle quelle, sans seconde tentative", async () => {
