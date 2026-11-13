@@ -10,7 +10,7 @@ import Micro from "../Micro";
 import { ajouterTexte } from "../../lib/enregistreur";
 import { distanceKm, arrondiKm, normaliseTrajets } from "../../lib/geo";
 import DistanceJour from "./DistanceJour";
-import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes } from "../../lib/stages";
+import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes, MAX_MOMENTS } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 import PhotoPicker, { AstucePartage } from "./PhotoPicker";
 import { appelApi } from "../../lib/jeton";
@@ -39,7 +39,7 @@ async function motifEchec(res) {
 }
 
 function motifLisible(e) {
-  if (e?.name === "AbortError") return "délai dépassé (45 s)";
+  if (e?.name === "AbortError") return "délai dépassé";
   if (e instanceof TypeError) return "connexion impossible";
   return e?.message || "cause inconnue";
 }
@@ -402,7 +402,7 @@ export default function Journal() {
       // index, et tout ce qu'il a raconté sans que l'assistant le recopie mot
       // pour mot y était perdu — d'où des posts qui ne tenaient plus que sur
       // le calepin.
-      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date, notes: notesJour.map((n) => n.texte), history: messages }), timeout: 70000 });
+      const res = await api("/api/format", { method: "POST", body: JSON.stringify({ extracted, date, notes: notesJour.map((n) => n.texte), history: messages }), timeout: 290000 }); // une très longue journée peut prendre quelques minutes
       if (!res.ok) throw new Error(await motifEchec(res));
       const genere = await res.json();
       setPost(genere);
@@ -1125,7 +1125,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, distance, photoPri
       </div>
 
       <div className="section">
-        <div className="section-head">Les moments {recit.length > 0 && `(${recit.length}/5)`}</div>
+        <div className="section-head">Les moments {recit.length > 0 && `(${recit.length}/${MAX_MOMENTS})`}</div>
         {recit.map((item, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -1142,7 +1142,7 @@ function EditablePost({ post, setPost, photos, notes, dayNum, distance, photoPri
             <textarea className="input" style={{ fontSize: 13.5 }} rows={2} value={item.detail || ""} onChange={(e) => updRecit(i, "detail", e.target.value)} placeholder="Détail (facultatif)" />
           </div>
         ))}
-        {recit.length < 5 && <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={addRecit}>+ Ajouter un moment</button>}
+        {recit.length < MAX_MOMENTS && <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={addRecit}>+ Ajouter un moment</button>}
       </div>
 
 

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { callClaude, checkAdmin, extractJson } from "../../../lib/server";
+import { MAX_MOMENTS } from "../../../lib/stages";
 
-// Une longue journée prend plusieurs dizaines de secondes à mettre en forme.
-export const maxDuration = 60;
+// Une très longue journée peut demander plus d'une minute de rédaction. 300 s
+// est le plafond des fonctions Vercel (Fluid Compute), offre gratuite comprise.
+export const maxDuration = 300;
 
 export async function POST(request) {
   if (!(await checkAdmin(request))) {
@@ -42,7 +44,9 @@ STRUCTURE — c'est une page de carnet, pas une liste de tâches
    - ÉQUILIBRE : chaque partie de la journée y pèse le même poids. Ce n'est PAS une introduction qui raconte le matin et expédie le reste en fin de phrase : le soir est aussi présent que le matin. Si le début occupe déjà une phrase entière, tu en dis trop.
    - Vue d'ensemble seulement : quelques mots par grande étape, le lieu et ce qu'il y a fait, sans détail, sans anecdote, sans citation.
    - Si la journée a un fil ou une tonalité qu'il a lui-même exprimés (épuisante, tranquille, pleine de rencontres), l'ouverture peut le dire, avec ses mots.
-2. "recit" : de 3 à 5 moments MAXIMUM. Chacun a un titre court et 2 à 4 phrases de PROSE CONTINUE, pas une notation télégraphique. C'est une sélection, pas un inventaire : si la journée n'a eu que deux vrais moments, n'en mets que deux.
+2. "recit" : les moments de la journée, dans l'ordre où il les a vécus. Chacun a un titre court et 2 à 4 phrases de PROSE CONTINUE, pas une notation télégraphique.
+   - Une journée ordinaire : 3 à 5 moments. Une journée très riche, où il a raconté beaucoup de choses distinctes et marquantes : jusqu'à ${MAX_MOMENTS}, plutôt que de tasser deux expériences différentes dans un même moment ou d'en sacrifier une.
+   - C'est une sélection, pas un inventaire : si la journée n'a eu que deux vrais moments, n'en mets que deux. Le nombre suit ce qu'il a vécu, pas un objectif.
 
 HIÉRARCHIE — la règle la plus importante
 Tous les faits d'une journée n'ont pas le même poids, et les mettre au même niveau détruit le récit.
@@ -103,13 +107,15 @@ Pour coords, donne les coordonnées approximatives du lieu principal mentionné 
               : ""),
         },
       ],
-      4000 // une longue journée en prose dépassait 2 000 tokens, et la réponse coupée devenait illisible
+      // Une journée très riche, jusqu'à huit moments en prose, dépassait 4 000
+      // tokens : la réponse coupée devenait illisible (« journée très longue »).
+      12000
     );
     const parsed = extractJson(raw);
-    // Garde-fou : le modèle peut ignorer le plafond de 5 moments. Au-delà, on
+    // Garde-fou : le modèle peut ignorer le plafond de moments. Au-delà, on
     // tronque plutôt que de laisser réapparaître l'inventaire indifférencié.
-    if (Array.isArray(parsed.recit) && parsed.recit.length > 5) {
-      parsed.recit = parsed.recit.slice(0, 5);
+    if (Array.isArray(parsed.recit) && parsed.recit.length > MAX_MOMENTS) {
+      parsed.recit = parsed.recit.slice(0, MAX_MOMENTS);
     }
     // Les anecdotes reviennent en liste mais tiennent dans une colonne texte,
     // une par ligne : pas de colonne jsonb dédiée, donc pas de migration.

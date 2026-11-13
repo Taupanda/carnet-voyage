@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { callClaude, checkAdmin, extractJson } from "../../../lib/server";
+import { fusionnerExtraits } from "../../../lib/entretien";
 
 export const maxDuration = 60;
 
@@ -30,7 +31,7 @@ Les champs à couvrir, dans cet ordre de priorité si plusieurs manquent : lieu,
 - Le champ "anecdote" peut en contenir PLUSIEURS : s'il en raconte une deuxième, ajoute-la à la suite en la séparant par un saut de ligne, sans effacer la première. Après la première, demande une seule fois s'il y en a une autre.
 - UN ÉLÉMENT RACONTÉ NE VA QUE DANS UN SEUL CHAMP. S'il raconte une histoire drôle survenue pendant une visite, elle va dans "anecdote" OU dans "activites", jamais dans les deux — choisis le champ le plus précis et n'en reparle pas ailleurs. Même règle pour un restaurant (adresse, pas activites). Les personnes croisées vont dans "rencontres" — ce champ sert à savoir QUI il a rencontré, pour qu'il pense à créer leur fiche ; ce qu'ils ont fait ensemble reste dans "activites", puisque le post racontera la rencontre dans le fil de la journée et non dans un paragraphe à part.
 - Ne redemande jamais un élément déjà noté dans un autre champ, et ne le recopie pas d'un champ à l'autre.
-- Consigne ses PROPRES MOTS dans les champs extraits, sans les reformuler ni les enjoliver. Ne les abrège pas non plus : garde le détail qu'il donne, c'est lui qui fera le récit.
+- Les champs extraits sont un INDEX, pas le récit : toute la conversation sera relue mot pour mot pour écrire le post. Pour chaque élément, quelques mots à lui (« plongée à Cabo Pulmo, tortues », « tacos chez Doña Mari ») avec les noms propres bien orthographiés — lieux, plats, personnes. Jamais de longues phrases recopiées : une journée très riche finirait par ne plus tenir dans ta réponse.
 - IL DICTE, IL N'ÉCRIT PAS. La reconnaissance vocale déforme des mots, surtout les noms de lieux, de plats et de personnes. Quand un mot est manifestement mal transcrit, comprends-le d'après le contexte et note la forme correcte plutôt que la bouillie ; si tu n'arrives vraiment pas à trancher sur quelque chose d'important, demande-lui simplement de répéter ce mot-là. Ne relève jamais la dictée comme une faute de sa part.
 - PHOTOS : il a actuellement ${photoCount} photo(s) jointe(s). Si c'est 0 et que le champ "photos" n'est pas encore rempli, demande-lui une fois (au moment opportun, pas en premier) d'ajouter des photos via le bouton « Ajouter des photos », et note "demandé" puis "fait" ou "rien" selon sa réponse. S'il y a déjà au moins 1 photo, mets directement "fait" dans photos sans poser la question.
 - État actuel des champs extraits : ${JSON.stringify(extracted)}${blocNotes}
@@ -38,8 +39,8 @@ Les champs à couvrir, dans cet ordre de priorité si plusieurs manquent : lieu,
 Quand TOUS les champs (y compris photos) valent soit une vraie valeur, soit "rien", soit "fait", passe done à true avec une phrase de clôture chaleureuse annonçant qu'il reste juste quelques petites notes rapides.
 
 Réponds UNIQUEMENT en JSON valide, sans markdown :
-{"reply": "...", "extracted": {"lieu": "...", "activites": "...", "rencontres": "...", "anecdote": "...", "adresse": "...", "reflexion": "...", "photos": "..."}, "done": false}
-Champs non répondus : null.`;
+{"reply": "...", "extracted": {"activites": "..."}, "done": false}
+Dans "extracted", ne renvoie QUE les champs qui changent à ce tour, avec leur nouvelle valeur complète (l'ancienne plus l'ajout) ; omets les autres, ils restent tels quels. Objet vide si rien ne change.`;
 
   try {
     const raw = await callClaude(system, [
@@ -49,9 +50,9 @@ Champs non répondus : null.`;
           .map((m) => `${m.role === "user" ? "Lui" : "Toi"}: ${m.content}`)
           .join("\n")}`,
       },
-    ]);
+    ], 3000);
     const parsed = extractJson(raw);
-    return NextResponse.json(parsed);
+    return NextResponse.json({ ...parsed, extracted: fusionnerExtraits(extracted, parsed.extracted) });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
