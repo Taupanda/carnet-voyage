@@ -45,3 +45,24 @@ test("chaque jour du voyage a exactement un rappel parmi les trois passages (4, 
 test("hors du voyage : aucun rappel", () => {
   assert.equal(soireeEnCours(a("2027-01-10T05:30:00Z"), ETAPES_DEFAUT), null);
 });
+
+test("le rappel ne compte pas la journée en cours parmi les jours en retard", async () => {
+  const { messageRappel } = await import("../lib/rappel.js");
+  const auj = "2026-11-16";
+  assert.equal(messageRappel([], auj), null);
+  assert.equal(messageRappel([auj], auj).title, "Alors, cette journée ?");
+  assert.equal(messageRappel([auj], auj).url, `/journal?date=${auj}`);
+
+  // Hier oublié, aujourd'hui pas encore écrit : UNE journée en retard, pas deux.
+  const m = messageRappel([auj, "2026-11-15"], auj);
+  assert.equal(m.title, "Une journée en retard");
+  assert.match(m.body, /celle d'aujourd'hui t'attend aussi/);
+  assert.equal(m.url, "/journal?date=2026-11-15");
+
+  // Aujourd'hui déjà écrit, deux jours oubliés : on ouvre le plus ancien.
+  const m2 = messageRappel(["2026-11-15", "2026-11-14"], auj);
+  assert.equal(m2.title, "2 journées en retard");
+  assert.equal(m2.body, "Elles sont encore fraîches — on les met par écrit ?");
+  assert.equal(m2.url, "/journal?date=2026-11-14");
+  assert.equal(messageRappel(["2026-11-15"], auj).body, "Elle est encore fraîche — on la met par écrit ?");
+});

@@ -3,6 +3,7 @@ import webpush from "web-push";
 import { supabaseAdmin } from "../../../lib/server";
 import { calendrierServeur } from "../../../lib/etapesServeur";
 import { soireeEnCours, heureEtDate } from "../../../lib/stages";
+import { messageRappel } from "../../../lib/rappel";
 
 // Le rappel part à 23 h, heure locale de l'étape en cours. Selon l'étape,
 // 23 h tombe à 4, 5 ou 6 h UTC : vercel.json appelle cette route à chacune de
@@ -81,24 +82,7 @@ export async function GET(request) {
   if (missing.length > 0) {
     const { data: admins } = await db.from("push_subs").select("*").eq("role", "admin");
     if (admins?.length) {
-      let payload;
-      if (missing.length === 1 && missing[0] === today) {
-        payload = {
-          title: "Alors, cette journée ?",
-          body: "Deux minutes pour raconter, et c'est dans les aventures.",
-          url: `/journal?date=${today}`,
-          tag: "reminder",
-          requireInteraction: true,
-        };
-      } else {
-        payload = {
-          title: `${missing.length} journées attendent`,
-          body: "Elles sont encore fraîches — on les met par écrit ?",
-          url: "/journal",
-          tag: "reminder",
-          requireInteraction: true,
-        };
-      }
+      const payload = { ...messageRappel(missing, today), tag: "reminder", requireInteraction: true };
       const sent = await sendTo(admins, payload);
       actions.push(`rappel envoyé à ${sent} appareil(s) — jours manquants : ${missing.join(", ")}`);
     } else {
