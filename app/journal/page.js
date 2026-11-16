@@ -13,6 +13,7 @@ import DistanceJour from "./DistanceJour";
 import { dayNumberOf, todayLocal, afficheJour, decoupeAnecdotes, colleAnecdotes, MAX_MOMENTS } from "../../lib/stages";
 import RencontresManager from "./RencontresManager";
 import PhotoPicker, { AstucePartage } from "./PhotoPicker";
+import Saisie from "./Saisie";
 import { appelApi } from "../../lib/jeton";
 import { sauverConversation, effacerConversation, conversationsEnCours, apercuConversation } from "../../lib/brouillonJournal";
 
@@ -783,23 +784,21 @@ export default function Journal() {
           {messages.some((m) => m.role === "user") && !loading && (
             <button className="jr-terminer" onClick={terminerConversation}>Terminer et passer à la suite →</button>
           )}
-          <div style={{ display: "flex", gap: 8, padding: "10px 12px", borderTop: "1px solid var(--line)", background: "var(--bg2)" }}>
-            <PhotoPicker onFiles={handlePhotos} busy={envoiPhotos > 0} compact />
-            <Micro
-              className="btn-secondary"
-              onTexte={(t) => setInput((v) => ajouterTexte(v, t))}
-              onErreur={setError}
-            />
-            <input
-              className="input"
-              style={{ flex: 1 }}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Raconte… (ou 🎙️ pour parler)"
-            />
-            <button className="btn" style={{ padding: "10px 16px" }} onClick={handleSend} disabled={loading}>➤</button>
-          </div>
+          <Saisie
+            value={input}
+            onChange={setInput}
+            onSend={handleSend}
+            disabled={loading}
+            placeholder="Raconte… (ou 🎙️ pour parler)"
+            outils={<>
+              <PhotoPicker onFiles={handlePhotos} busy={envoiPhotos > 0} compact />
+              <Micro
+                className="btn-secondary"
+                onTexte={(t) => setInput((v) => ajouterTexte(v, t))}
+                onErreur={setError}
+              />
+            </>}
+          />
         </>
       )}
 

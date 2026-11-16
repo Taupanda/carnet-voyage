@@ -1357,3 +1357,12 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .note-pour-btn { font-size: 12.5px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line2); background: none; color: var(--ink2); cursor: pointer; }
 .note-pour-btn.on, .note-pour-date.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .note-pour-date { font: inherit; font-size: 12.5px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line2); background: none; color: var(--ink2); }
+
+/* Journal : la zone de saisie de l'entretien. Le texte sur toute la largeur,
+   les boutons en dessous ; la zone grandit avec le texte. */
+.saisie { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--bg2); }
+.saisie-texte { width: 100%; resize: none; line-height: 1.45; min-height: 44px; overflow-y: auto; font-family: inherit; display: block; }
+.saisie.plein .saisie-texte { height: 62vh; height: 62dvh; }
+.saisie-outils { display: flex; align-items: center; gap: 8px; }
+.saisie-envoyer { padding: 10px 18px; }
+.saisie-agrandir { padding: 8px 12px; font-size: 13px; width: auto; }
