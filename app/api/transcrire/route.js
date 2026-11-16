@@ -3,9 +3,9 @@ import { supabaseAdmin, checkAdmin } from "../../../lib/server";
 import { etapesServeur } from "../../../lib/etapesServeur";
 import { transcrireAudio, extensionAudio, TAILLE_MAX } from "../../../lib/transcription";
 
-// Plusieurs minutes de voix se transcrivent en quelques secondes à quelques
-// dizaines de secondes.
-export const maxDuration = 60;
+// Plusieurs minutes de voix se transcrivent en quelques secondes ; on laisse
+// de la marge pour un long enregistrement et un service lent ce jour-là.
+export const maxDuration = 300;
 
 // Un enregistrement court part directement dans la requête. Au-delà, Vercel
 // refuserait le corps (4,5 Mo) : le téléphone le dépose d'abord dans un

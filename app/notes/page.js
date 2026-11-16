@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { todayLocal, afficheJour, dayNumberOf } from "../../lib/stages";
+import { todayLocal, afficheJour, dayNumberOf, DEPART } from "../../lib/stages";
 import { appelApi } from "../../lib/jeton";
 import Enregistrements from "./Enregistrements";
 
@@ -42,6 +42,15 @@ function NotesBody() {
   const champRef = useRef(null);
 
   const aujourdhui = todayLocal();
+  // Le jour auquel la note se rattache : aujourd'hui par défaut, mais on peut
+  // rattraper un oubli des jours passés (depuis cet écran seulement — la saisie
+  // rapide de l'accueil reste sur aujourd'hui).
+  const [jourNote, setJourNote] = useState(aujourdhui);
+  const hier = useMemo(() => {
+    const d = new Date(`${aujourdhui}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }, [aujourdhui]);
 
   async function load() {
     const res = await api("/api/notes");
@@ -59,7 +68,7 @@ function NotesBody() {
     if (!t || busy) return;
     setBusy(true);
     setErr(null);
-    const res = await api("/api/notes", { method: "POST", body: JSON.stringify({ date: aujourdhui, texte: t }) });
+    const res = await api("/api/notes", { method: "POST", body: JSON.stringify({ date: jourNote, texte: t }) });
     setBusy(false);
     if (!res.ok) { setErr("Note non enregistrée : " + (await motifEchec(res))); return; }
     const creee = await res.json();
@@ -113,7 +122,7 @@ function NotesBody() {
         <input
           ref={champRef}
           className="input"
-          placeholder="Ce que je veux retenir…"
+          placeholder={jourNote === aujourdhui ? "Ce que je veux retenir…" : `Ce que je veux retenir du ${jourLong(jourNote)}…`}
           value={texte}
           onChange={(e) => setTexte(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && ajouter()}
@@ -122,6 +131,21 @@ function NotesBody() {
         <button className="btn" style={{ padding: "10px 18px" }} onClick={ajouter} disabled={busy || !texte.trim()}>
           {busy ? "…" : "Noter"}
         </button>
+      </div>
+
+      <div className="note-pour" role="group" aria-label="Jour de la note">
+        <span>Pour</span>
+        <button className={"note-pour-btn" + (jourNote === aujourdhui ? " on" : "")} onClick={() => setJourNote(aujourdhui)}>aujourd'hui</button>
+        <button className={"note-pour-btn" + (jourNote === hier ? " on" : "")} onClick={() => setJourNote(hier)}>hier</button>
+        <input
+          type="date"
+          className={"note-pour-date" + (jourNote !== aujourdhui && jourNote !== hier ? " on" : "")}
+          value={jourNote}
+          min={DEPART}
+          max={aujourdhui}
+          onChange={(e) => e.target.value && e.target.value <= aujourdhui && setJourNote(e.target.value)}
+          aria-label="Autre jour"
+        />
       </div>
 
       <p className="note-compteur">

@@ -1351,3 +1351,9 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .enr-actions .btn-secondary { padding: 7px 12px; font-size: 13px; text-decoration: none; }
 .enr-msg { font-size: 13px; color: var(--muted); margin: 0; }
 .note-tag.alerte { background: var(--accent); color: #fff; }
+
+/* Calepin : à quel jour se rattache la note. */
+.note-pour { display: flex; align-items: center; gap: 6px; margin: 8px 0 2px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.note-pour-btn { font-size: 12.5px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line2); background: none; color: var(--ink2); cursor: pointer; }
+.note-pour-btn.on, .note-pour-date.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.note-pour-date { font: inherit; font-size: 12.5px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line2); background: none; color: var(--ink2); }
