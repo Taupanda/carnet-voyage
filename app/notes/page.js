@@ -5,6 +5,7 @@ import AdminGate from "../AdminGate";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { todayLocal, afficheJour, dayNumberOf } from "../../lib/stages";
 import { appelApi } from "../../lib/jeton";
+import Enregistrements from "./Enregistrements";
 
 // Le jeton vient du cache d'AuthProvider : plus de getSession() par requête,
 // et un délai maximal, pour qu'un appel finisse toujours — réponse ou erreur.
@@ -129,6 +130,8 @@ function NotesBody() {
       </p>
 
       {err && <p className="error" style={{ marginBottom: 12 }}>{err}</p>}
+
+      <Enregistrements />
 
       {!loaded ? (
         <p className="empty">Chargement…</p>

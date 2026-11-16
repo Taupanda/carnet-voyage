@@ -56,8 +56,7 @@ export async function POST(request) {
     if (!fichier || typeof fichier === "string") return NextResponse.json({ error: "aucun son reçu" }, { status: 400 });
     if (fichier.size > TAILLE_MAX) return NextResponse.json({ error: "enregistrement trop long" }, { status: 413 });
     try {
-      const texte = await transcrireAudio(fichier, { indices: await indicesDuVoyage(db) });
-      return NextResponse.json({ texte });
+      return NextResponse.json(await transcrireAudio(fichier, { indices: await indicesDuVoyage(db) }));
     } catch (e) {
       return reponseErreur(e);
     }
@@ -88,8 +87,7 @@ export async function POST(request) {
       const ext = chemin.split(".").pop();
       const type = { webm: "audio/webm", ogg: "audio/ogg", mp4: "audio/mp4", mp3: "audio/mpeg", wav: "audio/wav" }[ext];
       const fichier = new Blob([await data.arrayBuffer()], { type });
-      const texte = await transcrireAudio(fichier, { indices: await indicesDuVoyage(db) });
-      return NextResponse.json({ texte });
+      return NextResponse.json(await transcrireAudio(fichier, { indices: await indicesDuVoyage(db) }));
     } catch (e) {
       return reponseErreur(e);
     } finally {

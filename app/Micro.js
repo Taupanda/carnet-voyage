@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { appelApi } from "../lib/jeton";
 import {
   creerEnregistreur, enregistrementPossible, enregistrementEnAttente, oublierEnregistrement,
-  transcrire, dureeLisible, DUREE_MAX_S,
+  marquerTranscrit, purgerAnciens, transcrire, dureeLisible, trousLisibles, DUREE_MAX_S,
 } from "../lib/enregistreur";
 
 // Le bouton micro : un appui lance l'enregistrement, un second l'arrête, et
@@ -12,17 +12,18 @@ import {
 // onTexte(texte) reçoit la transcription ; onErreur(message | null) permet à
 // la page d'afficher le problème là où elle affiche déjà les siens.
 export default function Micro({ onTexte, onErreur, className = "", style }) {
-  const [etat, setEtat] = useState("repos"); // repos | ecoute | envoi
+  const [etat, setEtat] = useState("repos"); // repos | demarrage | ecoute | envoi
   const [secondes, setSecondes] = useState(0);
   const [attente, setAttente] = useState(null); // enregistrement sans texte
   const [dispo, setDispo] = useState(true);
   const recRef = useRef(null);
+  const occupe = useRef(false); // démarrage en cours, sans attendre le rendu
   const vivant = useRef(true);
 
   useEffect(() => {
     vivant.current = true;
     setDispo(enregistrementPossible());
-    enregistrementEnAttente().then((a) => vivant.current && setAttente(a));
+    purgerAnciens().then(enregistrementEnAttente).then((a) => vivant.current && setAttente(a));
     // Page quittée en plein enregistrement : on arrête, la copie de secours
     // garde le son pour la prochaine fois.
     return () => { vivant.current = false; recRef.current?.arreter(); };
@@ -32,12 +33,18 @@ export default function Micro({ onTexte, onErreur, className = "", style }) {
     setEtat("envoi");
     onErreur?.(null);
     try {
-      const texte = await transcrire(enr.blob, appelApi);
-      await oublierEnregistrement(enr.id);
+      const { texte, trous } = await transcrire(enr.blob, appelApi);
+      // Le son reste une semaine sur le téléphone (calepin → Derniers
+      // enregistrements), même transcrit : de quoi rattraper un passage sauté.
+      await marquerTranscrit(enr.id, { texte, trous });
       if (!vivant.current) return;
       setAttente(null);
       if (texte) onTexte(texte);
-      else onErreur?.("Rien d'audible dans cet enregistrement.");
+      if (trous.length) {
+        onErreur?.(`La transcription a sauté un passage (${trousLisibles(trous)}). Le son est gardé : réécoute-le ou retranscris-le depuis le calepin, rubrique « Derniers enregistrements ».`);
+      } else if (!texte) {
+        onErreur?.("Rien d'audible dans cet enregistrement.");
+      }
     } catch (e) {
       if (!vivant.current) return;
       setAttente(enr);
@@ -49,8 +56,11 @@ export default function Micro({ onTexte, onErreur, className = "", style }) {
   }
 
   async function basculer() {
-    if (etat === "envoi") return;
+    // Pendant le démarrage (autorisation du micro, verrou d'écran), un second
+    // appui lançait un second enregistrement par-dessus le premier.
+    if (etat === "envoi" || etat === "demarrage" || occupe.current) return;
     if (etat === "ecoute") { recRef.current?.arreter(); return; }
+    occupe.current = true;
     onErreur?.(null);
     const rec = creerEnregistreur({
       surTick: (s) => vivant.current && setSecondes(s),
@@ -64,13 +74,17 @@ export default function Micro({ onTexte, onErreur, className = "", style }) {
         envoyer(enr);
       },
     });
+    setEtat("demarrage");
     try {
       await rec.demarrer();
       recRef.current = rec;
       setSecondes(0);
       setEtat("ecoute");
+      occupe.current = false;
     } catch (e) {
       rec.annuler();
+      setEtat("repos");
+      occupe.current = false;
       const refus = e?.name === "NotAllowedError" || e?.name === "SecurityError";
       onErreur?.(refus
         ? "Micro refusé — autorise le micro pour ce site dans les réglages du navigateur."
@@ -114,7 +128,7 @@ export default function Micro({ onTexte, onErreur, className = "", style }) {
         className={`micro-btn ${className}${etat === "ecoute" ? " micro-on" : ""}`}
         style={style}
         onClick={basculer}
-        disabled={etat === "envoi"}
+        disabled={etat === "envoi" || etat === "demarrage"}
         aria-pressed={etat === "ecoute"}
         aria-label={etat === "ecoute" ? "Arrêter et transcrire" : etat === "envoi" ? "Transcription en cours" : "Enregistrer"}
       >

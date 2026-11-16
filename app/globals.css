@@ -1336,3 +1336,18 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 /* Un libellé long passe à la ligne plutôt que d'être coupé : la grille se
    contente d'une rangée un peu plus haute, ce qui coûte moins qu'un mot amputé. */
 .app-tile-label { font-size: 14px; font-weight: 600; line-height: 1.2; }
+
+/* Calepin : les enregistrements gardés sur le téléphone. */
+.enr-bloc { margin: 4px 0 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden; }
+.enr-titre { font-size: 14px; font-weight: 700; padding: 12px 14px 8px; margin: 0; }
+.enr-titre span { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 6px; }
+.enr-ligne { border-top: 1px solid var(--line); }
+.enr-tete { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; background: none; border: 0; text-align: left; font-size: 13.5px; color: var(--ink); cursor: pointer; flex-wrap: wrap; }
+.enr-duree { font-variant-numeric: tabular-nums; color: var(--muted); }
+.enr-corps { padding: 0 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.enr-texte { font-size: 13.5px; color: var(--ink2); line-height: 1.5; margin: 0; max-height: 180px; overflow-y: auto; }
+.enr-trous { font-size: 13px; color: var(--accent); font-weight: 600; margin: 0; }
+.enr-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.enr-actions .btn-secondary { padding: 7px 12px; font-size: 13px; text-decoration: none; }
+.enr-msg { font-size: 13px; color: var(--muted); margin: 0; }
+.note-tag.alerte { background: var(--accent); color: #fff; }
