@@ -1366,3 +1366,20 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .saisie-outils { display: flex; align-items: center; gap: 8px; }
 .saisie-envoyer { padding: 10px 18px; }
 .saisie-agrandir { padding: 8px 12px; font-size: 13px; width: auto; }
+
+/* Les anecdotes : toutes au même endroit, avec une étoile pour les préférées. */
+.anec-outils { display: flex; gap: 6px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.anec-filtre { font-size: 13px; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line2); background: none; color: var(--ink2); cursor: pointer; }
+.anec-filtre.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.anec-recherche { flex: 1; min-width: 150px; padding: 8px 12px; font-size: 14px; }
+.anec-etape { margin-bottom: 22px; }
+.anec-etape-titre { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--stage); border-top: 3px solid var(--stage); padding-top: 8px; margin: 0 0 8px; }
+.anec-carte { display: flex; gap: 10px; align-items: flex-start; padding: 12px 12px 10px 6px; border-bottom: 1px solid var(--line); }
+.anec-carte.etoilee { background: color-mix(in srgb, #F2B33D 10%, transparent); border-radius: 10px; }
+.anec-etoile { flex-shrink: 0; width: 40px; height: 40px; border: 0; background: none; font-size: 24px; line-height: 1; color: var(--muted); cursor: pointer; border-radius: 50%; }
+.anec-etoile.on { color: #E5A21B; }
+.anec-etoile:disabled { opacity: 0.4; cursor: default; }
+.anec-corps { flex: 1; min-width: 0; }
+.anec-texte { margin: 6px 0 6px; line-height: 1.55; color: var(--ink); }
+.anec-meta { margin: 0; font-size: 12.5px; color: var(--muted); }
+.anec-meta a { color: var(--stage); text-decoration: none; font-weight: 600; }
