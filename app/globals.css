@@ -1383,6 +1383,3 @@ input, textarea, button, select { font-family: inherit; font-size: inherit; }
 .anec-texte { margin: 6px 0 6px; line-height: 1.55; color: var(--ink); }
 .anec-meta { margin: 0; font-size: 12.5px; color: var(--muted); }
 .anec-meta a { color: var(--stage); text-decoration: none; font-weight: 600; }
-
-.enr-brut summary { font-size: 12.5px; color: var(--muted); cursor: pointer; }
-.enr-brut .enr-texte { margin-top: 6px; color: var(--muted); }
