@@ -94,6 +94,12 @@ function Enregistrement({ e, ouvert, basculer, recharger }) {
           {url && <audio controls src={url} preload="metadata" style={{ width: "100%" }} onLoadedMetadata={calerDuree} />}
           {e.trous.length > 0 && <p className="enr-trous">Non transcrit : {trousLisibles(e.trous)}</p>}
           {e.texte && <p className="enr-texte">{e.texte}</p>}
+          {e.brut && e.brut !== e.texte && (
+            <details className="enr-brut">
+              <summary>Avant relecture par Claude</summary>
+              <p className="enr-texte">{e.brut}</p>
+            </details>
+          )}
           <div className="enr-actions">
             <button className="btn-secondary" onClick={retranscrire} disabled={busy}>{busy ? "…" : "↻ Retranscrire"}</button>
             {e.texte && <button className="btn-secondary" onClick={copier}>Copier le texte</button>}

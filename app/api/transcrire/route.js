@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin, checkAdmin } from "../../../lib/server";
+import { supabaseAdmin, checkAdmin, callClaude } from "../../../lib/server";
 import { etapesServeur } from "../../../lib/etapesServeur";
 import { transcrireAudio, extensionAudio, TAILLE_MAX } from "../../../lib/transcription";
+import { corrigerTranscription } from "../../../lib/correction";
 
 // Plusieurs minutes de voix se transcrivent en quelques secondes ; on laisse
 // de la marge pour un long enregistrement et un service lent ce jour-là.
@@ -38,6 +39,15 @@ async function urlDeDepot(db, chemin) {
   return r;
 }
 
+// Transcription, puis relecture par Claude des mots manifestement écorchés.
+// `brut` garde ce que le service a entendu, pour comparer au besoin.
+async function transcrireEtRelire(fichier, db) {
+  const indices = await indicesDuVoyage(db);
+  const r = await transcrireAudio(fichier, { indices });
+  const relu = await corrigerTranscription(r.texte, { indices, callClaude });
+  return { ...r, texte: relu.texte, brut: r.texte, corrige: relu.corrige };
+}
+
 function reponseErreur(e) {
   const status = Number(e?.status) >= 400 ? Number(e.status) : 500;
   return NextResponse.json({ error: e?.message || "transcription impossible" }, { status });
@@ -56,7 +66,7 @@ export async function POST(request) {
     if (!fichier || typeof fichier === "string") return NextResponse.json({ error: "aucun son reçu" }, { status: 400 });
     if (fichier.size > TAILLE_MAX) return NextResponse.json({ error: "enregistrement trop long" }, { status: 413 });
     try {
-      return NextResponse.json(await transcrireAudio(fichier, { indices: await indicesDuVoyage(db) }));
+      return NextResponse.json(await transcrireEtRelire(fichier, db));
     } catch (e) {
       return reponseErreur(e);
     }
@@ -87,7 +97,7 @@ export async function POST(request) {
       const ext = chemin.split(".").pop();
       const type = { webm: "audio/webm", ogg: "audio/ogg", mp4: "audio/mp4", mp3: "audio/mpeg", wav: "audio/wav" }[ext];
       const fichier = new Blob([await data.arrayBuffer()], { type });
-      return NextResponse.json(await transcrireAudio(fichier, { indices: await indicesDuVoyage(db) }));
+      return NextResponse.json(await transcrireEtRelire(fichier, db));
     } catch (e) {
       return reponseErreur(e);
     } finally {

@@ -33,10 +33,10 @@ export default function Micro({ onTexte, onErreur, className = "", style }) {
     setEtat("envoi");
     onErreur?.(null);
     try {
-      const { texte, trous } = await transcrire(enr.blob, appelApi);
+      const { texte, brut, trous } = await transcrire(enr.blob, appelApi);
       // Le son reste une semaine sur le téléphone (calepin → Derniers
       // enregistrements), même transcrit : de quoi rattraper un passage sauté.
-      await marquerTranscrit(enr.id, { texte, trous });
+      await marquerTranscrit(enr.id, { texte, brut, trous });
       if (!vivant.current) return;
       setAttente(null);
       if (texte) onTexte(texte);
